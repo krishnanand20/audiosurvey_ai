@@ -1,0 +1,10 @@
+twilio:
+  account_sid: ""
+  auth_token: ""
+  from_number: ""
+  public_base_url: ""
+
+ivr:
+  question_text: "Please answer after the beep. What is your age?"
+  max_len_sec: 60
+  silence_timeout_sec: 4
