@@ -10,6 +10,8 @@ Flask + Twilio IVR (1-question MVP) + CSV outbound dialer
   - translate_to_english_chunked(text) -> english_text
   - text_to_english_audio(english_text, out_mp3_path) -> saves mp3
 """
+from dotenv import load_dotenv
+load_dotenv()
 
 import os
 import csv
@@ -19,6 +21,7 @@ from datetime import datetime
 from flask import Flask, request
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from twilio.rest import Client
+
 
 # ---- Import your pipeline functions (must exist in your project) ----
 from app.transcribe import transcribe_audio
@@ -33,12 +36,18 @@ def load_config(path="config.yaml"):
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
-cfg = load_config()
+cfg = load_config()  # keep for IVR params like question_text, max_len, etc.
 
-TWILIO_SID = cfg["twilio"]["account_sid"]
-TWILIO_TOKEN = cfg["twilio"]["auth_token"]
-TWILIO_FROM = cfg["twilio"]["from_number"]
-PUBLIC_BASE_URL = cfg["twilio"]["public_base_url"].rstrip("/")
+TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_FROM = os.getenv("TWILIO_FROM_NUMBER")
+PUBLIC_BASE_URL = (os.getenv("PUBLIC_BASE_URL") or "").rstrip("/")
+
+if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM, PUBLIC_BASE_URL]):
+    raise RuntimeError(
+        "Missing Twilio env vars. Ensure .env contains: "
+        "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, PUBLIC_BASE_URL"
+    )
 
 QUESTION_TEXT = cfg.get("ivr", {}).get("question_text", "Please answer after the beep.")
 MAX_LEN = int(cfg.get("ivr", {}).get("max_len_sec", 60))
