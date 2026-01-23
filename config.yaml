@@ -5,6 +5,6 @@ twilio:
   public_base_url: ""
 
 ivr:
-  question_text: "Please answer after the beep. What is your age?"
-  max_len_sec: 60
-  silence_timeout_sec: 4
+  questions_file: "data/questions.txt"
+  gather_timeout_sec: 6
+  speech_timeout: "auto"
