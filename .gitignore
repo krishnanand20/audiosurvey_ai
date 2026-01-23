@@ -1,4 +1,23 @@
+# Secrets
 .env
-data/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# macOS
+.DS_Store
+
+# Research data (DO NOT COMMIT)
+data/contacts.csv
+data/audio/
+data/transcripts/
+data/translations/
+data/english_audio/
+
+# Logs
+*.log
