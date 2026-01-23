@@ -1,14 +1,11 @@
 # app/twilio_handler.py
 """
-Flask + Twilio IVR
-- Multi-question survey (Q1 → answer → Q2 → answer ...)
-- ONE single recording for the entire call (full-call recording)
-- Uses speech Gather only to move between questions
-- Pipeline runs ONCE on the full call audio
-
-IMPORTANT:
-- Full call recording is started at outbound call creation (Twilio REST),
-  NOT via <Start><Record>.
+Flask + Twilio IVR (Inbound + Outbound)
+- Multi-question survey (Q1 → answer → Q2 → ...)
+- ONE single recording for the entire call
+- Pipeline runs once on the full call recording
+- Outbound recording: enabled via calls.create(record=True,...)
+- Inbound recording: enabled via TwiML <Start><Record .../></Start>
 """
 
 from dotenv import load_dotenv
@@ -22,15 +19,11 @@ from datetime import datetime
 from flask import Flask, request, Response
 from twilio.rest import Client
 
-# ---- Import your pipeline functions ----
 from app.transcribe import transcribe_audio
 from app.translate import translate_to_english_chunked
 from app.tts import text_to_english_audio
 
 
-# --------------------------
-# Config + env
-# --------------------------
 def load_config(path="config.yaml"):
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -52,18 +45,12 @@ GATHER_TIMEOUT = int(cfg.get("ivr", {}).get("gather_timeout_sec", 6))
 SPEECH_TIMEOUT = cfg.get("ivr", {}).get("speech_timeout", "auto")
 QUESTIONS_FILE = cfg.get("ivr", {}).get("questions_file", "data/questions.txt")
 
-# --------------------------
-# Load questions
-# --------------------------
 with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
     QUESTIONS = [q.strip() for q in f.readlines() if q.strip()]
 
 if not QUESTIONS:
     raise RuntimeError("No questions found in questions file")
 
-# --------------------------
-# Output dirs
-# --------------------------
 AUDIO_DIR = "data/audio"
 TRANSCRIPTS_DIR = "data/transcripts"
 TRANSLATIONS_DIR = "data/translations"
@@ -72,13 +59,9 @@ EN_AUDIO_DIR = "data/english_audio"
 for d in [AUDIO_DIR, TRANSCRIPTS_DIR, TRANSLATIONS_DIR, EN_AUDIO_DIR]:
     os.makedirs(d, exist_ok=True)
 
-# Flask app
 app = Flask(__name__)
 
 
-# --------------------------
-# Helpers
-# --------------------------
 def twiml(xml: str) -> Response:
     return Response(xml, mimetype="text/xml")
 
@@ -94,9 +77,11 @@ def xml_escape(s: str) -> str:
              .replace(">", "&gt;"))
 
 
-# --------------------------
-# Routes
-# --------------------------
+def is_inbound_call() -> bool:
+    direction = (request.form.get("Direction") or "").lower()
+    return direction.startswith("inbound")
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return "ok", 200
@@ -104,7 +89,10 @@ def health():
 
 @app.route("/voice", methods=["POST"])
 def voice():
-    # Trial-safe "press any key" gate
+    """
+    Entry point for BOTH inbound and outbound calls.
+    - On trial accounts, Gather(DTMF) helps get past the "press any key" gate.
+    """
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="dtmf" numDigits="1" timeout="8" action="{PUBLIC_BASE_URL}/start" method="POST">
@@ -118,11 +106,27 @@ def voice():
 
 @app.route("/start", methods=["POST"])
 def start():
-    # Ask Q1 (recording is handled at outbound call creation)
+    """
+    Start the survey and ask Q1.
+    - INBOUND: start full-call recording via TwiML <Start><Record>
+    - OUTBOUND: recording already started in calls.create(record=True, ...)
+    """
     q1 = xml_escape(QUESTIONS[0])
+
+    start_record_block = ""
+    if is_inbound_call():
+        start_record_block = f"""
+  <Start>
+    <Record recordingStatusCallback="{PUBLIC_BASE_URL}/recording-done"
+            recordingStatusCallbackMethod="POST"
+            recordingStatusCallbackEvent="completed"
+            trim="do-not-trim" />
+  </Start>"""
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
+{start_record_block}
+
   <Say voice="alice">Hello. This is a research survey call.</Say>
   <Say voice="alice">Please answer each question after it is spoken.</Say>
 
@@ -140,11 +144,15 @@ def start():
 def next_question():
     q = int(request.args.get("q", "0"))
 
-    # Finished all questions => say thanks + hangup
     if q >= len(QUESTIONS):
-        xml = """<?xml version="1.0" encoding="UTF-8"?>
+        # Stop recording ONLY for inbound (outbound recording is managed by Twilio call settings)
+        stop_block = ""
+        if is_inbound_call():
+            stop_block = "  <Stop><Record/></Stop>\n"
+
+        xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice">Thank you. The survey is complete. Goodbye.</Say>
+{stop_block}  <Say voice="alice">Thank you. The survey is complete. Goodbye.</Say>
   <Hangup/>
 </Response>"""
         return twiml(xml)
@@ -167,16 +175,14 @@ def next_question():
 @app.route("/recording-done", methods=["POST"])
 def recording_done():
     """
-    Called by Twilio when the FULL CALL recording is ready.
-    This callback comes from the outbound call creation params:
-      record=True + recording_status_callback=.../recording-done
-
-    We only process when RecordingStatus == completed.
+    Called by Twilio when the full-call recording is ready (inbound or outbound).
+    Process only when RecordingStatus=completed.
     """
     print("RECORDING DONE HIT")
     print("CallSid:", request.form.get("CallSid"))
     print("RecordingUrl:", request.form.get("RecordingUrl"))
     print("RecordingStatus:", request.form.get("RecordingStatus"))
+    print("Direction:", request.form.get("Direction"))
 
     status = (request.form.get("RecordingStatus") or "").lower()
     if status and status != "completed":
@@ -204,7 +210,6 @@ def recording_done():
     with open(audio_path, "wb") as f:
         f.write(r.content)
 
-    # ---- Pipeline ----
     text, detected = transcribe_audio(audio_path)
 
     with open(transcript_path, "w", encoding="utf-8") as f:
@@ -228,10 +233,10 @@ def recording_done():
     return ("ok", 200)
 
 
-# --------------------------
-# Outbound dialer (THIS starts recording)
-# --------------------------
 def call_from_csv(csv_path="data/contacts.csv"):
+    """
+    Outbound calls with full-call recording enabled at call creation.
+    """
     client = Client(TWILIO_SID, TWILIO_TOKEN)
 
     with open(csv_path, newline="", encoding="utf-8") as f:
