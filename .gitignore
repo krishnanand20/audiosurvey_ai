@@ -14,6 +14,8 @@ venv/
 
 # Research data (DO NOT COMMIT)
 data/contacts.csv
+data/state/participants.json
+data/state/call_log.csv
 data/audio/
 data/transcripts/
 data/translations/
