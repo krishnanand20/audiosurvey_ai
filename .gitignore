@@ -21,5 +21,10 @@ data/transcripts/
 data/translations/
 data/english_audio/
 
+s# Backup files
+data/state/*.bak
+data/state/*.bak_*
+
+
 # Logs
 *.log

@@ -1,13 +1,4 @@
 # app/twilio_handler.py
-"""
-Flask + Twilio IVR (Inbound + Outbound)
-- Multi-question survey (Q1 → answer → Q2 → ...)
-- ONE single recording for the entire call
-- Pipeline runs once on the full call recording
-- Outbound recording: enabled via calls.create(record=True,...)
-- Inbound recording: enabled via TwiML <Start><Record .../></Start> (may depend on Twilio account settings)
-- Phase 6: participant state + retry engine (max attempts=3, retry gap=1 hour) via app/state.py
-"""
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -20,6 +11,8 @@ from datetime import datetime
 from flask import Flask, request, Response
 from twilio.rest import Client
 
+from app.state import reset_state
+
 from app.state import (
     load_participants,
     save_participants,
@@ -28,6 +21,8 @@ from app.state import (
     mark_call_started,
     mark_completed,
     log_call_event,
+    mark_call_result,
+    mark_engaged,         
 )
 
 from app.transcribe import transcribe_audio
@@ -101,6 +96,27 @@ def is_inbound_call() -> bool:
     return direction.startswith("inbound")
 
 
+def looks_like_real_speech(s: str) -> bool:
+    """
+    Twilio may send "No." or blank SpeechResult.
+    Treat very short/empty or "no" as not engaged.
+    """
+    if not s:
+        return False
+    t = s.strip().lower()
+    if t in {"no", "no.", "nah", "none"}:
+        return False
+    # A small threshold to avoid marking engaged on single filler word
+    return len(t.split()) >= 2
+
+
+def find_participant_by_callsid(state: dict, call_sid: str):
+    for pid, p in state.items():
+        if p.get("last_call_sid") == call_sid:
+            return pid, p
+    return None, None
+
+
 # --------------------------
 # Routes
 # --------------------------
@@ -111,10 +127,6 @@ def health():
 
 @app.route("/voice", methods=["POST"])
 def voice():
-    """
-    Entry point for BOTH inbound and outbound calls.
-    Trial-safe DTMF gate helps get past "press any key".
-    """
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="dtmf" numDigits="1" timeout="8" action="{PUBLIC_BASE_URL}/start" method="POST">
@@ -128,16 +140,10 @@ def voice():
 
 @app.route("/start", methods=["POST"])
 def start():
-    """
-    Start the survey and ask Q1.
-    - INBOUND: attempts to start recording via TwiML <Start><Record>
-    - OUTBOUND: recording already started in calls.create(record=True,...)
-    """
     q1 = xml_escape(QUESTIONS[0])
 
     start_record_block = ""
     if is_inbound_call():
-        # NOTE: Whether this produces a recording/callback can depend on Twilio account settings.
         start_record_block = f"""
   <Start>
     <Record recordingStatusCallback="{PUBLIC_BASE_URL}/recording-done"
@@ -165,8 +171,25 @@ def start():
 
 @app.route("/next", methods=["POST"])
 def next_question():
+    """
+    Moves through questions.
+    ✅ Engagement tracking: if SpeechResult contains real speech, mark engaged=True.
+    """
     q = int(request.args.get("q", "0"))
 
+    # ---- Engagement tracking ----
+    call_sid = request.form.get("CallSid", "")
+    speech = (request.form.get("SpeechResult") or "").strip()
+
+    if call_sid and looks_like_real_speech(speech):
+        state = load_participants()
+        pid, _ = find_participant_by_callsid(state, call_sid)
+        if pid:
+            mark_engaged(state, pid)
+            save_participants(state)
+            print(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
+
+    # ---- End survey ----
     if q >= len(QUESTIONS):
         stop_block = ""
         if is_inbound_call():
@@ -179,6 +202,7 @@ def next_question():
 </Response>"""
         return twiml(xml)
 
+    # ---- Ask next question ----
     question = xml_escape(QUESTIONS[q])
     next_q = q + 1
 
@@ -194,15 +218,46 @@ def next_question():
     return twiml(xml)
 
 
+@app.route("/call-status", methods=["POST"])
+def call_status():
+    """
+    Twilio status callback for outbound calls.
+    ✅ We do NOT trust "completed" alone as survey completion.
+    We use 'engaged' to decide final completion.
+    """
+    call_sid = request.form.get("CallSid", "")
+    call_status = (request.form.get("CallStatus") or "").lower().strip()
+
+    print("CALL STATUS HIT")
+    print("CallSid:", call_sid)
+    print("CallStatus:", call_status)
+
+    state = load_participants()
+    pid, p = find_participant_by_callsid(state, call_sid)
+
+    if not pid:
+        return ("ok", 200)
+
+    # Store last_call_status + adjust retry state
+    mark_call_result(state, pid, call_status)
+
+    # ✅ If Twilio says completed but participant never spoke, keep them pending for retry
+    engaged = bool(p.get("engaged", False)) if p else False
+    if call_status == "completed" and not engaged:
+        state[pid]["status"] = "pending"
+
+    save_participants(state)
+    return ("ok", 200)
+
+
 @app.route("/recording-done", methods=["POST"])
 def recording_done():
     """
-    Called by Twilio when the full-call recording is ready (inbound or outbound).
-    We process only when RecordingStatus=completed.
-    Also marks participant completed (if we can map CallSid -> participant_id)
-    and writes an audit log row to data/state/call_log.csv.
+    Called when recording is ready.
+    ✅ Only mark 'completed' if participant was engaged AND transcript is non-trivial.
     """
     print("RECORDING DONE HIT")
+
     call_sid = request.form.get("CallSid", "unknown_call")
     recording_url = request.form.get("RecordingUrl")
     rec_status = request.form.get("RecordingStatus")
@@ -220,6 +275,24 @@ def recording_done():
     if not recording_url:
         return ("no recording", 400)
 
+    # ---- Map call -> participant ----
+    state = load_participants()
+    participant_id, p = find_participant_by_callsid(state, call_sid)
+    phone_e164 = p.get("phone_e164") if p else None
+    last_call_status = (p.get("last_call_status") or "").lower() if p else ""
+    engaged = bool(p.get("engaged", False)) if p else False
+
+    # If we know call outcome was failure, ignore recording for completion
+    if participant_id and last_call_status in {"no-answer", "busy", "failed", "canceled"}:
+        print(f"Not processing completion: call_status={last_call_status} for participant {participant_id}")
+        return ("ok", 200)
+
+    # If participant never spoke, do NOT process as completed
+    if participant_id and not engaged:
+        print(f"Not marking completed: engaged=False for participant {participant_id}")
+        return ("ok", 200)
+
+    # ---- Download recording and run pipeline ----
     wav_url = recording_url + ".wav"
     base = safe_base(call_sid)
 
@@ -236,10 +309,15 @@ def recording_done():
     with open(audio_path, "wb") as f:
         f.write(r.content)
 
-    # ---- Pipeline ----
     text, detected = transcribe_audio(audio_path)
+
     with open(transcript_path, "w", encoding="utf-8") as f:
         f.write(text)
+
+    # Guard: ignore extremely short transcripts
+    if len(text.strip().split()) < 5:
+        print("Transcript too short; not marking completed.")
+        return ("ok", 200)
 
     if (detected or "").lower() == "en":
         english_text = text
@@ -256,16 +334,6 @@ def recording_done():
     print("Saved:", translation_path)
     print("Saved:", english_audio_path)
 
-    # ---- Participant mapping (CallSid -> participant_id) ----
-    state = load_participants()
-    participant_id = None
-    phone_e164 = None
-    for pid, p in state.items():
-        if p.get("last_call_sid") == call_sid:
-            participant_id = pid
-            phone_e164 = p.get("phone_e164")
-            break
-
     outputs = {
         "audio_path": audio_path,
         "transcript_path": transcript_path,
@@ -277,7 +345,6 @@ def recording_done():
         mark_completed(state, participant_id, recording_url, outputs)
         save_participants(state)
 
-    # ---- Audit log row ----
     log_call_event({
         "timestamp_utc": datetime.utcnow().isoformat(),
         "participant_id": participant_id or "",
@@ -291,16 +358,7 @@ def recording_done():
     return ("ok", 200)
 
 
-# --------------------------
-# Outbound dialer with retry engine
-# --------------------------
 def call_from_csv(csv_path="data/contacts.csv"):
-    """
-    Outbound dialer with retry engine (Phase 6)
-    - Max attempts: 3
-    - Retry gap: 1 hour (controlled inside app/state.py)
-    - Skips completed participants
-    """
     client = Client(TWILIO_SID, TWILIO_TOKEN)
     state = load_participants()
 
@@ -323,9 +381,14 @@ def call_from_csv(csv_path="data/contacts.csv"):
                 from_=TWILIO_FROM,
                 url=f"{PUBLIC_BASE_URL}/voice",
                 method="POST",
+
                 record=True,
                 recording_status_callback=f"{PUBLIC_BASE_URL}/recording-done",
                 recording_status_callback_method="POST",
+
+                status_callback=f"{PUBLIC_BASE_URL}/call-status",
+                status_callback_event=["completed", "no-answer", "busy", "failed", "canceled"],
+                status_callback_method="POST",
             )
 
             mark_call_started(state, participant_id, call.sid)
@@ -336,9 +399,16 @@ def call_from_csv(csv_path="data/contacts.csv"):
 
 if __name__ == "__main__":
     import sys
+
     mode = sys.argv[1] if len(sys.argv) > 1 else "serve"
 
     if mode == "call":
         call_from_csv()
+    elif mode == "reset":
+        reset_call_log = "--log" in sys.argv
+        reset_state(reset_call_log=reset_call_log, backup=True)
+        print("State reset complete.")
+        if reset_call_log:
+            print("call_log.csv also reset (backed up).")
     else:
         app.run(host="0.0.0.0", port=5050, debug=False)
