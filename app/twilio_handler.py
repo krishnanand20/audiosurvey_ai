@@ -173,7 +173,7 @@ def start():
 def next_question():
     """
     Moves through questions.
-    ✅ Engagement tracking: if SpeechResult contains real speech, mark engaged=True.
+    Engagement tracking: if SpeechResult contains real speech, mark engaged=True.
     """
     q = int(request.args.get("q", "0"))
 
@@ -222,7 +222,7 @@ def next_question():
 def call_status():
     """
     Twilio status callback for outbound calls.
-    ✅ We do NOT trust "completed" alone as survey completion.
+    We do NOT trust "completed" alone as survey completion.
     We use 'engaged' to decide final completion.
     """
     call_sid = request.form.get("CallSid", "")
@@ -241,7 +241,7 @@ def call_status():
     # Store last_call_status + adjust retry state
     mark_call_result(state, pid, call_status)
 
-    # ✅ If Twilio says completed but participant never spoke, keep them pending for retry
+    #  If Twilio says completed but participant never spoke, keep them pending for retry
     engaged = bool(p.get("engaged", False)) if p else False
     if call_status == "completed" and not engaged:
         state[pid]["status"] = "pending"
@@ -254,7 +254,7 @@ def call_status():
 def recording_done():
     """
     Called when recording is ready.
-    ✅ Only mark 'completed' if participant was engaged AND transcript is non-trivial.
+    Only mark 'completed' if participant was engaged AND transcript is non-trivial.
     """
     print("RECORDING DONE HIT")
 
@@ -315,7 +315,7 @@ def recording_done():
         f.write(text)
 
     # Guard: ignore extremely short transcripts
-    if len(text.strip().split()) < 5:
+    if len(text.strip().split()) < 15:
         print("Transcript too short; not marking completed.")
         return ("ok", 200)
 
