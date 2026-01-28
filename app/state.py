@@ -138,7 +138,7 @@ def mark_call_result(state: dict, participant_id: str, call_status: str) -> None
     cs = (call_status or "").lower().strip()
 
     # ✅ Always store last call status
-    p["last_call_status"] = cs
+    p["last_call_status"] = cs  
 
     # Terminal success
     if cs == "completed":

@@ -10,6 +10,7 @@ import requests
 from datetime import datetime
 from flask import Flask, request, Response
 from twilio.rest import Client
+import threading
 
 from app.state import reset_state
 
@@ -396,6 +397,16 @@ def call_from_csv(csv_path="data/contacts.csv"):
 
     save_participants(state)
 
+def start_scheduler_in_background(interval_sec: int = 15) -> None:
+    """
+    Starts the scheduler loop in a daemon thread so it runs while the server runs.
+    """
+    from app.scheduler import run_loop
+
+    t = threading.Thread(target=run_loop, args=(interval_sec,), daemon=True)
+    t.start()
+    print(f" Scheduler started in background (every {interval_sec}s)")
+
 
 if __name__ == "__main__":
     import sys
@@ -404,11 +415,22 @@ if __name__ == "__main__":
 
     if mode == "call":
         call_from_csv()
+
     elif mode == "reset":
         reset_call_log = "--log" in sys.argv
         reset_state(reset_call_log=reset_call_log, backup=True)
         print("State reset complete.")
         if reset_call_log:
             print("call_log.csv also reset (backed up).")
+
     else:
-        app.run(host="0.0.0.0", port=5050, debug=False)
+        # ✅ Start scheduler automatically when server starts
+        start_scheduler_in_background(interval_sec=300)
+
+        # ✅ Run Flask without reloader (prevents duplicate scheduler threads)
+        app.run(
+            host="0.0.0.0",
+            port=5050,
+            debug=False,
+            use_reloader=False
+        )
