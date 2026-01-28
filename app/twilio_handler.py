@@ -7,13 +7,15 @@ import os
 import csv
 import yaml
 import requests
+import threading
+import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
 from flask import Flask, request, Response
 from twilio.rest import Client
-import threading
 
 from app.state import reset_state
-
 from app.state import (
     load_participants,
     save_participants,
@@ -23,7 +25,7 @@ from app.state import (
     mark_completed,
     log_call_event,
     mark_call_result,
-    mark_engaged,         
+    mark_engaged,
 )
 
 from app.transcribe import transcribe_audio
@@ -32,11 +34,58 @@ from app.tts import text_to_english_audio
 
 
 # --------------------------
+# Time (NYC + UTC)
+# --------------------------
+NY_TZ = ZoneInfo("America/New_York")
+UTC_TZ = ZoneInfo("UTC")
+
+
+def log(msg: str) -> None:
+    ny = datetime.now(NY_TZ).isoformat(timespec="seconds")
+    utc = datetime.now(UTC_TZ).isoformat(timespec="seconds").replace("+00:00", "Z")
+    print(f"[NYC {ny} | UTC {utc}] {msg}")
+
+
+def schedule_participant(participant_id: str, local_time_str: str) -> None:
+    """
+    local_time_str format: YYYY-MM-DD HH:MM (NYC time)
+    """
+    state = load_participants()
+    if participant_id not in state:
+        raise ValueError(f"Participant {participant_id} not found in participants.json")
+
+    # Parse NYC time
+    local_dt = datetime.strptime(local_time_str, "%Y-%m-%d %H:%M").replace(tzinfo=NY_TZ)
+    utc_dt = local_dt.astimezone(UTC_TZ)
+
+    # Store schedule fields
+    state[participant_id]["scheduled_time_local"] = local_dt.isoformat()
+    state[participant_id]["scheduled_time_utc"] = utc_dt.isoformat().replace("+00:00", "Z")
+
+    # Reset for new scheduled attempt (recommended)
+    state[participant_id]["status"] = "pending"
+    state[participant_id]["engaged"] = False
+    state[participant_id]["last_call_sid"] = None
+    state[participant_id]["last_call_status"] = None
+    state[participant_id]["last_recording_url"] = None
+    state[participant_id]["last_outputs"] = {}
+
+    save_participants(state)
+
+    print(
+        f"✅ Scheduled participant {participant_id}\n"
+        f"   NYC: {local_dt.isoformat()}\n"
+        f"   UTC: {utc_dt.isoformat()}"
+    )
+
+
+# --------------------------
 # Config + env
 # --------------------------
 def load_config(path="config.yaml"):
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
 
 cfg = load_config()
 
@@ -54,6 +103,7 @@ if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM, PUBLIC_BASE_URL]):
 GATHER_TIMEOUT = int(cfg.get("ivr", {}).get("gather_timeout_sec", 6))
 SPEECH_TIMEOUT = cfg.get("ivr", {}).get("speech_timeout", "auto")
 QUESTIONS_FILE = cfg.get("ivr", {}).get("questions_file", "data/questions.txt")
+CONTACTS_FILE = cfg.get("ivr", {}).get("contacts_file", "data/contacts.csv")
 
 with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
     QUESTIONS = [q.strip() for q in f.readlines() if q.strip()]
@@ -65,7 +115,6 @@ AUDIO_DIR = "data/audio"
 TRANSCRIPTS_DIR = "data/transcripts"
 TRANSLATIONS_DIR = "data/translations"
 EN_AUDIO_DIR = "data/english_audio"
-
 for d in [AUDIO_DIR, TRANSCRIPTS_DIR, TRANSLATIONS_DIR, EN_AUDIO_DIR]:
     os.makedirs(d, exist_ok=True)
 
@@ -85,11 +134,7 @@ def safe_base(call_sid: str) -> str:
 
 
 def xml_escape(s: str) -> str:
-    return (
-        s.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def is_inbound_call() -> bool:
@@ -98,16 +143,11 @@ def is_inbound_call() -> bool:
 
 
 def looks_like_real_speech(s: str) -> bool:
-    """
-    Twilio may send "No." or blank SpeechResult.
-    Treat very short/empty or "no" as not engaged.
-    """
     if not s:
         return False
     t = s.strip().lower()
     if t in {"no", "no.", "nah", "none"}:
         return False
-    # A small threshold to avoid marking engaged on single filler word
     return len(t.split()) >= 2
 
 
@@ -172,13 +212,8 @@ def start():
 
 @app.route("/next", methods=["POST"])
 def next_question():
-    """
-    Moves through questions.
-    Engagement tracking: if SpeechResult contains real speech, mark engaged=True.
-    """
     q = int(request.args.get("q", "0"))
 
-    # ---- Engagement tracking ----
     call_sid = request.form.get("CallSid", "")
     speech = (request.form.get("SpeechResult") or "").strip()
 
@@ -188,9 +223,8 @@ def next_question():
         if pid:
             mark_engaged(state, pid)
             save_participants(state)
-            print(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
+            log(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
 
-    # ---- End survey ----
     if q >= len(QUESTIONS):
         stop_block = ""
         if is_inbound_call():
@@ -203,7 +237,6 @@ def next_question():
 </Response>"""
         return twiml(xml)
 
-    # ---- Ask next question ----
     question = xml_escape(QUESTIONS[q])
     next_q = q + 1
 
@@ -221,30 +254,20 @@ def next_question():
 
 @app.route("/call-status", methods=["POST"])
 def call_status():
-    """
-    Twilio status callback for outbound calls.
-    We do NOT trust "completed" alone as survey completion.
-    We use 'engaged' to decide final completion.
-    """
     call_sid = request.form.get("CallSid", "")
-    call_status = (request.form.get("CallStatus") or "").lower().strip()
+    call_status_val = (request.form.get("CallStatus") or "").lower().strip()
 
-    print("CALL STATUS HIT")
-    print("CallSid:", call_sid)
-    print("CallStatus:", call_status)
+    log(f"CALL STATUS HIT | CallSid={call_sid} | CallStatus={call_status_val}")
 
     state = load_participants()
     pid, p = find_participant_by_callsid(state, call_sid)
-
     if not pid:
         return ("ok", 200)
 
-    # Store last_call_status + adjust retry state
-    mark_call_result(state, pid, call_status)
+    mark_call_result(state, pid, call_status_val)
 
-    #  If Twilio says completed but participant never spoke, keep them pending for retry
     engaged = bool(p.get("engaged", False)) if p else False
-    if call_status == "completed" and not engaged:
+    if call_status_val == "completed" and not engaged:
         state[pid]["status"] = "pending"
 
     save_participants(state)
@@ -253,47 +276,33 @@ def call_status():
 
 @app.route("/recording-done", methods=["POST"])
 def recording_done():
-    """
-    Called when recording is ready.
-    Only mark 'completed' if participant was engaged AND transcript is non-trivial.
-    """
-    print("RECORDING DONE HIT")
-
     call_sid = request.form.get("CallSid", "unknown_call")
     recording_url = request.form.get("RecordingUrl")
-    rec_status = request.form.get("RecordingStatus")
+    rec_status = (request.form.get("RecordingStatus") or "").lower()
     direction = request.form.get("Direction") or ""
 
-    print("CallSid:", call_sid)
-    print("RecordingUrl:", recording_url)
-    print("RecordingStatus:", rec_status)
-    print("Direction:", direction)
+    log(f"RECORDING DONE HIT | CallSid={call_sid} | Status={rec_status} | Dir={direction}")
 
-    status = (rec_status or "").lower()
-    if status and status != "completed":
+    if rec_status and rec_status != "completed":
         return ("ok", 200)
 
     if not recording_url:
         return ("no recording", 400)
 
-    # ---- Map call -> participant ----
     state = load_participants()
     participant_id, p = find_participant_by_callsid(state, call_sid)
     phone_e164 = p.get("phone_e164") if p else None
     last_call_status = (p.get("last_call_status") or "").lower() if p else ""
     engaged = bool(p.get("engaged", False)) if p else False
 
-    # If we know call outcome was failure, ignore recording for completion
     if participant_id and last_call_status in {"no-answer", "busy", "failed", "canceled"}:
-        print(f"Not processing completion: call_status={last_call_status} for participant {participant_id}")
+        log(f"Skipping pipeline: call_status={last_call_status} participant={participant_id}")
         return ("ok", 200)
 
-    # If participant never spoke, do NOT process as completed
     if participant_id and not engaged:
-        print(f"Not marking completed: engaged=False for participant {participant_id}")
+        log(f"Skipping pipeline: engaged=False participant={participant_id}")
         return ("ok", 200)
 
-    # ---- Download recording and run pipeline ----
     wav_url = recording_url + ".wav"
     base = safe_base(call_sid)
 
@@ -302,9 +311,9 @@ def recording_done():
     translation_path = os.path.join(TRANSLATIONS_DIR, base + "_FULLCALL.txt")
     english_audio_path = os.path.join(EN_AUDIO_DIR, base + "_FULLCALL.mp3")
 
-    print("Downloading:", wav_url)
+    log(f"Downloading recording: {wav_url}")
     r = requests.get(wav_url, auth=(TWILIO_SID, TWILIO_TOKEN), timeout=60)
-    print("Download status:", r.status_code)
+    log(f"Download status: {r.status_code}")
     r.raise_for_status()
 
     with open(audio_path, "wb") as f:
@@ -315,25 +324,21 @@ def recording_done():
     with open(transcript_path, "w", encoding="utf-8") as f:
         f.write(text)
 
-    # Guard: ignore extremely short transcripts
     if len(text.strip().split()) < 15:
-        print("Transcript too short; not marking completed.")
+        log("Transcript too short; not marking completed.")
         return ("ok", 200)
 
-    if (detected or "").lower() == "en":
-        english_text = text
-    else:
-        english_text = translate_to_english_chunked(text)
+    english_text = text if (detected or "").lower() == "en" else translate_to_english_chunked(text)
 
     with open(translation_path, "w", encoding="utf-8") as f:
         f.write(english_text)
 
     text_to_english_audio(english_text, english_audio_path)
 
-    print("Saved:", audio_path)
-    print("Saved:", transcript_path)
-    print("Saved:", translation_path)
-    print("Saved:", english_audio_path)
+    log(f"Saved audio: {audio_path}")
+    log(f"Saved transcript: {transcript_path}")
+    log(f"Saved translation: {translation_path}")
+    log(f"Saved english audio: {english_audio_path}")
 
     outputs = {
         "audio_path": audio_path,
@@ -359,7 +364,10 @@ def recording_done():
     return ("ok", 200)
 
 
-def call_from_csv(csv_path="data/contacts.csv"):
+# --------------------------
+# Outbound dialer
+# --------------------------
+def call_from_csv(csv_path=CONTACTS_FILE):
     client = Client(TWILIO_SID, TWILIO_TOKEN)
     state = load_participants()
 
@@ -368,13 +376,13 @@ def call_from_csv(csv_path="data/contacts.csv"):
         for row in reader:
             participant_id = (row.get("participant_id") or "").strip()
             phone = (row.get("phone_e164") or "").strip()
-
             if not participant_id or not phone:
                 continue
 
             upsert_participant(state, participant_id, phone)
 
-            if not can_call(state, participant_id):
+            # ✅ IMPORTANT: require schedule to call (prevents immediate calls)
+            if not can_call(state, participant_id, require_schedule=True):
                 continue
 
             call = client.calls.create(
@@ -382,55 +390,67 @@ def call_from_csv(csv_path="data/contacts.csv"):
                 from_=TWILIO_FROM,
                 url=f"{PUBLIC_BASE_URL}/voice",
                 method="POST",
-
                 record=True,
                 recording_status_callback=f"{PUBLIC_BASE_URL}/recording-done",
                 recording_status_callback_method="POST",
-
                 status_callback=f"{PUBLIC_BASE_URL}/call-status",
                 status_callback_event=["completed", "no-answer", "busy", "failed", "canceled"],
                 status_callback_method="POST",
             )
 
             mark_call_started(state, participant_id, call.sid)
-            print(f"Calling {participant_id} -> {phone} | CallSid={call.sid}")
+            log(f"Calling {participant_id} -> {phone} | CallSid={call.sid}")
 
     save_participants(state)
 
+
+# --------------------------
+# Scheduler thread
+# --------------------------
 def start_scheduler_in_background(interval_sec: int = 15) -> None:
-    """
-    Starts the scheduler loop in a daemon thread so it runs while the server runs.
-    """
-    from app.scheduler import run_loop
+    def _loop():
+        log(f"Scheduler thread started (interval_sec={interval_sec}). First run in 2s...")
+        time.sleep(2)  # small delay so Flask boots
+        while True:
+            try:
+                call_from_csv()
+            except Exception as e:
+                log(f"Scheduler ERROR: {repr(e)}")
+            time.sleep(interval_sec)
 
-    t = threading.Thread(target=run_loop, args=(interval_sec,), daemon=True)
+    t = threading.Thread(target=_loop, daemon=True)
     t.start()
-    print(f" Scheduler started in background (every {interval_sec}s)")
+    log(f"✅ Scheduler running in background every {interval_sec}s")
 
 
+# --------------------------
+# Main
+# --------------------------
 if __name__ == "__main__":
     import sys
 
     mode = sys.argv[1] if len(sys.argv) > 1 else "serve"
 
     if mode == "call":
+        # Manual run (still schedule-aware, so schedule must exist)
         call_from_csv()
 
     elif mode == "reset":
         reset_call_log = "--log" in sys.argv
         reset_state(reset_call_log=reset_call_log, backup=True)
         print("State reset complete.")
-        if reset_call_log:
-            print("call_log.csv also reset (backed up).")
+
+    elif mode == "schedule":
+        if len(sys.argv) != 4:
+            print("Usage: schedule <participant_id> 'YYYY-MM-DD HH:MM'")
+            sys.exit(1)
+
+        pid = sys.argv[2]
+        time_str = sys.argv[3]
+        schedule_participant(pid, time_str)
+        sys.exit(0)
 
     else:
-        # ✅ Start scheduler automatically when server starts
-        start_scheduler_in_background(interval_sec=300)
-
-        # ✅ Run Flask without reloader (prevents duplicate scheduler threads)
-        app.run(
-            host="0.0.0.0",
-            port=5050,
-            debug=False,
-            use_reloader=False
-        )
+        # Serve starts Flask + scheduler
+        start_scheduler_in_background(interval_sec=15)  # ✅ test mode
+        app.run(host="0.0.0.0", port=5050, debug=False, use_reloader=False)
