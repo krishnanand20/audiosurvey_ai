@@ -20,6 +20,15 @@ data/audio/
 data/transcripts/
 data/translations/
 data/english_audio/
+data/contacts*.csv
+# state (contains PII)
+
+data/state/*.bak_*
+data/state/*.corrupt
+
+# logs (optional, but recommended)
+data/state/call_log.csv
+data/state/call_log.csv.bak_*
 
 s# Backup files
 data/state/*.bak
