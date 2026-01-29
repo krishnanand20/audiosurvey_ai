@@ -9,4 +9,4 @@ pandas
 flask
 requests
 PyYAML
-python-dotenv
+gunicorn
