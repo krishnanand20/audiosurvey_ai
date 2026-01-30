@@ -99,7 +99,19 @@ def upsert_participant(state: Dict[str, Any], participant_id: str, phone_e164: s
     else:
         state[participant_id]["phone_e164"] = phone_e164
 
-def can_call(state: Dict[str, Any], participant_id: str) -> bool:
+def can_call(state: Dict[str, Any], participant_id: str, force: bool = False) -> bool:
+    """
+    Normal mode (force=False):
+      - blocks completed/failed
+      - blocks attempts >= MAX_ATTEMPTS
+      - requires schedule if set (now >= scheduled_time_utc)
+      - requires retry gap
+
+    Force mode (force=True):
+      - STILL blocks completed/failed
+      - STILL blocks attempts >= MAX_ATTEMPTS
+      - IGNORE schedule + retry gap (call immediately)
+    """
     p = state.get(participant_id)
     if not p:
         return True
@@ -110,24 +122,35 @@ def can_call(state: Dict[str, Any], participant_id: str) -> bool:
     if int(p.get("attempts", 0)) >= MAX_ATTEMPTS:
         return False
 
+    if force:
+        return True  # ✅ ignore schedule + retry gap
+
     # --- Scheduling gate ---
     sched_utc = p.get("scheduled_time_utc")
     if sched_utc:
         try:
-            # supports "2026-01-28T19:55:00Z" and "2026-01-28T19:55:00+00:00"
-            sched_dt = datetime.fromisoformat(sched_utc.replace("Z", "+00:00"))
-
-            # compare in UTC safely
-            if datetime.now(ZoneInfo("UTC")) < sched_dt:
+            sched_dt = datetime.fromisoformat(sched_utc.replace("Z", ""))
+            if _now_utc() < sched_dt:
                 return False
         except Exception:
-            # if schedule is malformed, ignore schedule and fall back to retry-gap logic
             pass
 
     # --- Retry gap gate ---
     last_time = p.get("last_call_time")
     if not last_time:
         return True
+    try:
+        last_dt = datetime.fromisoformat(last_time)
+    except Exception:
+        return True
+
+    return (_now_utc() - last_dt) >= RETRY_GAP
+
+    # ---- Retry gap gate ----
+    last_time = p.get("last_call_time")
+    if not last_time:
+        return True
+
     try:
         last_dt = datetime.fromisoformat(last_time)
     except Exception:

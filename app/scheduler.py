@@ -4,18 +4,31 @@ import time
 import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from twilio.rest import Client
 
-from app.state import load_participants, save_participants, can_call, mark_call_started, is_paused
+from twilio.rest import Client
+from app.state import (
+    load_participants,
+    save_participants,
+    can_call,
+    mark_call_started,
+    is_paused,
+)
 
 NY_TZ = ZoneInfo("America/New_York")
+
 
 def log(msg: str) -> None:
     now_ny = datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
     print(f"[{now_ny}] {msg}")
 
-def run_once() -> None:
-    if is_paused():
+
+def run_once(force: bool = False) -> None:
+    """
+    One tick.
+    - force=False: normal behavior (schedule + retry gap enforced)
+    - force=True : Dial Now behavior (ignore schedule + ignore retry gap)
+    """
+    if is_paused() and not force:
         log("Paused: no calls placed.")
         return
 
@@ -34,13 +47,16 @@ def run_once() -> None:
         return
 
     client = Client(TWILIO_SID, TWILIO_TOKEN)
-    any_called = False
 
+    any_called = False
     for participant_id, p in state.items():
         phone = (p.get("phone_e164") or "").strip()
         if not phone:
             continue
-        if not can_call(state, participant_id):
+
+        # ✅ Normal scheduler respects schedule + retry
+        # ✅ Dial Now forces call ignoring schedule + retry
+        if not can_call(state, participant_id, force=force):
             continue
 
         call = client.calls.create(
@@ -66,14 +82,18 @@ def run_once() -> None:
     else:
         log("No eligible participants to call right now.")
 
+
 def start_scheduler_in_background(interval_sec: int = 15) -> None:
+    """
+    Background loop for normal scheduled calling.
+    """
     def _loop():
-        log(f"Scheduler started (interval={interval_sec}s)")
+        log(f"[Scheduler] started (interval={interval_sec}s)")
         while True:
             try:
-                run_once()
+                run_once(force=False)
             except Exception as e:
-                log(f"Scheduler ERROR: {repr(e)}")
+                log(f"[Scheduler ERROR] {repr(e)}")
             time.sleep(interval_sec)
 
     t = threading.Thread(target=_loop, daemon=True)

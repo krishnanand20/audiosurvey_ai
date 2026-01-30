@@ -59,11 +59,34 @@ def fmt_dt(s: str | None) -> str:
     if not s:
         return ""
     try:
-        # scheduled_time_local is already ISO with tz
         dt = datetime.fromisoformat(s)
         return dt.strftime("%Y-%m-%d %H:%M")
     except Exception:
         return s
+
+
+def _read_questions_text() -> str:
+    path = "data/questions.txt"
+    try:
+        import yaml
+        if os.path.exists("config.yaml"):
+            with open("config.yaml", "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+            path = (cfg.get("ivr", {}) or {}).get("questions_file", path)
+    except Exception:
+        pass
+
+    if not os.path.exists(path):
+        return ""
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return ""
+
+
+def _safe_q(s: str) -> str:
+    return (s or "").replace(" ", "+").replace("&", "and").replace("%", "")
 
 
 # ----------------------------
@@ -80,7 +103,6 @@ def admin_home():
     msg = (request.args.get("msg") or "").strip()
     err = (request.args.get("err") or "").strip()
 
-    # Summary counts
     total = len(state)
     counts = {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0}
     for _, p in state.items():
@@ -90,7 +112,6 @@ def admin_home():
         else:
             counts["pending"] += 1
 
-    # Build table rows
     rows_html = []
     for pid, p in sorted(state.items(), key=lambda x: str(x[0])):
         phone_masked = mask_phone(p.get("phone_e164"))
@@ -112,7 +133,7 @@ def admin_home():
                 <input type="hidden" name="token" value="{_admin_token()}">
                 <input type="hidden" name="participant_id" value="{pid}">
                 <input class="input input-sm" name="local_time" placeholder="YYYY-MM-DD HH:MM" />
-                <button class="btn btn-sm" type="submit">Schedule</button>
+                <button class="btn btn-sm btn-primary" type="submit">Schedule</button>
               </form>
             </td>
           </tr>
@@ -121,6 +142,9 @@ def admin_home():
     rows = "\n".join(rows_html) if rows_html else """
       <tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>
     """
+
+    # initial clock string (JS will take over and update every second)
+    initial_clock = datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     html = f"""
 <!doctype html>
@@ -168,22 +192,25 @@ def admin_home():
     .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }}
     @media (max-width: 900px) {{ .grid {{ grid-template-columns: 1fr; }} }}
     .row {{ display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }}
+
     .btn {{
       border: 1px solid var(--line);
       background: rgba(255,255,255,.06);
       color: var(--text);
-      padding: 10px 12px;
-      border-radius: 12px;
+      padding: 10px 14px;
+      border-radius: 16px;
       cursor: pointer;
-      font-weight: 600;
-      transition: transform .05s ease, background .15s ease;
+      font-weight: 700;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease;
     }}
     .btn:hover {{ background: rgba(255,255,255,.10); }}
     .btn:active {{ transform: translateY(1px); }}
     .btn-primary {{ background: rgba(124,92,255,.22); border-color: rgba(124,92,255,.35); }}
     .btn-good {{ background: rgba(32,201,151,.16); border-color: rgba(32,201,151,.28); }}
     .btn-bad {{ background: rgba(255,107,107,.14); border-color: rgba(255,107,107,.28); }}
-    .btn-sm {{ padding: 7px 10px; border-radius: 10px; font-size: 12px; }}
+
+    .btn-sm {{ padding: 7px 10px; border-radius: 12px; font-size: 12px; }}
+
     .input {{
       border: 1px solid var(--line);
       background: rgba(0,0,0,.18);
@@ -194,20 +221,23 @@ def admin_home():
       width: 100%;
     }}
     .input-sm {{ padding: 7px 9px; border-radius: 10px; width: 170px; }}
+
     .muted {{ color: var(--muted); font-size: 13px; }}
     .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12.5px; }}
     .sep {{ height: 1px; background: var(--line); margin: 14px 0; }}
+
     .pill {{
       display: inline-flex; align-items: center; justify-content: center;
       padding: 5px 9px; border-radius: 999px;
       border: 1px solid var(--line);
-      font-size: 12px; font-weight: 700;
+      font-size: 12px; font-weight: 800;
       letter-spacing: .2px;
     }}
     .pill-ok {{ border-color: rgba(32,201,151,.35); background: rgba(32,201,151,.14); }}
     .pill-warn {{ border-color: rgba(245,159,0,.35); background: rgba(245,159,0,.12); }}
     .pill-bad {{ border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.12); }}
     .pill-neutral {{ border-color: rgba(154,164,195,.35); background: rgba(154,164,195,.10); }}
+
     .banner {{
       border-radius: 14px; padding: 10px 12px;
       border: 1px solid var(--line);
@@ -217,6 +247,7 @@ def admin_home():
     }}
     .banner.err {{ border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.10); }}
     .banner.ok {{ border-color: rgba(32,201,151,.35); background: rgba(32,201,151,.10); }}
+
     table {{
       width: 100%;
       border-collapse: collapse;
@@ -234,11 +265,12 @@ def admin_home():
     th {{
       text-align: left;
       color: var(--muted);
-      font-weight: 700;
+      font-weight: 800;
       background: rgba(255,255,255,.04);
     }}
     tr:hover td {{ background: rgba(255,255,255,.03); }}
     .inline {{ display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }}
+
     .kpi {{
       display: grid; grid-template-columns: repeat(4, 1fr);
       gap: 10px; margin-top: 10px;
@@ -250,8 +282,31 @@ def admin_home():
       padding: 10px;
       background: rgba(255,255,255,.04);
     }}
-    .k .n {{ font-size: 20px; font-weight: 800; }}
+    .k .n {{ font-size: 20px; font-weight: 900; }}
     .k .l {{ color: var(--muted); font-size: 12px; margin-top: 4px; }}
+
+    /* ---- Custom file input ---- */
+    .file-wrap {{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      width: 100%;
+    }}
+    input[type="file"].file-hidden {{
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }}
+    .file-name {{
+      color: var(--muted);
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px dashed rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      flex: 1;
+      min-width: 220px;
+    }}
   </style>
 </head>
 
@@ -260,11 +315,11 @@ def admin_home():
     <div class="top">
       <div class="title">
         <h1>AudioSurvey AI — Admin</h1>
-        <p>NYC time: <span class="mono">{datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")}</span></p>
+        <p>NYC time: <span id="nycClock" class="mono">{initial_clock}</span></p>
       </div>
       <div class="row">
         <span class="muted">System:</span>
-        <span class="{ 'pill pill-warn' if paused else 'pill pill-ok' }">{'PAUSED' if paused else 'RUNNING'}</span>
+        <span class="{ 'pill pill-bad' if paused else 'pill pill-ok' }">{'STOPPED' if paused else 'RUNNING'}</span>
       </div>
     </div>
 
@@ -280,15 +335,15 @@ def admin_home():
 
         <form method="POST" action="/admin/resume{token_qs()}">
           <input type="hidden" name="token" value="{_admin_token()}">
-          <button class="btn btn-good" type="submit">Resume</button>
+          <button class="btn btn-good" type="submit">Start</button>
         </form>
 
         <form method="POST" action="/admin/pause{token_qs()}">
           <input type="hidden" name="token" value="{_admin_token()}">
-          <button class="btn btn-bad" type="submit">Pause</button>
+          <button class="btn btn-bad" type="submit">Stop</button>
         </form>
 
-        <span class="muted">Calls will only go out when participants are eligible.</span>
+        <span class="muted">Calls go out only when participants are eligible.</span>
       </div>
 
       <div class="kpi">
@@ -307,10 +362,16 @@ def admin_home():
         <p class="muted" style="margin:0 0 12px 0;">
           CSV headers: <span class="mono">participant_id,phone_e164</span>
         </p>
-        <form method="POST" action="/admin/upload_contacts{token_qs()}" enctype="multipart/form-data" class="row">
+
+        <form method="POST" action="/admin/upload_contacts{token_qs()}" enctype="multipart/form-data">
           <input type="hidden" name="token" value="{_admin_token()}">
-          <input class="input" type="file" name="file" accept=".csv" />
-          <button class="btn btn-primary" type="submit">Upload</button>
+
+          <div class="file-wrap">
+            <input id="contactsFile" class="file-hidden" type="file" name="file" accept=".csv" />
+            <label for="contactsFile" class="btn btn-primary">Choose CSV</label>
+            <div id="fileName" class="file-name">No file selected</div>
+            <button class="btn btn-primary" type="submit">Upload</button>
+          </div>
         </form>
       </div>
 
@@ -331,7 +392,7 @@ def admin_home():
     <div class="card">
       <h3 style="margin:0 0 10px 0;">Participants</h3>
       <div class="muted" style="margin-bottom:10px;">
-        Tip: schedule time is interpreted in NYC time as <span class="mono">YYYY-MM-DD HH:MM</span>.
+        Tip: schedule time is NYC time as <span class="mono">YYYY-MM-DD HH:MM</span>.
       </div>
 
       <table>
@@ -354,33 +415,52 @@ def admin_home():
 
     <div style="height:24px;"></div>
   </div>
+
+  <script>
+    // Live NYC clock (updates every second)
+    const clockEl = document.getElementById("nycClock");
+    const fmt = new Intl.DateTimeFormat("en-US", {{
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+      timeZoneName: "short"
+    }});
+
+    function tickClock() {{
+      // Convert "MM/DD/YYYY, HH:MM:SS EST" -> "YYYY-MM-DD HH:MM:SS EST"
+      const parts = fmt.formatToParts(new Date());
+      const get = (t) => parts.find(p => p.type === t)?.value || "";
+      const y = get("year");
+      const mo = get("month");
+      const d = get("day");
+      const h = get("hour");
+      const mi = get("minute");
+      const s = get("second");
+      const tz = get("timeZoneName");
+      clockEl.textContent = `${{y}}-${{mo}}-${{d}} ${{h}}:${{mi}}:${{s}} ${{tz}}`;
+    }}
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    // File picker label
+    const fileInput = document.getElementById("contactsFile");
+    const fileName = document.getElementById("fileName");
+    if (fileInput) {{
+      fileInput.addEventListener("change", () => {{
+        const f = fileInput.files && fileInput.files[0];
+        fileName.textContent = f ? f.name : "No file selected";
+      }});
+    }}
+  </script>
 </body>
 </html>
 """
     return html
-
-
-def _read_questions_text() -> str:
-    # read questions file safely (path from config)
-    # we avoid importing twilio_handler to prevent circular imports
-    # default location
-    path = "data/questions.txt"
-    try:
-        import yaml
-        if os.path.exists("config.yaml"):
-            with open("config.yaml", "r", encoding="utf-8") as f:
-                cfg = yaml.safe_load(f) or {}
-            path = (cfg.get("ivr", {}) or {}).get("questions_file", path)
-    except Exception:
-        pass
-
-    if not os.path.exists(path):
-        return ""
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
-    except Exception:
-        return ""
 
 
 @dashboard_bp.route("/admin/upload_contacts", methods=["POST"])
@@ -397,7 +477,6 @@ def admin_upload_contacts():
 
     state = load_participants()
     count = 0
-
     for row in reader:
         pid = (row.get("participant_id") or "").strip()
         phone = (row.get("phone_e164") or "").strip()
@@ -415,7 +494,6 @@ def admin_save_questions():
     if not require_admin(request):
         return ("Unauthorized", 401)
 
-    # resolve questions file path
     path = "data/questions.txt"
     try:
         import yaml
@@ -461,7 +539,7 @@ def admin_pause():
     if not require_admin(request):
         return ("Unauthorized", 401)
     set_paused(True)
-    return redirect("/admin" + token_qs() + "&msg=Paused")
+    return redirect("/admin" + token_qs() + "&msg=Stopped")
 
 
 @dashboard_bp.route("/admin/resume", methods=["POST"])
@@ -469,29 +547,19 @@ def admin_resume():
     if not require_admin(request):
         return ("Unauthorized", 401)
     set_paused(False)
-    return redirect("/admin" + token_qs() + "&msg=Resumed")
+    return redirect("/admin" + token_qs() + "&msg=Started")
 
 
 @dashboard_bp.route("/admin/dial_now", methods=["POST"])
 def admin_dial_now():
-    """
-    This only triggers a scheduler tick (run_once) if you wired it in twilio_handler.
-    If you don't have run_once, remove this route or implement dial inside twilio_handler.
-    """
     if not require_admin(request):
         return ("Unauthorized", 401)
 
-    # Import inside route to avoid circulars
+    # import inside route to avoid circular imports
     try:
         from app.scheduler import run_once
         run_once()
     except Exception:
-        # If scheduler doesn't expose run_once, just ignore
         pass
 
     return redirect("/admin" + token_qs() + "&msg=Dial+Now+triggered")
-
-
-def _safe_q(s: str) -> str:
-    # cheap URL-safe replacement for our tiny use
-    return (s or "").replace(" ", "+").replace("&", "and").replace("%", "")

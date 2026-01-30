@@ -137,8 +137,10 @@ def health():
 def admin_dial_now():
     if not require_admin(request):
         return ("Unauthorized", 401)
-    run_once()
-    qs = f"?token={ADMIN_TOKEN}" if ADMIN_TOKEN else ""
+
+    run_once(force=True)  # ✅ CALL ALL IMMEDIATELY
+
+    qs = f"?token={ADMIN_TOKEN}&msg=Dial+Now+triggered" if ADMIN_TOKEN else "?msg=Dial+Now+triggered"
     return redirect("/admin" + qs)
 
 
