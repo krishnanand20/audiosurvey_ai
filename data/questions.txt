@@ -1,10 +1,34 @@
-What is your age?
-What is your gender?
-What city do you currently live in?
-How long have you lived in this community?
-What is your highest level of education?
-Are you currently employed?
-What type of work do you do?
-How many people live in your household?
-How do you usually access healthcare services?
-Is there anything else you would like to share?
+Tafadhali sema jina lako kamili.
+Tafadhali sema anwani unayoishi kwa sasa.
+Tafadhali sema nambari yako ya simu.
+Ulizaliwa katika nchi gani?
+Ni lugha zipi unazozungumza?
+Unaweza kuzungumza Kiingereza kwa kiwango gani?
+Ulizaliwa mwaka gani?
+Ulifika Marekani mwaka gani?
+Zip code unayoishi ni ipi?
+Una watoto wangapi?
+Kati ya watoto wako, wavulana ni wangapi?
+Na wasichana ni wangapi?
+Ni lugha gani kuu unayozungumza nyumbani?
+Hali yako ya ndoa ni ipi?
+Kiwango cha juu cha elimu ulichofikia ni kipi?
+Kazi yako ilikuwa nini katika nchi yako ya asili?
+Kwa sasa unaishi katika hali gani ya makazi?
+Je, unafanya kazi nje ya nyumbani?
+Ikiwa unafanya kazi, kazi yako ya sasa ni ipi?
+Watu wangapi wanaishi katika nyumba yako pamoja na wewe?
+Hali yako ya ajira ni ipi kwa sasa?
+Dini yako ni ipi?
+Je, una bima ya afya?
+Ni aina gani ya huduma ya afya unayopata mara kwa mara?
+Je, unahitaji mkalimani unapokwenda kliniki?
+Kwa kawaida unasafiri vipi kwenda kliniki?
+Je, unamiliki simu ya mkononi?
+Je, una mpango wa data wa kutumia WhatsApp mara kwa mara?
+Je, umewahi kushiriki katika utafiti wa kisayansi hapo awali?
+Mapato ya familia yako kwa mwaka ni kiasi gani?
+Je, kwa sasa una ujauzito?
+Je, umewahi kutumia njia za kupanga uzazi hapo awali?
+Je, kwa sasa unatumia njia za uzazi wa mpango?
+Ikiwa unatumia njia za uzazi wa mpango, ni njia ipi unayotumia?

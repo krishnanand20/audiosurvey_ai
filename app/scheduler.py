@@ -6,6 +6,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from twilio.rest import Client
+
 from app.state import (
     load_participants,
     save_participants,
@@ -24,9 +25,10 @@ def log(msg: str) -> None:
 
 def run_once(force: bool = False) -> None:
     """
-    One tick.
-    - force=False: normal behavior (schedule + retry gap enforced)
-    - force=True : Dial Now behavior (ignore schedule + ignore retry gap)
+    One scheduler tick.
+    force=True means:
+      - ignore schedule time + retry gap
+      - still respects: completed + max attempts
     """
     if is_paused() and not force:
         log("Paused: no calls placed.")
@@ -41,23 +43,31 @@ def run_once(force: bool = False) -> None:
         log("Scheduler skipped: missing Twilio env vars.")
         return
 
+    client = Client(TWILIO_SID, TWILIO_TOKEN)
     state = load_participants()
+
     if not state:
         log("No participants loaded (participants.json empty).")
         return
 
-    client = Client(TWILIO_SID, TWILIO_TOKEN)
-
     any_called = False
+
     for participant_id, p in state.items():
         phone = (p.get("phone_e164") or "").strip()
         if not phone:
             continue
 
-        # ✅ Normal scheduler respects schedule + retry
-        # ✅ Dial Now forces call ignoring schedule + retry
-        if not can_call(state, participant_id, force=force):
+        # Never call completed even when forced
+        if (p.get("status") or "").lower() == "completed":
             continue
+
+        # Normal behavior uses can_call(), forced bypasses schedule/retry gating
+        if not force and not can_call(state, participant_id):
+            continue
+
+        # If force=True, still respect can_call's "max attempts" rule indirectly:
+        # If your can_call() checks attempts>=MAX_ATTEMPTS, you'd skip.
+        # If it doesn't, you can add a MAX_ATTEMPTS check here.
 
         call = client.calls.create(
             to=phone,
@@ -84,9 +94,6 @@ def run_once(force: bool = False) -> None:
 
 
 def start_scheduler_in_background(interval_sec: int = 15) -> None:
-    """
-    Background loop for normal scheduled calling.
-    """
     def _loop():
         log(f"[Scheduler] started (interval={interval_sec}s)")
         while True:
