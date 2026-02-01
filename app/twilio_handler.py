@@ -59,11 +59,11 @@ GATHER_TIMEOUT = int(ivr_cfg.get("gather_timeout_sec", 6))
 SPEECH_TIMEOUT = ivr_cfg.get("speech_timeout", "auto")
 QUESTIONS_FILE = ivr_cfg.get("questions_file", "data/questions.txt")
 
-# ✅ IMPORTANT: keep Twilio-native voice. Polly voices often cause application error if not enabled.
+# ✅ Keep Twilio-native voice "alice"
 SAY_VOICE = ivr_cfg.get("say_voice", "alice")
 
-# Optional: speech recognition language (this usually does NOT crash; if it does, remove it)
-SPEECH_LANGUAGE = ivr_cfg.get("speech_language", "")
+# ✅ IMPORTANT: default to Kenya Kiswahili
+SPEECH_LANGUAGE = (ivr_cfg.get("speech_language") or "sw-KE").strip()
 
 AUDIO_DIR = "data/audio"
 TRANSCRIPTS_DIR = "data/transcripts"
@@ -96,13 +96,22 @@ def safe_base(call_sid: str) -> str:
     return f"{call_sid}_{ts}"
 
 
+# ✅ FIX: Accept 1-word answers (Ndiyo/Hapana/Mmoja/etc.)
 def looks_like_real_speech(s: str) -> bool:
     if not s:
         return False
-    t = s.strip().lower()
-    if t in {"no", "no.", "nah", "none"}:
+
+    t = s.strip()
+    if not t:
         return False
-    return len(t.split()) >= 2
+
+    # Reject obvious empty garbage only
+    tl = t.lower()
+    if tl in {"...", "…", "silence", "no speech"}:
+        return False
+
+    # ✅ accept ANY non-empty response (including 1 word)
+    return True
 
 
 def find_participant_by_callsid(state: dict, call_sid: str):
@@ -136,7 +145,6 @@ def admin_dial_now():
 
 @app.route("/voice", methods=["POST"])
 def voice():
-    # ✅ FIX: no language attribute on Say
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Gather input="dtmf" numDigits="1" timeout="8" action="{PUBLIC_BASE_URL}/start" method="POST">
@@ -155,7 +163,6 @@ def start():
 
     q1 = xml_escape(questions[0])
 
-    # Optional speech language attribute
     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -188,7 +195,7 @@ def next_question():
         if pid:
             mark_engaged(state, pid)
             save_participants(state)
-            log(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
+            log(f"ENGAGED=True for participant {pid} | CallSid={call_sid} | Speech='{speech[:60]}'")
 
     if q >= len(questions):
         return twiml(f"<Response><Say voice=\"{SAY_VOICE}\">Asante. Kwaheri.</Say><Hangup/></Response>")
@@ -277,7 +284,7 @@ def recording_done():
     with open(transcript_path, "w", encoding="utf-8") as f:
         f.write(text)
 
-    if len(text.strip().split()) < 15:
+    if len(text.strip().split()) < 5:
         log("Transcript too short. Not completing.")
         return ("ok", 200)
 
