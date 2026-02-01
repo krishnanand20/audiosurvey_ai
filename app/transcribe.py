@@ -46,7 +46,6 @@ def transcribe_directory(audio_dir, output_dir):
 
     print(f"Saved language map: {meta_path}")
 
-app/transcribe.py
 
 # import os
 # import json
