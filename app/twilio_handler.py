@@ -59,10 +59,10 @@ GATHER_TIMEOUT = int(ivr_cfg.get("gather_timeout_sec", 6))
 SPEECH_TIMEOUT = ivr_cfg.get("speech_timeout", "auto")
 QUESTIONS_FILE = ivr_cfg.get("questions_file", "data/questions.txt")
 
-# ✅ Keep Twilio-native voice "alice"
+# Twilio-native TTS voice
 SAY_VOICE = ivr_cfg.get("say_voice", "alice")
 
-# ✅ IMPORTANT: default to Kenya Kiswahili
+# Kenya Kiswahili recognition (Twilio <Gather input="speech"> language)
 SPEECH_LANGUAGE = (ivr_cfg.get("speech_language") or "sw-KE").strip()
 
 AUDIO_DIR = "data/audio"
@@ -84,6 +84,7 @@ def load_questions():
 
 
 def twiml(xml: str) -> Response:
+    # Important for Kiswahili chars
     return Response(xml, mimetype="text/xml; charset=utf-8")
 
 
@@ -96,21 +97,16 @@ def safe_base(call_sid: str) -> str:
     return f"{call_sid}_{ts}"
 
 
-# ✅ FIX: Accept 1-word answers (Ndiyo/Hapana/Mmoja/etc.)
+# Accept even 1-word answers (Ndiyo / Hapana / etc.)
 def looks_like_real_speech(s: str) -> bool:
     if not s:
         return False
-
     t = s.strip()
     if not t:
         return False
-
-    # Reject obvious empty garbage only
     tl = t.lower()
     if tl in {"...", "…", "silence", "no speech"}:
         return False
-
-    # ✅ accept ANY non-empty response (including 1 word)
     return True
 
 
@@ -143,13 +139,30 @@ def admin_dial_now():
     return redirect("/admin" + qs)
 
 
+# --------------------------
+# INBOUND CALL ENTRYPOINT
+# --------------------------
 @app.route("/voice", methods=["POST"])
 def voice():
+    """
+    Inbound calls were not recorded before.
+    FIX: Start recording immediately using TwiML <Start><Recording>.
+    This avoids Twilio REST error 21220.
+    """
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
+
+  <Start>
+    <Recording
+      recordingStatusCallback="{PUBLIC_BASE_URL}/recording-done"
+      recordingStatusCallbackMethod="POST"
+      recordingStatusCallbackEvent="completed" />
+  </Start>
+
   <Gather input="dtmf" numDigits="1" timeout="8" action="{PUBLIC_BASE_URL}/start" method="POST">
     <Say voice="{SAY_VOICE}">Bonyeza kitufe chochote kuanza utafiti.</Say>
   </Gather>
+
   <Redirect method="POST">{PUBLIC_BASE_URL}/start</Redirect>
 </Response>"""
     return twiml(xml)
@@ -159,10 +172,9 @@ def voice():
 def start():
     questions = load_questions()
     if not questions:
-        return twiml("<Response><Say>No questions configured.</Say><Hangup/></Response>")
+        return twiml(f"<Response><Say voice=\"{SAY_VOICE}\">Hakuna maswali yaliyoandaliwa.</Say><Hangup/></Response>")
 
     q1 = xml_escape(questions[0])
-
     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -189,6 +201,7 @@ def next_question():
     call_sid = request.form.get("CallSid", "")
     speech = (request.form.get("SpeechResult") or "").strip()
 
+    # Mark engaged for known participants
     if call_sid and looks_like_real_speech(speech):
         state = load_participants()
         pid, _ = find_participant_by_callsid(state, call_sid)
@@ -202,7 +215,6 @@ def next_question():
 
     question = xml_escape(questions[q])
     next_q = q + 1
-
     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -227,6 +239,7 @@ def call_status():
     state = load_participants()
     pid, p = find_participant_by_callsid(state, call_sid)
     if not pid:
+        # Inbound unknown calls won't be in participants.json
         return ("ok", 200)
 
     mark_call_result(state, pid, call_status_val)
@@ -255,17 +268,23 @@ def recording_done():
 
     state = load_participants()
     participant_id, p = find_participant_by_callsid(state, call_sid)
+
+    # ✅ IMPORTANT FIX:
+    # If inbound call is not in participants.json, still process it.
+    known_participant = bool(participant_id)
+
     phone = (p.get("phone_e164") or "") if p else ""
     phone_masked = mask_phone(phone)
     engaged = bool(p.get("engaged", False)) if p else False
     last_call_status = (p.get("last_call_status") or "").lower() if p else ""
 
-    if participant_id and last_call_status in {"no-answer", "busy", "failed", "canceled"}:
-        log("Skip pipeline: retryable failure.")
-        return ("ok", 200)
-    if participant_id and not engaged:
-        log("Skip pipeline: engaged=False.")
-        return ("ok", 200)
+    if known_participant:
+        if last_call_status in {"no-answer", "busy", "failed", "canceled"}:
+            log("Skip pipeline: retryable failure.")
+            return ("ok", 200)
+        if not engaged:
+            log("Skip pipeline: engaged=False.")
+            return ("ok", 200)
 
     wav_url = recording_url + ".wav"
     base = safe_base(call_sid)
@@ -288,6 +307,7 @@ def recording_done():
         log("Transcript too short. Not completing.")
         return ("ok", 200)
 
+    # Translate only if not English
     english_text = text if (detected or "").lower() == "en" else translate_to_english_chunked(text)
     with open(translation_path, "w", encoding="utf-8") as f:
         f.write(english_text)
@@ -301,10 +321,12 @@ def recording_done():
         "english_audio_path": english_audio_path,
     }
 
-    if participant_id:
+    # Only mark completed for scheduled/outbound known participants
+    if known_participant:
         mark_completed(state, participant_id, recording_url, outputs)
         save_participants(state)
 
+    # Always log event (even inbound unknown calls)
     log_call_event({
         "timestamp_utc": datetime.utcnow().isoformat(),
         "participant_id": participant_id or "",
@@ -332,7 +354,7 @@ if __name__ == "__main__":
             print("Usage: python3 -m app.twilio_handler schedule <participant_id> 'YYYY-MM-DD HH:MM'")
             sys.exit(1)
         schedule_participant(sys.argv[2], sys.argv[3])
-        print(f"✅ Scheduled participant {sys.argv[2]} at {sys.argv[3]} (NYC time)")
+        print(f"Scheduled participant {sys.argv[2]} at {sys.argv[3]} (NYC time)")
         sys.exit(0)
 
     elif mode == "reset":
