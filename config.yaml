@@ -11,3 +11,10 @@ ivr:
   speech_timeout: "auto"
   say_voice: "alice"
   speech_language: "sw-KE"
+
+auth:
+  users:
+    krishnanand:
+      password_hash: "pbkdf2:sha256:1000000$4XNAVOienFxn4ds0$3e99dcd19b4b5620ab43371657a5ef3006717d1bd4dc2699e7fd125af889ce07"
+    professor:
+      password_hash: "pbkdf2:sha256:1000000$VhlYJkcJxxZjb70x$5f0054b84e4f467913841b225a27895112f67d8656dc7cda74412e5d6812fd8c"

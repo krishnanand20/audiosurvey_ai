@@ -3,12 +3,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import time
+import json
 import yaml
 import requests
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Flask, request, Response, redirect
+from flask import Flask, request, Response, redirect, session
+
+from werkzeug.security import check_password_hash
 
 from app.dashboard import dashboard_bp
 from app.scheduler import start_scheduler_in_background, run_once
@@ -28,6 +32,10 @@ from app.transcribe import transcribe_audio
 from app.translate import translate_to_english_chunked
 from app.tts import text_to_english_audio
 
+
+# --------------------------
+# Time (NYC + UTC)
+# --------------------------
 NY_TZ = ZoneInfo("America/New_York")
 UTC_TZ = ZoneInfo("UTC")
 
@@ -38,6 +46,9 @@ def log(msg: str) -> None:
     print(f"[NYC {ny} | UTC {utc}] {msg}")
 
 
+# --------------------------
+# Config + env
+# --------------------------
 def load_config(path="config.yaml"):
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
@@ -49,6 +60,8 @@ TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_FROM = os.getenv("TWILIO_FROM_NUMBER")
 PUBLIC_BASE_URL = (os.getenv("PUBLIC_BASE_URL") or "").rstrip("/")
+
+# NOTE: To remove token-based auth from dashboard.py, set ADMIN_TOKEN blank in .env
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
 
 if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM, PUBLIC_BASE_URL]):
@@ -62,7 +75,7 @@ QUESTIONS_FILE = ivr_cfg.get("questions_file", "data/questions.txt")
 # Twilio-native TTS voice
 SAY_VOICE = ivr_cfg.get("say_voice", "alice")
 
-# Kenya Kiswahili recognition (Twilio <Gather input="speech"> language)
+# Kenya Kiswahili recognition
 SPEECH_LANGUAGE = (ivr_cfg.get("speech_language") or "sw-KE").strip()
 
 AUDIO_DIR = "data/audio"
@@ -72,10 +85,328 @@ EN_AUDIO_DIR = "data/english_audio"
 for d in [AUDIO_DIR, TRANSCRIPTS_DIR, TRANSLATIONS_DIR, EN_AUDIO_DIR]:
     os.makedirs(d, exist_ok=True)
 
+# --------------------------
+# Auth settings (hard)
+# --------------------------
+AUTH_STATE_PATH = os.getenv("AUTH_STATE_PATH", "data/auth_state.json")
+AUTH_LOG_PATH = os.getenv("AUTH_LOG_PATH", "data/auth_log.jsonl")
+
+AUTH_MAX_FAILS = int(os.getenv("AUTH_MAX_FAILS", "7"))
+AUTH_LOCK_SECONDS = int(os.getenv("AUTH_LOCK_SECONDS", "900"))     # 15 min
+AUTH_WINDOW_SECONDS = int(os.getenv("AUTH_WINDOW_SECONDS", "600")) # 10 min
+
+
+def _ensure_parent(path: str) -> None:
+    parent = os.path.dirname(path)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _ny_now_str() -> str:
+    return datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+
+def _client_ip() -> str:
+    xff = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return xff or (request.remote_addr or "unknown")
+
+
+def _auth_key(username: str) -> str:
+    return f"{(username or '').lower()}|{_client_ip()}"
+
+
+def _load_auth_state() -> dict:
+    if not os.path.exists(AUTH_STATE_PATH):
+        return {"fails": {}, "locks": {}}
+    try:
+        with open(AUTH_STATE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f) or {"fails": {}, "locks": {}}
+    except Exception:
+        return {"fails": {}, "locks": {}}
+
+
+def _save_auth_state(st: dict) -> None:
+    _ensure_parent(AUTH_STATE_PATH)
+    with open(AUTH_STATE_PATH, "w", encoding="utf-8") as f:
+        json.dump(st, f, indent=2)
+
+
+def _log_auth_event(event: dict) -> None:
+    _ensure_parent(AUTH_LOG_PATH)
+    with open(AUTH_LOG_PATH, "a", encoding="utf-8") as f:
+        f.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+
+def _is_locked(username: str) -> tuple[bool, int]:
+    st = _load_auth_state()
+    k = _auth_key(username)
+    until = int(st.get("locks", {}).get(k, 0))
+    now = int(time.time())
+    if until > now:
+        return True, until - now
+    return False, 0
+
+
+def _record_fail(username: str) -> None:
+    st = _load_auth_state()
+    k = _auth_key(username)
+    now = int(time.time())
+
+    fails = st.setdefault("fails", {}).setdefault(k, [])
+    fails = [t for t in fails if now - int(t) <= AUTH_WINDOW_SECONDS]
+    fails.append(now)
+    st["fails"][k] = fails
+
+    if len(fails) >= AUTH_MAX_FAILS:
+        st.setdefault("locks", {})[k] = now + AUTH_LOCK_SECONDS
+
+    _save_auth_state(st)
+
+
+def _clear_fails(username: str) -> None:
+    st = _load_auth_state()
+    k = _auth_key(username)
+    st.get("fails", {}).pop(k, None)
+    st.get("locks", {}).pop(k, None)
+    _save_auth_state(st)
+
+
+def _load_users_from_config() -> dict:
+    auth_cfg = cfg.get("auth", {}) or {}
+    users = auth_cfg.get("users", {}) or {}
+    out = {}
+    for name, meta in users.items():
+        out[str(name).lower()] = {
+            "password_hash": (meta or {}).get("password_hash", "")
+        }
+    return out
+
+
+def _verify_user(users: dict, username: str, password: str) -> bool:
+    u = users.get((username or "").lower())
+    if not u:
+        return False
+    return check_password_hash(u.get("password_hash", ""), password or "")
+
+
+def _is_logged_in() -> bool:
+    return bool(session.get("user"))
+
+
+def _start_session(username: str) -> None:
+    session["user"] = username
+    session["login_utc"] = _utc_now_iso()
+    session["login_ts"] = int(time.time())
+    session["ip"] = _client_ip()
+
+    _log_auth_event({
+        "event": "login",
+        "user": username,
+        "ip": session["ip"],
+        "login_utc": session["login_utc"],
+        "login_local": _ny_now_str(),
+        "user_agent": request.headers.get("User-Agent", ""),
+    })
+
+
+def _end_session() -> None:
+    user = session.get("user")
+    if not user:
+        session.clear()
+        return
+
+    login_ts = int(session.get("login_ts") or 0)
+    duration = max(0, int(time.time()) - login_ts)
+
+    _log_auth_event({
+        "event": "logout",
+        "user": user,
+        "ip": session.get("ip", ""),
+        "logout_utc": _utc_now_iso(),
+        "logout_local": _ny_now_str(),
+        "session_duration_sec": duration,
+    })
+
+    session.clear()
+
+
+def _render_login_page(err: str = "") -> str:
+    return f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AudioSurvey AI — Login</title>
+  <style>
+    :root {{
+      --bg: #0b1020;
+      --card: rgba(18,26,51,.78);
+      --muted: #9aa4c3;
+      --text: #e8ecff;
+      --line: rgba(255,255,255,.08);
+      --accent: #7c5cff;
+      --bad: #ff6b6b;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(124,92,255,.22), transparent 60%),
+                  radial-gradient(900px 600px at 80% 20%, rgba(32,201,151,.12), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }}
+    .card {{
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      backdrop-filter: blur(8px);
+    }}
+    h1 {{ margin: 0 0 6px 0; font-size: 20px; }}
+    p {{ margin: 0 0 14px 0; color: var(--muted); font-size: 13px; }}
+    .banner {{
+      border-radius: 14px; padding: 10px 12px;
+      border: 1px solid rgba(255,107,107,.35);
+      background: rgba(255,107,107,.10);
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--text);
+    }}
+    label {{ display:block; margin: 10px 0 6px; color: var(--muted); font-size: 12px; }}
+    input {{
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding: 10px 10px;
+      border-radius: 12px;
+      outline: none;
+      font-size: 14px;
+    }}
+    button {{
+      margin-top: 14px;
+      width: 100%;
+      border: 1px solid rgba(124,92,255,.35);
+      background: rgba(124,92,255,.22);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }}
+    button:hover {{ background: rgba(124,92,255,.28); }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>AudioSurvey AI</h1>
+    <p>Sign in to continue.</p>
+    {f'<div class="banner">{err}</div>' if err else ''}
+    <form method="POST" action="/login">
+      <label>Username</label>
+      <input name="username" autocomplete="username" />
+      <label>Password</label>
+      <input name="password" type="password" autocomplete="current-password" />
+      <button type="submit">Sign in</button>
+    </form>
+  </div>
+</body>
+</html>
+"""
+
+
+# --------------------------
+# Flask app
+# --------------------------
 app = Flask(__name__)
 app.register_blueprint(dashboard_bp)
 
+# Session secret (must set in .env)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "CHANGE_ME_NOW")
 
+# hardened cookies
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=True,   # ngrok is HTTPS (recommended)
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
+)
+
+# Protect admin routes without touching dashboard.py
+@app.before_request
+def _guard_admin_routes():
+    path = request.path or ""
+    # allow login + health + Twilio webhooks
+    allowed_prefixes = ("/login", "/health", "/voice", "/start", "/next", "/call-status", "/recording-done")
+    if path.startswith(allowed_prefixes):
+        return None
+
+    if path.startswith("/admin"):
+        # If old token auth is still set in env, allow token too (backward compatible)
+        if ADMIN_TOKEN:
+            tok = (request.args.get("token") or request.form.get("token") or "").strip()
+            if tok == ADMIN_TOKEN:
+                return None
+
+        if not _is_logged_in():
+            return redirect("/login")
+
+    return None
+
+
+@app.route("/", methods=["GET"])
+def root():
+    return redirect("/admin" if _is_logged_in() else "/login")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_route():
+    if request.method == "GET":
+        return _render_login_page()
+
+    users = _load_users_from_config()
+    username = (request.form.get("username") or "").strip().lower()
+    password = request.form.get("password") or ""
+
+    if not username or not password:
+        return _render_login_page("Please enter username and password.")
+
+    locked, wait = _is_locked(username)
+    if locked:
+        return _render_login_page(f"Too many attempts. Try again in {wait} seconds.")
+
+    if not _verify_user(users, username, password):
+        _record_fail(username)
+        return _render_login_page("Invalid credentials.")
+
+    _clear_fails(username)
+    _start_session(username)
+    session.permanent = True
+    return redirect("/admin")
+
+
+@app.route("/logout", methods=["POST"])
+def logout_route():
+    _end_session()
+    return redirect("/login")
+
+
+# --------------------------
+# Helpers
+# --------------------------
 def load_questions():
     if not os.path.exists(QUESTIONS_FILE):
         return []
@@ -84,7 +415,6 @@ def load_questions():
 
 
 def twiml(xml: str) -> Response:
-    # Important for Kiswahili chars
     return Response(xml, mimetype="text/xml; charset=utf-8")
 
 
@@ -97,7 +427,6 @@ def safe_base(call_sid: str) -> str:
     return f"{call_sid}_{ts}"
 
 
-# Accept even 1-word answers (Ndiyo / Hapana / etc.)
 def looks_like_real_speech(s: str) -> bool:
     if not s:
         return False
@@ -117,12 +446,9 @@ def find_participant_by_callsid(state: dict, call_sid: str):
     return None, None
 
 
-def require_admin(req) -> bool:
-    if not ADMIN_TOKEN:
-        return True
-    return (req.args.get("token") == ADMIN_TOKEN) or (req.form.get("token") == ADMIN_TOKEN)
-
-
+# --------------------------
+# Routes
+# --------------------------
 @app.route("/health", methods=["GET"])
 def health():
     return "ok", 200
@@ -130,13 +456,9 @@ def health():
 
 @app.route("/admin/dial_now", methods=["POST"])
 def admin_dial_now():
-    if not require_admin(request):
-        return ("Unauthorized", 401)
-
+    # Protected by before_request session auth
     run_once(force=True)
-
-    qs = f"?token={ADMIN_TOKEN}&msg=Dial+Now+triggered" if ADMIN_TOKEN else "?msg=Dial+Now+triggered"
-    return redirect("/admin" + qs)
+    return redirect("/admin?msg=Dial+Now+triggered")
 
 
 # --------------------------
@@ -145,9 +467,8 @@ def admin_dial_now():
 @app.route("/voice", methods=["POST"])
 def voice():
     """
-    Inbound calls were not recorded before.
     FIX: Start recording immediately using TwiML <Start><Recording>.
-    This avoids Twilio REST error 21220.
+    (Avoids Twilio REST error 21220: resource not eligible for recording)
     """
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -269,8 +590,6 @@ def recording_done():
     state = load_participants()
     participant_id, p = find_participant_by_callsid(state, call_sid)
 
-    # ✅ IMPORTANT FIX:
-    # If inbound call is not in participants.json, still process it.
     known_participant = bool(participant_id)
 
     phone = (p.get("phone_e164") or "") if p else ""
@@ -307,7 +626,6 @@ def recording_done():
         log("Transcript too short. Not completing.")
         return ("ok", 200)
 
-    # Translate only if not English
     english_text = text if (detected or "").lower() == "en" else translate_to_english_chunked(text)
     with open(translation_path, "w", encoding="utf-8") as f:
         f.write(english_text)
@@ -321,12 +639,10 @@ def recording_done():
         "english_audio_path": english_audio_path,
     }
 
-    # Only mark completed for scheduled/outbound known participants
     if known_participant:
         mark_completed(state, participant_id, recording_url, outputs)
         save_participants(state)
 
-    # Always log event (even inbound unknown calls)
     log_call_event({
         "timestamp_utc": datetime.utcnow().isoformat(),
         "participant_id": participant_id or "",
@@ -340,6 +656,9 @@ def recording_done():
     return ("ok", 200)
 
 
+# --------------------------
+# CLI
+# --------------------------
 if __name__ == "__main__":
     import sys
 

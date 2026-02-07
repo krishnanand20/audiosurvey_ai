@@ -6,7 +6,7 @@ import csv
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from flask import Blueprint, request, redirect
+from flask import Blueprint, request, redirect, session
 
 from app.state import (
     load_participants,
@@ -20,23 +20,6 @@ from app.utils import schedule_participant
 
 dashboard_bp = Blueprint("dashboard", __name__)
 NY_TZ = ZoneInfo("America/New_York")
-
-
-# ----------------------------
-# Auth helper
-# ----------------------------
-def _admin_token() -> str:
-    return (os.getenv("ADMIN_TOKEN") or "").strip()
-
-def require_admin(req) -> bool:
-    token = _admin_token()
-    if not token:
-        return True
-    return (req.args.get("token") == token) or (req.form.get("token") == token)
-
-def token_qs() -> str:
-    token = _admin_token()
-    return f"?token={token}" if token else ""
 
 
 # ----------------------------
@@ -54,6 +37,7 @@ def pill(status: str) -> str:
     else:
         cls += " pill-neutral"
     return f'<span class="{cls}">{(status or "pending")}</span>'
+
 
 def fmt_dt(s: str | None) -> str:
     if not s:
@@ -89,14 +73,18 @@ def _safe_q(s: str) -> str:
     return (s or "").replace(" ", "+").replace("&", "and").replace("%", "")
 
 
+def _whoami() -> str:
+    # twilio_handler.py sets session["user"]
+    return (session.get("user") or "").strip()
+
+
 # ----------------------------
 # Routes
 # ----------------------------
 @dashboard_bp.route("/admin", methods=["GET"])
 def admin_home():
-    if not require_admin(request):
-        return ("Unauthorized (add ?token=ADMIN_TOKEN)", 401)
-
+    # Auth is enforced in twilio_handler.py @app.before_request.
+    # If someone hits this directly without login, they'll be redirected to /login by the main app.
     state = load_participants()
     paused = is_paused()
 
@@ -129,8 +117,7 @@ def admin_home():
             <td>{'✅' if engaged else '—'}</td>
             <td class="mono">{sched_local}</td>
             <td>
-              <form class="inline" method="POST" action="/admin/schedule{token_qs()}">
-                <input type="hidden" name="token" value="{_admin_token()}">
+              <form class="inline" method="POST" action="/admin/schedule">
                 <input type="hidden" name="participant_id" value="{pid}">
                 <input class="input input-sm" name="local_time" placeholder="YYYY-MM-DD HH:MM" />
                 <button class="btn btn-sm btn-primary" type="submit">Schedule</button>
@@ -143,8 +130,8 @@ def admin_home():
       <tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>
     """
 
-    # initial clock string (JS will take over and update every second)
     initial_clock = datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
+    user = _whoami()
 
     html = f"""
 <!doctype html>
@@ -208,7 +195,6 @@ def admin_home():
     .btn-primary {{ background: rgba(124,92,255,.22); border-color: rgba(124,92,255,.35); }}
     .btn-good {{ background: rgba(32,201,151,.16); border-color: rgba(32,201,151,.28); }}
     .btn-bad {{ background: rgba(255,107,107,.14); border-color: rgba(255,107,107,.28); }}
-
     .btn-sm {{ padding: 7px 10px; border-radius: 12px; font-size: 12px; }}
 
     .input {{
@@ -285,7 +271,6 @@ def admin_home():
     .k .n {{ font-size: 20px; font-weight: 900; }}
     .k .l {{ color: var(--muted); font-size: 12px; margin-top: 4px; }}
 
-    /* ---- Custom file input ---- */
     .file-wrap {{
       display:flex; gap:10px; align-items:center; flex-wrap:wrap;
       width: 100%;
@@ -315,11 +300,20 @@ def admin_home():
     <div class="top">
       <div class="title">
         <h1>AudioSurvey AI — Admin</h1>
-        <p>NYC time: <span id="nycClock" class="mono">{initial_clock}</span></p>
+        <p>
+          NYC time: <span id="nycClock" class="mono">{initial_clock}</span>
+          <span class="muted" style="margin-left:10px;">Logged in as:</span>
+          <span class="mono">{user or "unknown"}</span>
+        </p>
       </div>
+
       <div class="row">
         <span class="muted">System:</span>
         <span class="{ 'pill pill-bad' if paused else 'pill pill-ok' }">{'STOPPED' if paused else 'RUNNING'}</span>
+
+        <form method="POST" action="/logout" style="margin-left:10px;">
+          <button class="btn btn-sm btn-bad" type="submit">Sign out</button>
+        </form>
       </div>
     </div>
 
@@ -328,18 +322,15 @@ def admin_home():
 
     <div class="card">
       <div class="row">
-        <form method="POST" action="/admin/dial_now{token_qs()}">
-          <input type="hidden" name="token" value="{_admin_token()}">
+        <form method="POST" action="/admin/dial_now">
           <button class="btn btn-primary" type="submit">Dial Now</button>
         </form>
 
-        <form method="POST" action="/admin/resume{token_qs()}">
-          <input type="hidden" name="token" value="{_admin_token()}">
+        <form method="POST" action="/admin/resume">
           <button class="btn btn-good" type="submit">Start</button>
         </form>
 
-        <form method="POST" action="/admin/pause{token_qs()}">
-          <input type="hidden" name="token" value="{_admin_token()}">
+        <form method="POST" action="/admin/pause">
           <button class="btn btn-bad" type="submit">Stop</button>
         </form>
 
@@ -363,9 +354,7 @@ def admin_home():
           CSV headers: <span class="mono">participant_id,phone_e164</span>
         </p>
 
-        <form method="POST" action="/admin/upload_contacts{token_qs()}" enctype="multipart/form-data">
-          <input type="hidden" name="token" value="{_admin_token()}">
-
+        <form method="POST" action="/admin/upload_contacts" enctype="multipart/form-data">
           <div class="file-wrap">
             <input id="contactsFile" class="file-hidden" type="file" name="file" accept=".csv" />
             <label for="contactsFile" class="btn btn-primary">Choose CSV</label>
@@ -378,8 +367,7 @@ def admin_home():
       <div class="card">
         <h3 style="margin:0 0 8px 0;">Questions</h3>
         <p class="muted" style="margin:0 0 12px 0;">One question per line.</p>
-        <form method="POST" action="/admin/save_questions{token_qs()}">
-          <input type="hidden" name="token" value="{_admin_token()}">
+        <form method="POST" action="/admin/save_questions">
           <textarea class="input" name="questions" rows="8" style="resize:vertical;">{_read_questions_text()}</textarea>
           <div style="height:10px;"></div>
           <button class="btn btn-primary" type="submit">Save questions</button>
@@ -417,7 +405,7 @@ def admin_home():
   </div>
 
   <script>
-    // Live NYC clock (updates every second)
+    // Live NYC clock
     const clockEl = document.getElementById("nycClock");
     const fmt = new Intl.DateTimeFormat("en-US", {{
       timeZone: "America/New_York",
@@ -432,7 +420,6 @@ def admin_home():
     }});
 
     function tickClock() {{
-      // Convert "MM/DD/YYYY, HH:MM:SS EST" -> "YYYY-MM-DD HH:MM:SS EST"
       const parts = fmt.formatToParts(new Date());
       const get = (t) => parts.find(p => p.type === t)?.value || "";
       const y = get("year");
@@ -465,12 +452,9 @@ def admin_home():
 
 @dashboard_bp.route("/admin/upload_contacts", methods=["POST"])
 def admin_upload_contacts():
-    if not require_admin(request):
-        return ("Unauthorized", 401)
-
     f = request.files.get("file")
     if not f:
-        return redirect("/admin" + token_qs() + "&err=No+file+selected")
+        return redirect("/admin?err=No+file+selected")
 
     content = f.read().decode("utf-8", errors="ignore").splitlines()
     reader = csv.DictReader(content)
@@ -486,14 +470,11 @@ def admin_upload_contacts():
         count += 1
 
     save_participants(state)
-    return redirect("/admin" + token_qs() + f"&msg=Uploaded+{count}+contacts")
+    return redirect(f"/admin?msg=Uploaded+{count}+contacts")
 
 
 @dashboard_bp.route("/admin/save_questions", methods=["POST"])
 def admin_save_questions():
-    if not require_admin(request):
-        return ("Unauthorized", 401)
-
     path = "data/questions.txt"
     try:
         import yaml
@@ -509,57 +490,46 @@ def admin_save_questions():
     with open(path, "w", encoding="utf-8") as f:
         f.write(text + ("\n" if text and not text.endswith("\n") else ""))
 
-    return redirect("/admin" + token_qs() + "&msg=Questions+saved")
+    return redirect("/admin?msg=Questions+saved")
 
 
 @dashboard_bp.route("/admin/schedule", methods=["POST"])
 def admin_schedule():
-    if not require_admin(request):
-        return ("Unauthorized", 401)
-
     pid = (request.form.get("participant_id") or "").strip()
     local_time = (request.form.get("local_time") or "").strip()
 
     if not pid:
-        return redirect("/admin" + token_qs() + "&err=Missing+participant_id")
+        return redirect("/admin?err=Missing+participant_id")
 
     if not local_time:
-        return redirect("/admin" + token_qs() + "&err=Please+enter+time+as+YYYY-MM-DD+HH:MM")
+        return redirect("/admin?err=Please+enter+time+as+YYYY-MM-DD+HH:MM")
 
     try:
         schedule_participant(pid, local_time)
     except Exception as e:
-        return redirect("/admin" + token_qs() + "&err=" + _safe_q(str(e)))
+        return redirect("/admin?err=" + _safe_q(str(e)))
 
-    return redirect("/admin" + token_qs() + f"&msg=Scheduled+{pid}+at+{_safe_q(local_time)}")
+    return redirect(f"/admin?msg=Scheduled+{pid}+at+{_safe_q(local_time)}")
 
 
 @dashboard_bp.route("/admin/pause", methods=["POST"])
 def admin_pause():
-    if not require_admin(request):
-        return ("Unauthorized", 401)
     set_paused(True)
-    return redirect("/admin" + token_qs() + "&msg=Stopped")
+    return redirect("/admin?msg=Stopped")
 
 
 @dashboard_bp.route("/admin/resume", methods=["POST"])
 def admin_resume():
-    if not require_admin(request):
-        return ("Unauthorized", 401)
     set_paused(False)
-    return redirect("/admin" + token_qs() + "&msg=Started")
+    return redirect("/admin?msg=Started")
 
 
 @dashboard_bp.route("/admin/dial_now", methods=["POST"])
 def admin_dial_now():
-    if not require_admin(request):
-        return ("Unauthorized", 401)
-
-    # import inside route to avoid circular imports
     try:
         from app.scheduler import run_once
         run_once()
     except Exception:
         pass
 
-    return redirect("/admin" + token_qs() + "&msg=Dial+Now+triggered")
+    return redirect("/admin?msg=Dial+Now+triggered")
