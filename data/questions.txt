@@ -1,34 +1,58 @@
-Tafadhali sema jina lako kamili.
-Tafadhali sema anwani unayoishi kwa sasa.
-Tafadhali sema nambari yako ya simu.
-Ulizaliwa katika nchi gani?
-Ni lugha zipi unazozungumza?
-Unaweza kuzungumza Kiingereza kwa kiwango gani?
-Ulizaliwa mwaka gani?
-Ulifika Marekani mwaka gani?
-Zip code unayoishi ni ipi?
-Una watoto wangapi?
-Kati ya watoto wako, wavulana ni wangapi?
-Na wasichana ni wangapi?
-Ni lugha gani kuu unayozungumza nyumbani?
-Hali yako ya ndoa ni ipi?
-Kiwango cha juu cha elimu ulichofikia ni kipi?
-Kazi yako ilikuwa nini katika nchi yako ya asili?
-Kwa sasa unaishi katika hali gani ya makazi?
-Je, unafanya kazi nje ya nyumbani?
-Ikiwa unafanya kazi, kazi yako ya sasa ni ipi?
-Watu wangapi wanaishi katika nyumba yako pamoja na wewe?
-Hali yako ya ajira ni ipi kwa sasa?
-Dini yako ni ipi?
-Je, una bima ya afya?
-Ni aina gani ya huduma ya afya unayopata mara kwa mara?
-Je, unahitaji mkalimani unapokwenda kliniki?
-Kwa kawaida unasafiri vipi kwenda kliniki?
-Je, unamiliki simu ya mkononi?
-Je, una mpango wa data wa kutumia WhatsApp mara kwa mara?
-Je, umewahi kushiriki katika utafiti wa kisayansi hapo awali?
-Mapato ya familia yako kwa mwaka ni kiasi gani?
-Je, kwa sasa una ujauzito?
-Je, umewahi kutumia njia za kupanga uzazi hapo awali?
-Je, kwa sasa unatumia njia za uzazi wa mpango?
-Ikiwa unatumia njia za uzazi wa mpango, ni njia ipi unayotumia?
+Tafadhali jibu maswali haya kwa uaminifu. Hakuna jibu sahihi au lisilo sahihi. Maswali mengine yanahusu video ulizotazama, na mengine yanahusu uzoefu wako, imani zako, na mipango yako ya baadaye.
+Tafadhali sema jina lako kamili, jina la kwanza na la mwisho.
+Tafadhali sema anwani yako ya sasa unayoishi.
+Tafadhali sema tarehe yako ya kuzaliwa.
+SEHEMU YA KWANZA: Vipindi vya Kwanza na vya Pili – Kumbukumbu, Mtazamo, na Imani.
+Mado anataka kufanya nini kabla ya kupata mtoto mwingine? Unaweza kusema: kuhamia mahali pengine, kumaliza masomo ya uuguzi, au kuanzisha mgahawa.
+Ni nani anayemwekea Mado shinikizo la kupata mtoto wa kiume? Unaweza kusema: marafiki zake, mume wake na mama mkwe, au watoto wake.
+Kwa nini Mado na Zamba wanamtembelea daktari? Unaweza kusema: kuchagua jinsia ya mtoto, kuzungumza kuhusu uzazi wa mpango na afya, au kwa sababu Mado ni mjamzito.
+Daktari anasema Mado ana tatizo gani la kiafya? Unaweza kusema: kisukari, uvimbe wa mfuko wa uzazi, au shinikizo la damu.
+Daktari anaeleza nini kuhusu njia za uzazi wa mpango? Unaweza kusema: njia zote ni za kudumu, njia nyingi zinaweza kusitishwa baadaye, au vidonge pekee ndiyo salama.
+Ni nani anayepaswa kushiriki katika maamuzi ya uzazi wa mpango? Unaweza kusema: mume pekee, mke pekee, au wenzi wote wawili pamoja.
+Watu wanapaswa kupata wapi taarifa sahihi kuhusu uzazi wa mpango? Unaweza kusema: marafiki na majirani, mitandao ya kijamii, au wahudumu wa afya waliofunzwa.
+Filamu inapinga imani gani kuhusu kupata mtoto wa kiume? Unaweza kusema: watoto wa kiume lazima waje kabla ya elimu, jinsia huamuliwa na Mungu si shinikizo, au watoto wa kiume ni wa thamani zaidi.
+SEHEMU YA PILI: Kipindi cha Tatu – Mustakabali wa Baadaye.
+Zamba anapomwona Mado akifanya kazi, majibu yake yanaonyesha nini? Unaweza kusema: anamuunga mkono, anataka aache, au anakasirika.
+Kwa nini Chidi anasimulia hadithi ya mke wake wa kwanza? Unaweza kusema: kumtisha Zamba, kuonyesha umuhimu wa maamuzi ya wanawake, au kulalamika kuhusu hospitali.
+Ni nini kilichomtokea mke wa kwanza wa Chidi? Unaweza kusema: aliacha ndoa, yeye na mtoto walifariki wakati wa kujifungua, au alipata ugonjwa lakini akaishi.
+Kwa nini familia zingine huhisi shinikizo la kupata mtoto wa kiume? Unaweza kusema: kuendeleza jina la familia, kwa sababu watoto wa kiume hugharimu kidogo, au kwa sababu wasichana hawawezi kusaidia.
+Zamba anafanya uamuzi gani kuhusu maisha ya baadaye ya Mado? Unaweza kusema: abaki nyumbani, arudi shuleni, au apate mtoto mwingine.
+Kuonyesha watoto kwenye mahafali kunafundisha nini? Unaweza kusema: watoto huzuia mafanikio, familia na elimu vinaweza kwenda pamoja, au akina mama wanapaswa kusoma peke yao.
+Filamu inafundisha nini wakati Mado anamaliza shule kwanza na baadaye anapata mtoto wa kiume? Unaweza kusema: wanawake wanaweza kupanga uzazi kulingana na malengo yao kwa msaada, mtoto wa kiume ndiye muhimu zaidi, au mwanamke lazima apate mtoto wa kiume aheshimiwe.
+SEHEMU YA TATU: Mizani ya Familia ya SFPS-C10.
+Maamuzi ya uzazi wa mpango yanapaswa kufanywa na wenzi wote wawili. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Afya ya mwanamke inapaswa kuzingatiwa kabla ya kuamua kupata mtoto mwingine. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Mwanamke anapaswa kupata mimba haraka hata kama hajamaliza masomo yake. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Msaada kutoka kwa mume au mwenzi humsaidia mwanamke kufanikiwa. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Familia lazima iwe na mtoto wa kiume ili iheshimiwe. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Mwanamke hapaswi kukataa mimba ikiwa mume wake anataka mtoto. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Uzazi wa mpango ni salama zaidi unapojadiliwa na daktari au mhudumu wa afya aliyehitimu. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Uzazi wa mpango unaweza kujadiliwa kwa njia inayoheshimu imani au dini. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Kuzungumza waziwazi kama wanandoa husaidia familia kufanya maamuzi bora. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Mwanamke anapaswa kupata mimba ili kumfurahisha mume wake. Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+SEHEMU YA NNE: Uzoefu wa Zamani na Taarifa Ulizosikia.
+Je, umewahi kutumia njia yoyote ya kuchelewesha au kuzuia mimba? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, umewahi kuacha kutumia uzazi wa mpango kwa sababu ya madhara? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, ushauri kutoka kwa marafiki au familia uliwahi kukufanya uache au uepuke uzazi wa mpango? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, umewahi kuzungumza na mwenzi wako kuhusu wakati wa kupata watoto? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, familia yako imewahi kukuwekea shinikizo kuhusu kupata mimba? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, umewahi kuepuka uzazi wa mpango kwa sababu ya shinikizo kutoka kwa mwenzi au familia? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, umewahi kupata madhara binafsi kutokana na uzazi wa mpango? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Kabla ya kutumia uzazi wa mpango, je, mhudumu wa afya alikueleza madhara yanayoweza kutokea? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, umewahi kusikia kwamba uzazi wa mpango husababisha madhara makubwa kwa wanawake? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, umewahi kusikia hadithi kwamba uzazi wa mpango husababisha utasa, kutokwa damu nyingi, au kuongezeka kwa uzito? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Kabla ya leo, je, uliamini taarifa za uzazi wa mpango kutoka kwa madaktari au wahudumu wa afya? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+SEHEMU YA TANO: Afya ya Uzazi na Kinga dhidi ya Magonjwa ya Zinaa.
+Je, umewahi kuzungumza na mwenzi wako kuhusu kinga dhidi ya magonjwa ya zinaa? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, unaamini kutumia kondomu kunaweza kusaidia kuzuia magonjwa ya zinaa? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, unaamini kupima magonjwa ya zinaa ni muhimu hata kama mtu anahisi yuko mzima? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, unajua mahali ambapo unaweza kwenda kupima magonjwa ya zinaa ukitaka? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, umewahi kupimwa magonjwa ya zinaa? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+SEHEMU YA SITA: Mipango na Nia ya Baadaye.
+Baada ya kutazama video hizi, je, unapanga kuzungumza na mwenzi wako kuhusu uzazi wa mpango? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, unadhani wewe na mwenzi wako mtakuwa mkifanya maamuzi ya baadaye kuhusu mimba pamoja? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Ikiwa wewe au mwenzi wako hamko tayari kupata mimba, je, ungefikiria kutumia uzazi wa mpango? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, unapanga kutafuta ushauri kutoka kwa daktari au mhudumu wa afya kabla ya kuamua kuhusu mimba? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Ikiwa familia itakuwekea shinikizo kuhusu mimba, je, unahisi una ujasiri zaidi wa kusema unachotaka? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Ikiwa mwenzi wako anataka mimba lakini wewe hauko tayari, je, unadhani unaweza kusema maoni yako? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
+Je, unadhani video hizi zitabadilisha jinsi unavyofanya maamuzi ya kifamilia siku zijazo? Unaweza kusema: ndiyo, hapana, au sema jibu lako mwenyewe.
