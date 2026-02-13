@@ -3,13 +3,13 @@ Maelekezo: Tafadhali jibu maswali kwa ukweli. Hakuna jibu sahihi au baya. Baadhi
 
 Tafadhali sema au taja majibu yako baada ya kila swali.
 
-Tafadhali sema jina lako la kwanza na la mwisho.
+Please say your first and last name.
 
-Tafadhali sema anwani yako.
+Please say your address.
 
-Tafadhali sema tarehe yako ya kuzaliwa.
+Please say your phone number.
 
-SEHEMU YA 1: Vipindi 1 & 2 - (BAADA YA KUTAZAMA)
+Sehemu ya 1. Vipindi 1 na 2. Baada ya kutazama.
 
 Mado anataka kufanya nini kabla ya kupata mtoto mwingine?
 Chaguzi ni: Kuhamia sehemu nyingine, Kumaliza masomo ya uuguzi, Kufungua mkahawa. Tafadhali sema jibu lako.
@@ -58,7 +58,7 @@ Chaguzi ni: Watoto huzuia mafanikio, Familia na elimu vinaweza kwenda pamoja, Ma
 Mado alimaliza shule kwanza kisha akapata mtoto. Hiyo inakuonyesha nini?
 Chaguzi ni: Mwanamke anaweza kupanga maisha yake akipata msaada, Mtoto wa kiume ni muhimu zaidi, Mwanamke lazima apate mtoto wa kiume. Tafadhali sema jibu lako.
 
-SEHEMU YA 3: Maoni yako (KABLA na BAADA)
+Sehemu ya 3. Maoni yako kabla na baada.
 
 Kwa maswali yafuatayo, chaguzi ni: Ndiyo, Hapana, au Nyingine. Kama ni Nyingine, tafadhali sema maelezo yako.
 
@@ -73,7 +73,7 @@ Mtu anaweza kuzungumzia kupanga watoto na bado kuheshimu dini yake.
 Mume na mke wakiongea wazi, hufanya uamuzi mzuri zaidi.
 Mke anapaswa kupata mimba ili kumfurahisha mume.
 
-SEHEMU YA 4: Maisha yako (KABLA TU)
+Sehemu ya 4. Maisha yako kabla tu.
 
 Kwa maswali yafuatayo, chaguzi ni: Ndiyo, Hapana, au Nyingine. Kama ni Nyingine, tafadhali sema maelezo yako.
 
@@ -89,7 +89,7 @@ Umewahi kusikia kuwa kupanga watoto ni hatari kwa wanawake?
 Umewahi kusikia kuwa kupanga watoto husababisha utasa, kutokwa damu nyingi, ama kuongeza uzito?
 Kabla ya leo, uliamini habari za kupanga watoto kutoka kwa wahudumu wa afya?
 
-SEHEMU YA 5: Afya ya Ngono na Kinga
+Sehemu ya 5: Afya ya Ngono na Kinga
 
 Maambukizo ya zinaa (STIs) hupitishwa kwa ngono. Baadhi yanaweza kusababisha ugonjwa mkubwa kama hayatatibiwa. Mfano ni Ukimwi, Klamidia, Kisonono, Kaswende, Malengelenge sehemu za siri, Trikomonia.
 
@@ -101,7 +101,7 @@ Kupima magonjwa ya zinaa ni muhimu hata kama mtu hajisikii mgonjwa.
 Unajua mahali pa kupima magonjwa ya zinaa?
 Umewahi kupima magonjwa ya zinaa?
 
-SEHEMU YA 6: Mipango ya Baadaye (BAADA TU)
+Sehemu ya 6: Mipango ya Baadaye Baada tu.
 
 Kwa maswali yafuatayo, chaguzi ni: Ndiyo, Hapana, au Nyingine. Kama ni Nyingine, tafadhali sema maelezo yako.
 
