@@ -520,7 +520,7 @@ def conference_ivr():
 
     for q in questions:
         xml += f'<Say voice="{SAY_VOICE}">{xml_escape(q)}</Say>'
-        xml += '<Pause length="3"/>'
+        xml += '<Pause length="7"/>'
 
     xml += '</Response>'
     return twiml(xml)
