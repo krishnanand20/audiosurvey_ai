@@ -403,7 +403,127 @@ def logout_route():
     _end_session()
     return redirect("/login")
 
+# ================================
+# CONFERENCE CALL (FIXED)
+# ================================
+@app.route("/admin/conference_call", methods=["POST"])
+def admin_conference_call():
+    n1 = (request.form.get("number_1") or "").strip()
+    n2 = (request.form.get("number_2") or "").strip()
 
+    if not n1 or not n2:
+        return redirect("/admin?msg=Please+enter+both+phone+numbers")
+
+    room = "CONF_" + datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+
+    try:
+        from twilio.rest import Client
+        client = Client(TWILIO_SID, TWILIO_TOKEN)
+
+        # call host (starts conf)
+        client.calls.create(
+            to=n1,
+            from_=TWILIO_FROM,
+            url=f"{PUBLIC_BASE_URL}/conference_host?room={room}",
+            method="POST"
+        )
+
+        # call joiner (waits silently until host starts)
+        client.calls.create(
+            to=n2,
+            from_=TWILIO_FROM,
+            url=f"{PUBLIC_BASE_URL}/conference_join?room={room}",
+            method="POST"
+        )
+
+        # ✅ poll until conference exists, then inject IVR
+        conf = None
+        for _ in range(20):  # ~10 seconds
+            lst = client.conferences.list(friendly_name=room, status="in-progress", limit=1)
+            if lst:
+                conf = lst[0]
+                break
+            time.sleep(0.5)
+
+        if conf:
+            client.conferences(conf.sid).update(
+                announce_url=f"{PUBLIC_BASE_URL}/conference_ivr",
+                announce_method="POST"
+            )
+        else:
+            log(f"Conference not found in time for room={room} (IVR not injected)")
+
+        return redirect("/admin?msg=Conference+call+started")
+
+    except Exception as e:
+        log(f"Conference ERROR: {type(e).__name__}: {e}")
+        return redirect("/admin?msg=Failed+to+start+conference")
+    
+# ================================
+# HOST SIDE (IVR + RECORDING)
+# ================================
+@app.route("/conference_host", methods=["POST"])
+def conference_host():
+    room = request.args.get("room")
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial>
+    <Conference
+      startConferenceOnEnter="true"
+      endConferenceOnExit="false"
+      beep="false"
+      record="record-from-start"
+      recordingStatusCallback="{PUBLIC_BASE_URL}/recording-done"
+      recordingStatusCallbackMethod="POST"
+      recordingStatusCallbackEvent="completed">
+      {room}
+    </Conference>
+  </Dial>
+</Response>"""
+    return twiml(xml)
+
+@app.route("/conference_join", methods=["POST"])
+def conference_join():
+    room = request.args.get("room")
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Dial>
+    <Conference
+      startConferenceOnEnter="false"
+      endConferenceOnExit="false"
+      beep="false"
+      waitUrl="{PUBLIC_BASE_URL}/silence"
+      waitMethod="POST">
+      {room}
+    </Conference>
+  </Dial>
+</Response>"""
+    return twiml(xml)
+
+@app.route("/silence", methods=["POST", "GET"])
+def silence():
+    # Twilio will loop this while waiting (no music)
+    return twiml("""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Pause length="60"/>
+</Response>""")
+
+@app.route("/conference_ivr", methods=["POST"])
+def conference_ivr():
+    questions = load_questions()
+    xml = '<?xml version="1.0" encoding="UTF-8"?><Response>'
+
+    xml += f'<Say voice="{SAY_VOICE}">Habari. Huu ni utafiti wa maswali.</Say>'
+    xml += '<Pause length="1"/>'
+
+    for q in questions:
+        xml += f'<Say voice="{SAY_VOICE}">{xml_escape(q)}</Say>'
+        xml += '<Pause length="3"/>'
+
+    xml += '</Response>'
+    return twiml(xml)
 # --------------------------
 # Helpers
 # --------------------------

@@ -377,6 +377,22 @@ def admin_home():
 
     <div class="sep"></div>
 
+    <!-- NEW: Conference call -->
+    <div class="card">
+      <h3 style="margin:0 0 8px 0;">Conference call</h3>
+      <p class="muted" style="margin:0 0 12px 0;">
+        Enter two phone numbers in international format (example: <span class="mono">+1716XXXXXXX</span>). Both will join the same call.
+      </p>
+
+      <form class="inline" method="POST" action="/admin/conference_call">
+        <input class="input input-sm" name="number_1" placeholder="+1..." required />
+        <input class="input input-sm" name="number_2" placeholder="+1..." required />
+        <button class="btn btn-primary" type="submit">Start call</button>
+      </form>
+    </div>
+
+    <div class="sep"></div>
+
     <div class="card">
       <h3 style="margin:0 0 10px 0;">Participants</h3>
       <div class="muted" style="margin-bottom:10px;">
