@@ -82,7 +82,7 @@ QUESTIONS_FILE = ivr_cfg.get("questions_file", "data/questions.txt")
 SPEECH_LANGUAGE = (ivr_cfg.get("speech_language") or "sw-KE").strip()
 
 # Recording length (20 min)
-RECORDING_MAX_SEC = int(ivr_cfg.get("recording_max_seconds", 1200))
+RECORDING_MAX_SEC = int(ivr_cfg.get("recording_max_seconds", 1800))
 
 AUDIO_DIR = "data/audio"
 TRANSCRIPTS_DIR = "data/transcripts"
@@ -732,11 +732,9 @@ def admin_dial_now():
 @app.route("/voice", methods=["POST"])
 def voice():
     """
-    Start recording immediately (20 minutes).
-    Then ask user to press any key to start.
+    Start recording immediately (20 minutes)
+    Then go directly to survey intro.
     """
-    prompt = "Bonyeza kitufe chochote kuanza utafiti."
-    prompt_url = get_prompt_audio_url(prompt, "sw")
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -749,14 +747,48 @@ def voice():
       recordingStatusCallbackEvent="completed" />
   </Start>
 
-  <Gather input="dtmf" numDigits="1" timeout="8" action="{PUBLIC_BASE_URL}/start" method="POST">
-    <Play>{prompt_url}</Play>
-  </Gather>
-
   <Redirect method="POST">{PUBLIC_BASE_URL}/start</Redirect>
+
 </Response>"""
     return twiml(xml)
 
+
+# @app.route("/start", methods=["POST"])
+# def start():
+#     questions = load_questions()
+#     if not questions:
+#         msg = "Hakuna maswali yaliyoandaliwa."
+#         msg_url = get_prompt_audio_url(msg, "sw")
+#         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+# <Response><Play>{msg_url}</Play><Hangup/></Response>""")
+
+#     intro1 = "Habari. Huu ni utafiti wa maswali."
+#     intro2 = "Tafadhali jibu kila swali baada ya kusikiliza."
+
+#     intro1_url = get_prompt_audio_url(intro1, "sw")
+#     intro2_url = get_prompt_audio_url(intro2, "sw")
+
+#     q1_text = questions[0]
+#     q1_url = get_prompt_audio_url(q1_text, "sw")
+
+#     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
+
+#     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+# <Response>
+#   <Play>{intro1_url}</Play>
+#   <Pause length="1"/>
+#   <Play>{intro2_url}</Play>
+#   <Pause length="1"/>
+
+#   <Gather input="speech" timeout="{GATHER_TIMEOUT}" speechTimeout="{SPEECH_TIMEOUT}"
+#           {lang_attr}
+#           action="{PUBLIC_BASE_URL}/next?q=1" method="POST">
+#     <Play>{q1_url}</Play>
+#   </Gather>
+
+#   <Redirect method="POST">{PUBLIC_BASE_URL}/next?q=1</Redirect>
+# </Response>"""
+#     return twiml(xml)
 
 @app.route("/start", methods=["POST"])
 def start():
@@ -767,32 +799,43 @@ def start():
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response><Play>{msg_url}</Play><Hangup/></Response>""")
 
-    intro1 = "Habari. Huu ni utafiti wa maswali."
-    intro2 = "Tafadhali jibu kila swali baada ya kusikiliza."
+    # Play first 2 lines as greeting/instructions
+    intro_xml = ""
 
-    intro1_url = get_prompt_audio_url(intro1, "sw")
-    intro2_url = get_prompt_audio_url(intro2, "sw")
+    for i in range(min(2, len(questions))):
+        intro_url = get_prompt_audio_url(questions[i], "sw")
+        intro_xml += f"<Play>{intro_url}</Play><Pause length='1'/>"
 
-    q1_text = questions[0]
-    q1_url = get_prompt_audio_url(q1_text, "sw")
+    # If there are no real questions after greeting
+    if len(questions) <= 2:
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    {intro_xml}
+    <Hangup/>
+</Response>""")
+
+    # First real question (index 2)
+    first_question = questions[2]
+    q_url = get_prompt_audio_url(first_question, "sw")
 
     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Play>{intro1_url}</Play>
-  <Pause length="1"/>
-  <Play>{intro2_url}</Play>
-  <Pause length="1"/>
+    {intro_xml}
 
-  <Gather input="speech" timeout="{GATHER_TIMEOUT}" speechTimeout="{SPEECH_TIMEOUT}"
-          {lang_attr}
-          action="{PUBLIC_BASE_URL}/next?q=1" method="POST">
-    <Play>{q1_url}</Play>
-  </Gather>
+    <Gather input="speech"
+            timeout="{GATHER_TIMEOUT}"
+            speechTimeout="{SPEECH_TIMEOUT}"
+            {lang_attr}
+            action="{PUBLIC_BASE_URL}/next?q=3"
+            method="POST">
+        <Play>{q_url}</Play>
+    </Gather>
 
-  <Redirect method="POST">{PUBLIC_BASE_URL}/next?q=1</Redirect>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q=3</Redirect>
 </Response>"""
+
     return twiml(xml)
 
 
