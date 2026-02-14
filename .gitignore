@@ -21,6 +21,7 @@ data/transcripts/
 data/translations/
 data/english_audio/
 data/contacts*.csv
+data/ivr_audio/
 # state (contains PII)
 
 data/state/*.bak_*

@@ -7,12 +7,13 @@ import time
 import json
 import yaml
 import requests
+import hashlib
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
-from flask import Flask, request, Response, redirect, session
-
+from flask import Flask, request, Response, redirect, session, send_from_directory
 from werkzeug.security import check_password_hash
+from flask import send_from_directory
 
 from app.dashboard import dashboard_bp
 from app.scheduler import start_scheduler_in_background, run_once
@@ -31,6 +32,9 @@ from app.state import (
 from app.transcribe import transcribe_audio
 from app.translate import translate_to_english_chunked
 from app.tts import text_to_english_audio
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+IVR_AUDIO_DIR = os.path.join(BASE_DIR, "data", "ivr_audio")
 
 
 # --------------------------
@@ -61,7 +65,6 @@ TWILIO_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_FROM = os.getenv("TWILIO_FROM_NUMBER")
 PUBLIC_BASE_URL = (os.getenv("PUBLIC_BASE_URL") or "").rstrip("/")
 
-# NOTE: To remove token-based auth from dashboard.py, set ADMIN_TOKEN blank in .env
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "").strip()
 
 if not all([TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM, PUBLIC_BASE_URL]):
@@ -72,18 +75,110 @@ GATHER_TIMEOUT = int(ivr_cfg.get("gather_timeout_sec", 6))
 SPEECH_TIMEOUT = ivr_cfg.get("speech_timeout", "auto")
 QUESTIONS_FILE = ivr_cfg.get("questions_file", "data/questions.txt")
 
-# Twilio-native TTS voice
-SAY_VOICE = ivr_cfg.get("say_voice", "alice")
-
 # Kenya Kiswahili recognition
 SPEECH_LANGUAGE = (ivr_cfg.get("speech_language") or "sw-KE").strip()
+
+# Recording length (20 min)
+RECORDING_MAX_SEC = int(ivr_cfg.get("recording_max_seconds", 1200))
 
 AUDIO_DIR = "data/audio"
 TRANSCRIPTS_DIR = "data/transcripts"
 TRANSLATIONS_DIR = "data/translations"
 EN_AUDIO_DIR = "data/english_audio"
-for d in [AUDIO_DIR, TRANSCRIPTS_DIR, TRANSLATIONS_DIR, EN_AUDIO_DIR]:
+
+
+for d in [
+    AUDIO_DIR,
+    TRANSCRIPTS_DIR,
+    TRANSLATIONS_DIR,
+    EN_AUDIO_DIR,
+    IVR_AUDIO_DIR  # this now uses absolute path
+]:
     os.makedirs(d, exist_ok=True)
+
+
+# --------------------------
+# Azure Neural TTS (for call prompts)
+# --------------------------
+AZURE_SPEECH_KEY = (os.getenv("AZURE_SPEECH_KEY") or "").strip().strip('"').strip("'")
+AZURE_SPEECH_REGION = (os.getenv("AZURE_SPEECH_REGION") or "").strip().strip('"').strip("'")
+
+AZURE_TTS_VOICE_SW = (os.getenv("AZURE_TTS_VOICE_SW") or "sw-KE-ZuriNeural").strip().strip('"').strip("'")
+AZURE_TTS_VOICE_EN = (os.getenv("AZURE_TTS_VOICE_EN") or "en-US-JennyNeural").strip().strip('"').strip("'")
+AZURE_TTS_FORMAT = (os.getenv("AZURE_TTS_FORMAT") or "audio-16khz-128kbitrate-mono-mp3").strip().strip('"').strip("'")
+
+try:
+    import azure.cognitiveservices.speech as speechsdk
+except Exception:
+    speechsdk = None
+
+
+def _azure_output_format(fmt: str):
+    """
+    Map env format string -> SpeechSynthesisOutputFormat enum.
+    We'll support your default mp3 format reliably.
+    """
+    if not speechsdk:
+        return None
+
+    # Common mapping for your env default
+    mapping = {
+        "audio-16khz-128kbitrate-mono-mp3": speechsdk.SpeechSynthesisOutputFormat.Audio16Khz128KBitRateMonoMp3,
+        "audio-24khz-160kbitrate-mono-mp3": speechsdk.SpeechSynthesisOutputFormat.Audio24Khz160KBitRateMonoMp3,
+        "audio-48khz-192kbitrate-mono-mp3": speechsdk.SpeechSynthesisOutputFormat.Audio48Khz192KBitRateMonoMp3,
+    }
+    return mapping.get(fmt.lower(), speechsdk.SpeechSynthesisOutputFormat.Audio16Khz128KBitRateMonoMp3)
+
+
+def _hash_key(text: str, voice: str, fmt: str) -> str:
+    raw = f"{voice}|{fmt}|{text}".encode("utf-8")
+    return hashlib.sha1(raw).hexdigest()
+
+
+def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
+    if not speechsdk:
+        raise RuntimeError("azure-cognitiveservices-speech not installed. Run: pip install azure-cognitiveservices-speech")
+    if not AZURE_SPEECH_KEY or not AZURE_SPEECH_REGION:
+        raise RuntimeError("Missing AZURE_SPEECH_KEY / AZURE_SPEECH_REGION in .env")
+
+    speech_config = speechsdk.SpeechConfig(subscription=AZURE_SPEECH_KEY, region=AZURE_SPEECH_REGION)
+    speech_config.speech_synthesis_voice_name = voice
+
+    fmt_enum = _azure_output_format(AZURE_TTS_FORMAT)
+    if fmt_enum is not None:
+        speech_config.set_speech_synthesis_output_format(fmt_enum)
+
+    audio_config = speechsdk.audio.AudioOutputConfig(filename=out_path)
+    synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
+
+    result = synthesizer.speak_text_async(text).get()
+    if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
+        details = ""
+        try:
+            details = str(result.cancellation_details)
+        except Exception:
+            pass
+        raise RuntimeError(f"Azure TTS failed: reason={result.reason} details={details}")
+
+
+def get_prompt_audio_url(text: str, lang: str) -> str:
+    """
+    Returns a PUBLIC URL to an mp3 of the prompt.
+    Uses caching on disk (same text -> same file).
+    """
+    lang = (lang or "").lower().strip()
+    voice = AZURE_TTS_VOICE_SW if lang.startswith("sw") else AZURE_TTS_VOICE_EN
+
+    key = _hash_key(text, voice, AZURE_TTS_FORMAT)
+    filename = f"{key}.mp3"
+    out_path = os.path.join(IVR_AUDIO_DIR, filename)
+
+    if not os.path.exists(out_path) or os.path.getsize(out_path) < 2000:
+        azure_tts_to_file(text, out_path, voice)
+        log(f"Azure TTS generated: {out_path}")
+
+    return f"{PUBLIC_BASE_URL}/ivr-audio/{filename}"
+
 
 # --------------------------
 # Auth settings (hard)
@@ -180,9 +275,7 @@ def _load_users_from_config() -> dict:
     users = auth_cfg.get("users", {}) or {}
     out = {}
     for name, meta in users.items():
-        out[str(name).lower()] = {
-            "password_hash": (meta or {}).get("password_hash", "")
-        }
+        out[str(name).lower()] = {"password_hash": (meta or {}).get("password_hash", "")}
     return out
 
 
@@ -334,28 +427,29 @@ def _render_login_page(err: str = "") -> str:
 app = Flask(__name__)
 app.register_blueprint(dashboard_bp)
 
-# Session secret (must set in .env)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "CHANGE_ME_NOW")
 
-# hardened cookies
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=True,   # ngrok is HTTPS (recommended)
+    SESSION_COOKIE_SECURE=True,   # ngrok is HTTPS
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
 )
 
-# Protect admin routes without touching dashboard.py
+
 @app.before_request
 def _guard_admin_routes():
     path = request.path or ""
-    # allow login + health + Twilio webhooks
-    allowed_prefixes = ("/login", "/health", "/voice", "/start", "/next", "/call-status", "/recording-done")
+    allowed_prefixes = (
+        "/login", "/health",
+        "/voice", "/start", "/next", "/call-status", "/recording-done",
+        "/conference_host", "/conference_join", "/conference_ivr", "/silence",
+        "/ivr-audio/"
+    )
     if path.startswith(allowed_prefixes):
         return None
 
     if path.startswith("/admin"):
-        # If old token auth is still set in env, allow token too (backward compatible)
         if ADMIN_TOKEN:
             tok = (request.args.get("token") or request.form.get("token") or "").strip()
             if tok == ADMIN_TOKEN:
@@ -403,8 +497,17 @@ def logout_route():
     _end_session()
     return redirect("/login")
 
+
+# --------------------------
+# Serve generated IVR audio (Azure MP3)
+# --------------------------
+@app.route("/ivr-audio/<path:filename>")
+def serve_ivr_audio(filename):
+    return send_from_directory(IVR_AUDIO_DIR, filename)
+
+
 # ================================
-# CONFERENCE CALL (FIXED)
+# CONFERENCE CALL
 # ================================
 @app.route("/admin/conference_call", methods=["POST"])
 def admin_conference_call():
@@ -420,7 +523,6 @@ def admin_conference_call():
         from twilio.rest import Client
         client = Client(TWILIO_SID, TWILIO_TOKEN)
 
-        # call host (starts conf)
         client.calls.create(
             to=n1,
             from_=TWILIO_FROM,
@@ -428,7 +530,6 @@ def admin_conference_call():
             method="POST"
         )
 
-        # call joiner (waits silently until host starts)
         client.calls.create(
             to=n2,
             from_=TWILIO_FROM,
@@ -436,32 +537,13 @@ def admin_conference_call():
             method="POST"
         )
 
-        # ✅ poll until conference exists, then inject IVR
-        conf = None
-        for _ in range(20):  # ~10 seconds
-            lst = client.conferences.list(friendly_name=room, status="in-progress", limit=1)
-            if lst:
-                conf = lst[0]
-                break
-            time.sleep(0.5)
-
-        if conf:
-            client.conferences(conf.sid).update(
-                announce_url=f"{PUBLIC_BASE_URL}/conference_ivr",
-                announce_method="POST"
-            )
-        else:
-            log(f"Conference not found in time for room={room} (IVR not injected)")
-
         return redirect("/admin?msg=Conference+call+started")
 
     except Exception as e:
         log(f"Conference ERROR: {type(e).__name__}: {e}")
         return redirect("/admin?msg=Failed+to+start+conference")
-    
-# ================================
-# HOST SIDE (IVR + RECORDING)
-# ================================
+
+
 @app.route("/conference_host", methods=["POST"])
 def conference_host():
     room = request.args.get("room")
@@ -483,6 +565,7 @@ def conference_host():
 </Response>"""
     return twiml(xml)
 
+
 @app.route("/conference_join", methods=["POST"])
 def conference_join():
     room = request.args.get("room")
@@ -502,28 +585,37 @@ def conference_join():
 </Response>"""
     return twiml(xml)
 
+
 @app.route("/silence", methods=["POST", "GET"])
 def silence():
-    # Twilio will loop this while waiting (no music)
     return twiml("""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Pause length="60"/>
 </Response>""")
 
+
 @app.route("/conference_ivr", methods=["POST"])
 def conference_ivr():
+    """
+    Plays survey prompts into the conference using Azure TTS MP3 via <Play>.
+    """
     questions = load_questions()
     xml = '<?xml version="1.0" encoding="UTF-8"?><Response>'
 
-    xml += f'<Say voice="{SAY_VOICE}">Habari. Huu ni utafiti wa maswali.</Say>'
+    intro = "Habari. Huu ni utafiti wa maswali."
+    intro_url = get_prompt_audio_url(intro, "sw")
+    xml += f'<Play>{intro_url}</Play>'
     xml += '<Pause length="1"/>'
 
     for q in questions:
-        xml += f'<Say voice="{SAY_VOICE}">{xml_escape(q)}</Say>'
-        xml += '<Pause length="7"/>'
+        q_url = get_prompt_audio_url(q, "sw")
+        xml += f'<Play>{q_url}</Play>'
+        xml += '<Pause length="2"/>'
 
     xml += '</Response>'
     return twiml(xml)
+
+
 # --------------------------
 # Helpers
 # --------------------------
@@ -576,7 +668,6 @@ def health():
 
 @app.route("/admin/dial_now", methods=["POST"])
 def admin_dial_now():
-    # Protected by before_request session auth
     run_once(force=True)
     return redirect("/admin?msg=Dial+Now+triggered")
 
@@ -587,21 +678,25 @@ def admin_dial_now():
 @app.route("/voice", methods=["POST"])
 def voice():
     """
-    FIX: Start recording immediately using TwiML <Start><Recording>.
-    (Avoids Twilio REST error 21220: resource not eligible for recording)
+    Start recording immediately (20 minutes).
+    Then ask user to press any key to start.
     """
+    prompt = "Bonyeza kitufe chochote kuanza utafiti."
+    prompt_url = get_prompt_audio_url(prompt, "sw")
+
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
 
   <Start>
     <Recording
+      maxLength="{RECORDING_MAX_SEC}"
       recordingStatusCallback="{PUBLIC_BASE_URL}/recording-done"
       recordingStatusCallbackMethod="POST"
       recordingStatusCallbackEvent="completed" />
   </Start>
 
   <Gather input="dtmf" numDigits="1" timeout="8" action="{PUBLIC_BASE_URL}/start" method="POST">
-    <Say voice="{SAY_VOICE}">Bonyeza kitufe chochote kuanza utafiti.</Say>
+    <Play>{prompt_url}</Play>
   </Gather>
 
   <Redirect method="POST">{PUBLIC_BASE_URL}/start</Redirect>
@@ -613,20 +708,33 @@ def voice():
 def start():
     questions = load_questions()
     if not questions:
-        return twiml(f"<Response><Say voice=\"{SAY_VOICE}\">Hakuna maswali yaliyoandaliwa.</Say><Hangup/></Response>")
+        msg = "Hakuna maswali yaliyoandaliwa."
+        msg_url = get_prompt_audio_url(msg, "sw")
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response><Play>{msg_url}</Play><Hangup/></Response>""")
 
-    q1 = xml_escape(questions[0])
+    intro1 = "Habari. Huu ni utafiti wa maswali."
+    intro2 = "Tafadhali jibu kila swali baada ya kusikiliza."
+
+    intro1_url = get_prompt_audio_url(intro1, "sw")
+    intro2_url = get_prompt_audio_url(intro2, "sw")
+
+    q1_text = questions[0]
+    q1_url = get_prompt_audio_url(q1_text, "sw")
+
     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="{SAY_VOICE}">Habari. Huu ni utafiti wa maswali.</Say>
-  <Say voice="{SAY_VOICE}">Tafadhali jibu kila swali baada ya kusikiliza.</Say>
+  <Play>{intro1_url}</Play>
+  <Pause length="1"/>
+  <Play>{intro2_url}</Play>
+  <Pause length="1"/>
 
   <Gather input="speech" timeout="{GATHER_TIMEOUT}" speechTimeout="{SPEECH_TIMEOUT}"
           {lang_attr}
           action="{PUBLIC_BASE_URL}/next?q=1" method="POST">
-    <Say voice="{SAY_VOICE}">{q1}</Say>
+    <Play>{q1_url}</Play>
   </Gather>
 
   <Redirect method="POST">{PUBLIC_BASE_URL}/next?q=1</Redirect>
@@ -642,7 +750,6 @@ def next_question():
     call_sid = request.form.get("CallSid", "")
     speech = (request.form.get("SpeechResult") or "").strip()
 
-    # Mark engaged for known participants
     if call_sid and looks_like_real_speech(speech):
         state = load_participants()
         pid, _ = find_participant_by_callsid(state, call_sid)
@@ -652,9 +759,14 @@ def next_question():
             log(f"ENGAGED=True for participant {pid} | CallSid={call_sid} | Speech='{speech[:60]}'")
 
     if q >= len(questions):
-        return twiml(f"<Response><Say voice=\"{SAY_VOICE}\">Asante. Kwaheri.</Say><Hangup/></Response>")
+        bye = "Asante. Kwaheri."
+        bye_url = get_prompt_audio_url(bye, "sw")
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response><Play>{bye_url}</Play><Hangup/></Response>""")
 
-    question = xml_escape(questions[q])
+    question_text = questions[q]
+    question_url = get_prompt_audio_url(question_text, "sw")
+
     next_q = q + 1
     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
 
@@ -663,7 +775,7 @@ def next_question():
   <Gather input="speech" timeout="{GATHER_TIMEOUT}" speechTimeout="{SPEECH_TIMEOUT}"
           {lang_attr}
           action="{PUBLIC_BASE_URL}/next?q={next_q}" method="POST">
-    <Say voice="{SAY_VOICE}">{question}</Say>
+    <Play>{question_url}</Play>
   </Gather>
 
   <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={next_q}</Redirect>
@@ -680,7 +792,6 @@ def call_status():
     state = load_participants()
     pid, p = find_participant_by_callsid(state, call_sid)
     if not pid:
-        # Inbound unknown calls won't be in participants.json
         return ("ok", 200)
 
     mark_call_result(state, pid, call_status_val)
@@ -774,7 +885,6 @@ def recording_done():
     })
 
     return ("ok", 200)
-
 
 # --------------------------
 # CLI
