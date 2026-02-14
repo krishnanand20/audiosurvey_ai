@@ -138,13 +138,49 @@ def _hash_key(text: str, voice: str, fmt: str) -> str:
     return hashlib.sha1(raw).hexdigest()
 
 
+# def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
+#     if not speechsdk:
+#         raise RuntimeError("azure-cognitiveservices-speech not installed. Run: pip install azure-cognitiveservices-speech")
+#     if not AZURE_SPEECH_KEY or not AZURE_SPEECH_REGION:
+#         raise RuntimeError("Missing AZURE_SPEECH_KEY / AZURE_SPEECH_REGION in .env")
+
+#     speech_config = speechsdk.SpeechConfig(subscription=AZURE_SPEECH_KEY, region=AZURE_SPEECH_REGION)
+#     speech_config.speech_synthesis_voice_name = voice
+
+#     fmt_enum = _azure_output_format(AZURE_TTS_FORMAT)
+#     if fmt_enum is not None:
+#         speech_config.set_speech_synthesis_output_format(fmt_enum)
+
+#     audio_config = speechsdk.audio.AudioOutputConfig(filename=out_path)
+#     synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
+
+#     result = synthesizer.speak_text_async(text).get()
+#     if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
+#         details = ""
+#         try:
+#             details = str(result.cancellation_details)
+#         except Exception:
+#             pass
+#         raise RuntimeError(f"Azure TTS failed: reason={result.reason} details={details}")
 def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
     if not speechsdk:
-        raise RuntimeError("azure-cognitiveservices-speech not installed. Run: pip install azure-cognitiveservices-speech")
-    if not AZURE_SPEECH_KEY or not AZURE_SPEECH_REGION:
-        raise RuntimeError("Missing AZURE_SPEECH_KEY / AZURE_SPEECH_REGION in .env")
+        raise RuntimeError("azure-cognitiveservices-speech not installed")
 
-    speech_config = speechsdk.SpeechConfig(subscription=AZURE_SPEECH_KEY, region=AZURE_SPEECH_REGION)
+    if not AZURE_SPEECH_KEY or not AZURE_SPEECH_REGION:
+        raise RuntimeError("Missing AZURE_SPEECH_KEY / AZURE_SPEECH_REGION")
+
+    # Escape XML special characters
+    safe_text = (
+        text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+    )
+
+    speech_config = speechsdk.SpeechConfig(
+        subscription=AZURE_SPEECH_KEY,
+        region=AZURE_SPEECH_REGION
+    )
+
     speech_config.speech_synthesis_voice_name = voice
 
     fmt_enum = _azure_output_format(AZURE_TTS_FORMAT)
@@ -152,16 +188,31 @@ def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
         speech_config.set_speech_synthesis_output_format(fmt_enum)
 
     audio_config = speechsdk.audio.AudioOutputConfig(filename=out_path)
-    synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
 
-    result = synthesizer.speak_text_async(text).get()
+    synthesizer = speechsdk.SpeechSynthesizer(
+        speech_config=speech_config,
+        audio_config=audio_config
+    )
+
+    ssml = f"""
+<speak version="1.0"
+       xmlns="http://www.w3.org/2001/10/synthesis"
+       xml:lang="sw-KE">
+    <voice name="{voice}">
+        <prosody rate="-10%">
+            {safe_text}
+        </prosody>
+    </voice>
+</speak>
+"""
+
+    result = synthesizer.speak_ssml_async(ssml).get()
+
     if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
-        details = ""
-        try:
-            details = str(result.cancellation_details)
-        except Exception:
-            pass
-        raise RuntimeError(f"Azure TTS failed: reason={result.reason} details={details}")
+        cancellation = speechsdk.CancellationDetails.from_result(result)
+        raise RuntimeError(
+            f"Azure TTS failed: {cancellation.reason} | {cancellation.error_details}"
+        )
 
 
 def get_prompt_audio_url(text: str, lang: str) -> str:
