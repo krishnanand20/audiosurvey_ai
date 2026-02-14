@@ -15,6 +15,9 @@ from flask import Flask, request, Response, redirect, session, send_from_directo
 from werkzeug.security import check_password_hash
 from flask import send_from_directory
 
+from threading import Thread
+from app.background_worker import process_pending_recordings
+
 from app.dashboard import dashboard_bp
 from app.scheduler import start_scheduler_in_background, run_once
 from app.utils import schedule_participant
@@ -803,7 +806,6 @@ def call_status():
     save_participants(state)
     return ("ok", 200)
 
-
 @app.route("/recording-done", methods=["POST"])
 def recording_done():
     call_sid = request.form.get("CallSid", "unknown_call")
@@ -813,14 +815,15 @@ def recording_done():
 
     log(f"RECORDING DONE HIT | CallSid={call_sid} | Status={rec_status}")
 
+    # Only process completed recordings
     if rec_status and rec_status != "completed":
         return ("ok", 200)
+
     if not recording_url:
         return ("no recording", 400)
 
     state = load_participants()
     participant_id, p = find_participant_by_callsid(state, call_sid)
-
     known_participant = bool(participant_id)
 
     phone = (p.get("phone_e164") or "") if p else ""
@@ -828,52 +831,47 @@ def recording_done():
     engaged = bool(p.get("engaged", False)) if p else False
     last_call_status = (p.get("last_call_status") or "").lower() if p else ""
 
+    # Skip failed calls
     if known_participant:
         if last_call_status in {"no-answer", "busy", "failed", "canceled"}:
             log("Skip pipeline: retryable failure.")
             return ("ok", 200)
+
         if not engaged:
             log("Skip pipeline: engaged=False.")
             return ("ok", 200)
 
+    # --------------------------
+    # Download recording WAV
+    # --------------------------
     wav_url = recording_url + ".wav"
     base = safe_base(call_sid)
 
     audio_path = os.path.join(AUDIO_DIR, base + "_FULLCALL.wav")
-    transcript_path = os.path.join(TRANSCRIPTS_DIR, base + "_FULLCALL.txt")
-    translation_path = os.path.join(TRANSLATIONS_DIR, base + "_FULLCALL.txt")
-    english_audio_path = os.path.join(EN_AUDIO_DIR, base + "_FULLCALL.mp3")
 
-    r = requests.get(wav_url, auth=(TWILIO_SID, TWILIO_TOKEN), timeout=60)
-    r.raise_for_status()
-    with open(audio_path, "wb") as f:
-        f.write(r.content)
+    try:
+        r = requests.get(wav_url, auth=(TWILIO_SID, TWILIO_TOKEN), timeout=60)
+        r.raise_for_status()
 
-    text, detected = transcribe_audio(audio_path)
-    with open(transcript_path, "w", encoding="utf-8") as f:
-        f.write(text)
+        with open(audio_path, "wb") as f:
+            f.write(r.content)
 
-    if len(text.strip().split()) < 5:
-        log("Transcript too short. Not completing.")
+    except Exception as e:
+        log(f"Failed to download recording: {e}")
         return ("ok", 200)
 
-    english_text = text if (detected or "").lower() == "en" else translate_to_english_chunked(text)
-    with open(translation_path, "w", encoding="utf-8") as f:
-        f.write(english_text)
-
-    text_to_english_audio(english_text, english_audio_path)
-
-    outputs = {
-        "audio_path": audio_path,
-        "transcript_path": transcript_path,
-        "translation_path": translation_path,
-        "english_audio_path": english_audio_path,
-    }
-
+    # --------------------------
+    # Queue for background ML processing
+    # --------------------------
     if known_participant:
-        mark_completed(state, participant_id, recording_url, outputs)
+        state[participant_id]["processing_status"] = "pending"
+        state[participant_id]["audio_path"] = audio_path
+        state[participant_id]["recording_url"] = recording_url
         save_participants(state)
 
+    log(f"Recording saved. Queued for background processing. File={audio_path}")
+
+    # Log minimal event
     log_call_event({
         "timestamp_utc": datetime.utcnow().isoformat(),
         "participant_id": participant_id or "",
@@ -881,7 +879,8 @@ def recording_done():
         "direction": direction,
         "call_sid": call_sid,
         "recording_url": recording_url,
-        **outputs
+        "audio_path": audio_path,
+        "processing_status": "pending"
     })
 
     return ("ok", 200)
@@ -896,6 +895,9 @@ if __name__ == "__main__":
 
     if mode == "serve":
         start_scheduler_in_background(interval_sec=15)
+        # Start background ML worker
+        t = Thread(target=process_pending_recordings, daemon=True)
+        t.start()
         app.run(host="0.0.0.0", port=5050, debug=False, use_reloader=False)
 
     elif mode == "schedule":
