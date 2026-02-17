@@ -199,7 +199,7 @@ def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
        xmlns="http://www.w3.org/2001/10/synthesis"
        xml:lang="sw-KE">
     <voice name="{voice}">
-        <prosody rate="-10%">
+        <prosody rate="-15%">
             {safe_text}
         </prosody>
     </voice>
