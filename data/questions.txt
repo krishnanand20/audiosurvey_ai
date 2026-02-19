@@ -4,18 +4,18 @@ OPEN|Tafadhali sema jina lako la kwanza na la mwisho.
 OPEN|Tafadhali sema anwani yako kamili.
 OPEN|Tafadhali sema tarehe yako ya kuzaliwa.
 
-OPEN|sehemu ya 1: Baada ya Kipindi cha 1 na 2
+OPEN|sehemu ya 1: vipindi 1 & 2 - (baada ya kutazama)
 
 MCQ|Mado anataka kufanya nini kabla ya kupata mtoto mwingine?|Kuhamia sehemu nyingine|Kumaliza masomo ya uuguzi|Kufungua mkahawa
 MCQ|Nani anamsukuma Mado apate mtoto wa kiume?|Marafiki|Mume na mama mkwe|Watoto wake
 MCQ|Kwa nini Mado na Zamba wanaenda hospitali?|Kuchagua jinsia ya mtoto|Kuzungumza kuhusu afya na kupanga watoto|Mado ni mjamzito
-MCQ|Daktari alisema Mado ana shida gani?|Kisukari|Uvimbe kwenye kizazi|Shinikizo la damu
+MCQ|Daktari alisema Mado ana shida gani?|Kisukari|Uvimbe kwenye kizazi (fibroidi)|Shinikizo la damu
 MCQ|Daktari alisema nini kuhusu kupanga watoto?|Njia zote ni za kudumu|Njia nyingi unaweza kuachwa baadaye|Dawa tu ndio salama
 MCQ|Nani anapaswa kuamua kuhusu kupanga watoto?|Mume pekee|Mke pekee|Wote wawili
-MCQ|Ukitaka kujua ukweli kuhusu kupanga watoto, unaenda wapi?|Marafiki|Mitandao ya kijamii|Mhudumu wa afya
+MCQ|Ukitaka kujua ukweli kuhusu kupanga watoto, unaenda wapi?|Marafiki|Mitandao ya kijamii (Kwa mfano Facebook, Instagram, X)|Mhudumu wa afya
 MCQ|Filamu inapinga wazo gani kuhusu mtoto wa kiume?|Mtoto wa kiume ni muhimu kuliko elimu|Mungu ndiye anaamua jinsia ya mtoto|Mtoto wa kiume ana thamani zaidi
 
-OPEN|sehemu ya 2: Baada ya Kipindi cha 3
+OPEN|sehemu ya 2: kipindi cha 3- (baada ya kutazama)
 
 MCQ|Zamba alipomwona Mado akifanya kazi, alionyesha nini?|Anamuunga mkono|Anataka aache|Ameudhika
 MCQ|Kwa nini Chidi aliongea kuhusu mke wake wa kwanza?|Kumtisha Zamba|Kuonyesha umuhimu wa maamuzi ya mwanamke|Kulalamika kuhusu hospitali
@@ -25,12 +25,12 @@ MCQ|Zamba aliamua nini kuhusu maisha ya Mado?|Akae nyumbani|Arudi shule|Apate mt
 MCQ|Kuwaona watoto siku ya kupata vyeti kunamaanisha nini?|Watoto huzuia mafanikio|Familia na elimu vinaweza kwenda pamoja|Mama asome peke yake
 MCQ|Mado alimaliza shule kwanza kisha akapata mtoto. Hiyo inakuonyesha nini?|Mwanamke anaweza kupanga maisha yake akipata msaada|Mtoto wa kiume ni muhimu zaidi|Mwanamke lazima apate mtoto wa kiume
 
-OPEN|sehemu ya 3: Maoni Yako
+OPEN|sehemu ya 3: maoni yako (kabla na baada)
 
 MCQO|Kupanga watoto ni uamuzi wa watu wawili?|Ndiyo|Hapana|Nyingine
 MCQO|Afya ya mwanamke ni muhimu kabla ya kupata mtoto mwingine?|Ndiyo|Hapana|Nyingine
 MCQO|Mwanamke anapaswa kupata mimba hata kama hajamaliza shule?|Ndiyo|Hapana|Nyingine
-MCQO|Msaada wa mume humsaidia mwanamke kufanikiwa?|Ndiyo|Hapana|Nyingine
+MCQO|Msaada wa mume ama mpenzi humsaidia mwanamke kufanikiwa?|Ndiyo|Hapana|Nyingine
 MCQO|Familia lazima iwe na mtoto wa kiume ili iheshimiwe?|Ndiyo|Hapana|Nyingine
 MCQO|Mwanamke hapaswi kukataa mimba kama mume anataka mtoto?|Ndiyo|Hapana|Nyingine
 MCQO|Ni vizuri kuongea kuhusu kupanga watoto na mhudumu wa afya?|Ndiyo|Hapana|Nyingine
@@ -38,34 +38,35 @@ MCQO|Mtu anaweza kuzungumzia kupanga watoto na bado kuheshimu dini yake?|Ndiyo|H
 MCQO|Mume na mke wakiongea wazi, hufanya uamuzi mzuri zaidi?|Ndiyo|Hapana|Nyingine
 MCQO|Mke anapaswa kupata mimba ili kumfurahisha mume?|Ndiyo|Hapana|Nyingine
 
-OPEN|sehemu ya 4: Uzoefu Binafsi
+OPEN|sehemu ya 4: maisha yako (kabla tu)
 
 MCQO|Umewahi kutumia njia ya kuzuia mimba?|Ndiyo|Hapana|Nyingine
 MCQO|Umewahi kuacha njia ya kupanga watoto kwa sababu ilikuletea matatizo mwilini?|Ndiyo|Hapana|Nyingine
 MCQO|Marafiki au familia waliwahi kukufanya uache kupanga watoto?|Ndiyo|Hapana|Nyingine
-MCQO|Umewahi kuzungumza na mwenzi wako kuhusu lini kupata mtoto?|Ndiyo|Hapana|Nyingine
+MCQO|Umewahi kuzungumza na mume au mke wako kuhusu lini kupata mtoto?|Ndiyo|Hapana|Nyingine
 MCQO|Watu wa familia yako waliwahi kukulazimisha kuhusu mimba?|Ndiyo|Hapana|Nyingine
 MCQO|Umewahi kulazimishwa kutotumia njia ya kupanga watoto?|Ndiyo|Hapana|Nyingine
 MCQO|Umewahi kupata matatizo kwa mwili kutokana na njia ya kupanga watoto?|Ndiyo|Hapana|Nyingine
 MCQO|Mhudumu wa afya alikueleza madhara kabla ya kutumia njia ya kupanga watoto?|Ndiyo|Hapana|Nyingine
 MCQO|Umewahi kusikia kuwa kupanga watoto ni hatari kwa wanawake?|Ndiyo|Hapana|Nyingine
-MCQO|Umewahi kusikia kuwa kupanga watoto husababisha utasa au kuongeza uzito?|Ndiyo|Hapana|Nyingine
+MCQO|Umewahi kusikia kuwa kupanga watoto husababisha utasa, kutokwa damu nyingi, ama kuongeza uzito?|Ndiyo|Hapana|Nyingine
 MCQO|Kabla ya leo, uliamini habari za kupanga watoto kutoka kwa wahudumu wa afya?|Ndiyo|Hapana|Nyingine
 
-OPEN|sehemu ya 5: Afya ya Ngono na Magonjwa ya Zinaa
+OPEN|sehemu ya 5: afya ya ngono na kinga
+OPEN|Maambukizo ya zinaa STIs hupitishwa kwa ngono. Baadhi yanaweza kusababisha ugonjwa mkubwa kama hayatatibiwa. Mfano ni Ukimwi, Klamidia, Kisonono, Kaswende, Malengelenge sehemu za siri, Trikomonia.
 
-MCQO|Umewahi kuzungumza na mwenzi wako kuhusu kujikinga na magonjwa ya zinaa?|Ndiyo|Hapana|Nyingine
+MCQO|Umewahi kuzungumza na mpenzi wako  kuhusu kujikinga na magonjwa ya zinaa?|Ndiyo|Hapana|Nyingine
 MCQO|Unaamini kondomu husaidia kuzuia magonjwa ya zinaa?|Ndiyo|Hapana|Nyingine
 MCQO|Kupima magonjwa ya zinaa ni muhimu hata kama mtu hajisikii mgonjwa?|Ndiyo|Hapana|Nyingine
 MCQO|Unajua mahali pa kupima magonjwa ya zinaa?|Ndiyo|Hapana|Nyingine
 MCQO|Umewahi kupima magonjwa ya zinaa?|Ndiyo|Hapana|Nyingine
 
-OPEN|sehemu ya 6: Mipango ya Baadaye
+OPEN|sehemu ya 6: mipango ya baadaye (baada tu)
 
-MCQO|Baada ya video hizi, utazungumza na mwenzi wako kuhusu kupanga watoto?|Ndiyo|Hapana|Nyingine
-MCQO|Wewe na mwenzi wako mtafanya maamuzi ya kupata mtoto pamoja?|Ndiyo|Hapana|Nyingine
+MCQO|Baada ya video hizi, utazungumza na mpenzi wako  kuhusu kupanga watoto?|Ndiyo|Hapana|Nyingine
+MCQO|Wewe na mpenzi wako  mtafanya maamuzi ya kupata mtoto pamoja?|Ndiyo|Hapana|Nyingine
 MCQO|Kama hamko tayari kupata mtoto, mtatumia njia za kuzuia mimba?|Ndiyo|Hapana|Nyingine
 MCQO|Utatafuta ushauri wa mhudumu wa afya kabla ya kuamua kuhusu mimba?|Ndiyo|Hapana|Nyingine
 MCQO|Familia ikikulazimisha, unaweza kusema unachotaka?|Ndiyo|Hapana|Nyingine
-MCQO|Mwenzi wako akitaka mimba na wewe huko tayari, unaweza kusema maoni yako?|Ndiyo|Hapana|Nyingine
+MCQO|Mpenzi wako akitaka mimba na wewe huko tayari, unaweza kusema maoni yako?|Ndiyo|Hapana|Nyingine
 MCQO|Unaamini video hizi zitabadilisha maamuzi yako ya familia baadaye?|Ndiyo|Hapana|Nyingine
