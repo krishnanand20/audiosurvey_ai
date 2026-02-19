@@ -138,30 +138,6 @@ def _hash_key(text: str, voice: str, fmt: str) -> str:
     return hashlib.sha1(raw).hexdigest()
 
 
-# def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
-#     if not speechsdk:
-#         raise RuntimeError("azure-cognitiveservices-speech not installed. Run: pip install azure-cognitiveservices-speech")
-#     if not AZURE_SPEECH_KEY or not AZURE_SPEECH_REGION:
-#         raise RuntimeError("Missing AZURE_SPEECH_KEY / AZURE_SPEECH_REGION in .env")
-
-#     speech_config = speechsdk.SpeechConfig(subscription=AZURE_SPEECH_KEY, region=AZURE_SPEECH_REGION)
-#     speech_config.speech_synthesis_voice_name = voice
-
-#     fmt_enum = _azure_output_format(AZURE_TTS_FORMAT)
-#     if fmt_enum is not None:
-#         speech_config.set_speech_synthesis_output_format(fmt_enum)
-
-#     audio_config = speechsdk.audio.AudioOutputConfig(filename=out_path)
-#     synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
-
-#     result = synthesizer.speak_text_async(text).get()
-#     if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
-#         details = ""
-#         try:
-#             details = str(result.cancellation_details)
-#         except Exception:
-#             pass
-#         raise RuntimeError(f"Azure TTS failed: reason={result.reason} details={details}")
 def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
     if not speechsdk:
         raise RuntimeError("azure-cognitiveservices-speech not installed")
@@ -379,6 +355,8 @@ def _end_session() -> None:
     })
 
     session.clear()
+
+    
 
 
 def _render_login_page(err: str = "") -> str:
@@ -650,10 +628,7 @@ def silence():
 
 @app.route("/conference_ivr", methods=["POST"])
 def conference_ivr():
-    """
-    Plays survey prompts into the conference using Azure TTS MP3 via <Play>.
-    """
-    questions = load_questions()
+    questions = load_structured_questions()
     xml = '<?xml version="1.0" encoding="UTF-8"?><Response>'
 
     intro = "Habari. Huu ni utafiti wa maswali."
@@ -662,7 +637,7 @@ def conference_ivr():
     xml += '<Pause length="1"/>'
 
     for q in questions:
-        q_url = get_prompt_audio_url(q, "sw")
+        q_url = get_prompt_audio_url(q["question"], "sw")
         xml += f'<Play>{q_url}</Play>'
         xml += '<Pause length="2"/>'
 
@@ -711,6 +686,30 @@ def find_participant_by_callsid(state: dict, call_sid: str):
             return pid, p
     return None, None
 
+def load_structured_questions():
+    qs = []
+    if not os.path.exists(QUESTIONS_FILE):
+        return qs
+
+    with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            parts = line.strip().split("|")
+
+            if parts[0] in ["MCQ", "MCQO"]:
+                qs.append({
+                    "type": parts[0].lower(),
+                    "question": parts[1],
+                    "options": parts[2:]
+                })
+
+            elif parts[0] == "OPEN":
+                qs.append({
+                    "type": "open",
+                    "question": parts[1]
+                })
+
+    return qs
+
 
 # --------------------------
 # Routes
@@ -752,100 +751,65 @@ def voice():
 </Response>"""
     return twiml(xml)
 
-
-# @app.route("/start", methods=["POST"])
-# def start():
-#     questions = load_questions()
-#     if not questions:
-#         msg = "Hakuna maswali yaliyoandaliwa."
-#         msg_url = get_prompt_audio_url(msg, "sw")
-#         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
-# <Response><Play>{msg_url}</Play><Hangup/></Response>""")
-
-#     intro1 = "Habari. Huu ni utafiti wa maswali."
-#     intro2 = "Tafadhali jibu kila swali baada ya kusikiliza."
-
-#     intro1_url = get_prompt_audio_url(intro1, "sw")
-#     intro2_url = get_prompt_audio_url(intro2, "sw")
-
-#     q1_text = questions[0]
-#     q1_url = get_prompt_audio_url(q1_text, "sw")
-
-#     lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
-
-#     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-# <Response>
-#   <Play>{intro1_url}</Play>
-#   <Pause length="1"/>
-#   <Play>{intro2_url}</Play>
-#   <Pause length="1"/>
-
-#   <Gather input="speech" timeout="{GATHER_TIMEOUT}" speechTimeout="{SPEECH_TIMEOUT}"
-#           {lang_attr}
-#           action="{PUBLIC_BASE_URL}/next?q=1" method="POST">
-#     <Play>{q1_url}</Play>
-#   </Gather>
-
-#   <Redirect method="POST">{PUBLIC_BASE_URL}/next?q=1</Redirect>
-# </Response>"""
-#     return twiml(xml)
-
 @app.route("/start", methods=["POST"])
 def start():
-    questions = load_questions()
+
+    questions = load_structured_questions()
+
     if not questions:
         msg = "Hakuna maswali yaliyoandaliwa."
         msg_url = get_prompt_audio_url(msg, "sw")
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response><Play>{msg_url}</Play><Hangup/></Response>""")
 
-    # Play first 2 lines as greeting/instructions
     intro_xml = ""
 
     for i in range(min(2, len(questions))):
-        intro_url = get_prompt_audio_url(questions[i], "sw")
+        intro_text = questions[i]["question"]
+        intro_url = get_prompt_audio_url(intro_text, "sw")
         intro_xml += f"<Play>{intro_url}</Play><Pause length='1'/>"
 
-    # If there are no real questions after greeting
     if len(questions) <= 2:
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    {intro_xml}
-    <Hangup/>
+{intro_xml}
+<Hangup/>
 </Response>""")
 
-    # First real question (index 2)
-    first_question = questions[2]
+    first_question = questions[2]["question"]
     q_url = get_prompt_audio_url(first_question, "sw")
-
-    lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-    {intro_xml}
+{intro_xml}
 
-    <Gather input="speech"
-            timeout="{GATHER_TIMEOUT}"
-            speechTimeout="{SPEECH_TIMEOUT}"
-            {lang_attr}
-            action="{PUBLIC_BASE_URL}/next?q=3"
-            method="POST">
-        <Play>{q_url}</Play>
-    </Gather>
+<Gather input="speech"
+        timeout="{GATHER_TIMEOUT}"
+        speechTimeout="{SPEECH_TIMEOUT}"
+        action="{PUBLIC_BASE_URL}/next?q=3"
+        method="POST">
 
-    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q=3</Redirect>
+    <Play>{q_url}</Play>
+
+</Gather>
+
+<Redirect method="POST">{PUBLIC_BASE_URL}/next?q=3</Redirect>
 </Response>"""
 
     return twiml(xml)
-
-
-@app.route("/next", methods=["POST"])
+    
+@app.route("/next", methods=["POST","GET"])
 def next_question():
-    questions = load_questions()
-    q = int(request.args.get("q", "0"))
 
-    call_sid = request.form.get("CallSid", "")
-    speech = (request.form.get("SpeechResult") or "").strip()
+    questions = load_structured_questions()
+
+    try:
+        q = int(request.args.get("q", "0"))
+    except:
+        q = 0
+
+    call_sid = request.values.get("CallSid", "")
+    speech = (request.values.get("SpeechResult") or "").strip()
 
     if call_sid and looks_like_real_speech(speech):
         state = load_participants()
@@ -853,33 +817,125 @@ def next_question():
         if pid:
             mark_engaged(state, pid)
             save_participants(state)
-            log(f"ENGAGED=True for participant {pid} | CallSid={call_sid} | Speech='{speech[:60]}'")
+            log(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
 
     if q >= len(questions):
         bye = "Asante. Kwaheri."
         bye_url = get_prompt_audio_url(bye, "sw")
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response><Play>{bye_url}</Play><Hangup/></Response>""")
-
-    question_text = questions[q]
-    question_url = get_prompt_audio_url(question_text, "sw")
-
-    next_q = q + 1
-    lang_attr = f'language="{SPEECH_LANGUAGE}"' if SPEECH_LANGUAGE else ""
-
-    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Gather input="speech" timeout="{GATHER_TIMEOUT}" speechTimeout="{SPEECH_TIMEOUT}"
-          {lang_attr}
-          action="{PUBLIC_BASE_URL}/next?q={next_q}" method="POST">
-    <Play>{question_url}</Play>
-  </Gather>
+    <Play>{bye_url}</Play>
+    <Hangup/>
+</Response>""")
 
-  <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={next_q}</Redirect>
-</Response>"""
-    return twiml(xml)
+    question = questions[q]
 
+    # ---------------- MCQ / MCQO ----------------
+    if question["type"] in ["mcq","mcqo"]:
 
+        q_text = question["question"]
+
+        options_text = ""
+        for i, opt in enumerate(question["options"], start=1):
+            options_text += f"Bonyeza {i} kwa {opt}. "
+
+        full_q = f"{q_text}. {options_text}"
+        q_url = get_prompt_audio_url(full_q, "sw")
+
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+
+<Gather input="dtmf"
+        numDigits="1"
+        timeout="6"
+        action="{PUBLIC_BASE_URL}/mcq-handler?q={q}"
+        method="POST">
+
+    <Play>{q_url}</Play>
+
+</Gather>
+
+<Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q}</Redirect>
+
+</Response>""")
+
+    # ---------------- OPEN ----------------
+    else:
+
+        q_text = question["question"]
+        q_url = get_prompt_audio_url(q_text, "sw")
+
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+
+<Gather input="speech"
+        timeout="{GATHER_TIMEOUT}"
+        speechTimeout="{SPEECH_TIMEOUT}"
+        action="{PUBLIC_BASE_URL}/next?q={q+1}"
+        method="POST">
+
+    <Play>{q_url}</Play>
+
+</Gather>
+
+<Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+
+</Response>""")
+    
+@app.route("/mcq-handler", methods=["POST"])
+def mcq_handler():
+
+    questions = load_structured_questions()
+
+    q = int(request.args.get("q", "0"))
+    digit = request.form.get("Digits", "")
+
+    log(f"MCQ Input Received | Q={q} | Digit={digit}")
+
+    # Get current question
+    if q >= len(questions):
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+</Response>""")
+
+    question = questions[q]
+
+    # -------------------------------------------------
+    # ONLY IF MCQO AND user presses 3 → go to speech
+    # -------------------------------------------------
+    if question["type"] == "mcqo" and digit == "3":
+
+        prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
+        prompt_url = get_prompt_audio_url(prompt, "sw")
+
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+
+<Gather input="speech"
+        timeout="{GATHER_TIMEOUT}"
+        speechTimeout="{SPEECH_TIMEOUT}"
+        action="{PUBLIC_BASE_URL}/next?q={q+1}"
+        method="POST">
+
+    <Play>{prompt_url}</Play>
+
+</Gather>
+
+<Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+
+</Response>""")
+
+    # -------------------------------------------------
+    # NORMAL MCQ OR any other digit → move ahead
+    # -------------------------------------------------
+    else:
+
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+</Response>""")
+    
 @app.route("/call-status", methods=["POST"])
 def call_status():
     call_sid = request.form.get("CallSid", "")
