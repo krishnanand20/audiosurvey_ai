@@ -811,6 +811,7 @@ def next_question():
     call_sid = request.values.get("CallSid", "")
     speech = (request.values.get("SpeechResult") or "").strip()
 
+    # ---------------- MARK ENGAGED ----------------
     if call_sid and looks_like_real_speech(speech):
         state = load_participants()
         pid, _ = find_participant_by_callsid(state, call_sid)
@@ -819,6 +820,25 @@ def next_question():
             save_participants(state)
             log(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
 
+    # ---------------- SAVE OPEN RESPONSE ----------------
+    # This saves spoken answer BEFORE moving to next question
+    if speech and q > 0:
+
+        prev_q = q - 1
+
+        if prev_q < len(questions):
+
+            prev_question = questions[prev_q]
+
+            if prev_question["type"] == "open":
+
+                if "responses" not in session:
+                    session["responses"] = {}
+
+                session["responses"][f"Q{prev_q}_response"] = speech
+
+
+    # ---------------- SURVEY END ----------------
     if q >= len(questions):
         bye = "Asante. Kwaheri."
         bye_url = get_prompt_audio_url(bye, "sw")
@@ -827,6 +847,7 @@ def next_question():
     <Play>{bye_url}</Play>
     <Hangup/>
 </Response>""")
+
 
     question = questions[q]
 
@@ -885,37 +906,46 @@ def next_question():
 @app.route("/mcq-handler", methods=["POST"])
 def mcq_handler():
 
-    questions = load_structured_questions()
-
     q = int(request.args.get("q", "0"))
     digit = request.form.get("Digits", "")
 
-    log(f"MCQ Input Received | Q={q} | Digit={digit}")
-
-    # Get current question
-    if q >= len(questions):
-        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
-</Response>""")
-
+    questions = load_structured_questions()
     question = questions[q]
 
-    # -------------------------------------------------
-    # ONLY IF MCQO AND user presses 3 → go to speech
-    # -------------------------------------------------
-    if question["type"] == "mcqo" and digit == "3":
+    log(f"MCQ Input Received | Q={q} | Digit={digit}")
 
-        prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
-        prompt_url = get_prompt_audio_url(prompt, "sw")
+    if "responses" not in session:
+        session["responses"] = {}
 
-        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+    # -----------------------------
+    # IF DIGIT = 1 or 2 or 3
+    # -----------------------------
+    if digit in ["1","2","3"]:
+
+        try:
+            selected_option = question["options"][int(digit)-1]
+        except:
+            selected_option = ""
+
+        # SAVE SELECTED TEXT
+        session["responses"][f"Q{q}_response"] = selected_option
+
+
+        # -----------------------------
+        # IF MCQO AND 3 → ASK SPEECH
+        # -----------------------------
+        if question["type"] == "mcqo" and digit == "3":
+
+            prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
+            prompt_url = get_prompt_audio_url(prompt, "sw")
+
+            return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
 
 <Gather input="speech"
         timeout="{GATHER_TIMEOUT}"
         speechTimeout="{SPEECH_TIMEOUT}"
-        action="{PUBLIC_BASE_URL}/next?q={q+1}"
+        action="{PUBLIC_BASE_URL}/other-handler?q={q}"
         method="POST">
 
     <Play>{prompt_url}</Play>
@@ -926,12 +956,28 @@ def mcq_handler():
 
 </Response>""")
 
-    # -------------------------------------------------
-    # NORMAL MCQ OR any other digit → move ahead
-    # -------------------------------------------------
-    else:
+    # -----------------------------
+    # OTHERWISE MOVE FORWARD
+    # -----------------------------
+    return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+</Response>""")
 
-        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+@app.route("/other-handler", methods=["POST"])
+def other_handler():
+
+    q = int(request.args.get("q", "0"))
+    speech = (request.values.get("SpeechResult") or "").strip()
+
+    if speech:
+
+        if "responses" not in session:
+            session["responses"] = {}
+
+        session["responses"][f"Q{q}_other"] = speech
+
+    return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
 </Response>""")
