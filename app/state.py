@@ -111,13 +111,14 @@ def can_call(state: Dict[str, Any], participant_id: str, force: bool = False) ->
     if int(p.get("attempts", 0)) >= MAX_ATTEMPTS:
         return False
 
-    # 🚨 HARD RULE → MUST BE SCHEDULED
+    # 🚨 FORCE MODE (Dial Now)
+    if force:
+        return True
+
+    # 🚨 NORMAL MODE MUST BE SCHEDULED
     sched_utc = p.get("scheduled_time_utc")
     if not sched_utc:
         return False
-
-    if force:
-        return True
 
     try:
         sched_dt = datetime.fromisoformat(sched_utc.replace("Z", ""))

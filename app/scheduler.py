@@ -62,7 +62,7 @@ def run_once(force: bool = False) -> None:
             continue
 
         # Normal behavior uses can_call(), forced bypasses schedule/retry gating
-        if not force and not can_call(state, participant_id):
+        if not can_call(state, participant_id, force=force):
             continue
 
         # If force=True, still respect can_call's "max attempts" rule indirectly:

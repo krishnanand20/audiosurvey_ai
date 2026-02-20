@@ -459,6 +459,19 @@ def _render_login_page(err: str = "") -> str:
 app = Flask(__name__)
 app.register_blueprint(dashboard_bp)
 
+@app.before_first_request
+def start_background_services():
+    global scheduler_started
+
+    if not scheduler_started:
+        print("🚀 Starting scheduler ONLY ONCE")
+        start_scheduler_in_background(interval_sec=15)
+
+        t = Thread(target=process_pending_recordings, daemon=True)
+        t.start()
+
+        scheduler_started = True
+
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "CHANGE_ME_NOW")
 
 app.config.update(
@@ -1044,10 +1057,6 @@ if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "serve"
 
     if mode == "serve":
-        start_scheduler_in_background(interval_sec=15)
-        # Start background ML worker
-        t = Thread(target=process_pending_recordings, daemon=True)
-        t.start()
         app.run(host="0.0.0.0", port=5050, debug=False, use_reloader=False)
 
     elif mode == "schedule":
