@@ -461,10 +461,12 @@ app.register_blueprint(dashboard_bp)
 
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "CHANGE_ME_NOW")
 
+is_https = PUBLIC_BASE_URL.startswith("https://")
+
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    SESSION_COOKIE_SECURE=True,   # ngrok is HTTPS
+    SESSION_COOKIE_SECURE=is_https,   # AUTO SWITCH
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
 )
 
@@ -718,11 +720,20 @@ def load_structured_questions():
 def health():
     return "ok", 200
 
+@app.route("/admin/dial_now_run", methods=["GET"])
+def admin_dial_now_run():
+
+    if session.pop("dial_trigger", None):
+
+        run_once(force=True)
+        return redirect("/admin?msg=Dial+Now+triggered")
+
+    return redirect("/admin")
 
 @app.route("/admin/dial_now", methods=["POST"])
 def admin_dial_now():
-    run_once(force=True)
-    return redirect("/admin?msg=Dial+Now+triggered")
+    session["dial_trigger"] = True
+    return redirect("/admin/dial_now_run")
 
 
 # --------------------------
@@ -797,7 +808,7 @@ def start():
 </Response>"""
 
     return twiml(xml)
-    
+
 @app.route("/next", methods=["POST","GET"])
 def next_question():
 
@@ -820,9 +831,9 @@ def next_question():
             save_participants(state)
             log(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
 
+
     # ---------------- SAVE OPEN RESPONSE ----------------
-    # This saves spoken answer BEFORE moving to next question
-    if speech and q > 0:
+    if speech and looks_like_real_speech(speech) and q > 0:
 
         prev_q = q - 1
 
@@ -832,16 +843,26 @@ def next_question():
 
             if prev_question["type"] == "open":
 
-                if "responses" not in session:
-                    session["responses"] = {}
+                state = load_participants()
+                pid, _ = find_participant_by_callsid(state, call_sid)
 
-                session["responses"][f"Q{prev_q}_response"] = speech
+                if pid:
+
+                    if "responses" not in state[pid]:
+                        state[pid]["responses"] = {}
+
+                    # SAVE SPOKEN TEXT
+                    state[pid]["responses"][f"Q{prev_q}_response"] = speech
+                    save_participants(state)
+
+                    log(f"OPEN Answer Saved Q{prev_q} = {speech}")
 
 
     # ---------------- SURVEY END ----------------
     if q >= len(questions):
         bye = "Asante. Kwaheri."
         bye_url = get_prompt_audio_url(bye, "sw")
+
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Play>{bye_url}</Play>
@@ -850,6 +871,7 @@ def next_question():
 
 
     question = questions[q]
+
 
     # ---------------- MCQ / MCQO ----------------
     if question["type"] in ["mcq","mcqo"]:
@@ -880,6 +902,7 @@ def next_question():
 
 </Response>""")
 
+
     # ---------------- OPEN ----------------
     else:
 
@@ -902,44 +925,87 @@ def next_question():
 <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
 
 </Response>""")
-    
+
 @app.route("/mcq-handler", methods=["POST"])
 def mcq_handler():
 
     q = int(request.args.get("q", "0"))
     digit = request.form.get("Digits", "")
+    call_sid = request.values.get("CallSid", "")
 
     questions = load_structured_questions()
     question = questions[q]
 
     log(f"MCQ Input Received | Q={q} | Digit={digit}")
 
-    if "responses" not in session:
-        session["responses"] = {}
+    # -----------------------------
+    # LOAD STATE
+    # -----------------------------
+    state = load_participants()
+    pid, _ = find_participant_by_callsid(state, call_sid)
+
+    if not pid:
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+</Response>""")
+
+    # Ensure response dict exists
+    if "responses" not in state[pid]:
+        state[pid]["responses"] = {}
 
     # -----------------------------
-    # IF DIGIT = 1 or 2 or 3
+    # DIGIT PRESSED
     # -----------------------------
-    if digit in ["1","2","3"]:
+    if digit in ["1", "2", "3"]:
 
         try:
             selected_option = question["options"][int(digit)-1]
         except:
             selected_option = ""
 
-        # SAVE SELECTED TEXT
-        session["responses"][f"Q{q}_response"] = selected_option
-
-
         # -----------------------------
-        # IF MCQO AND 3 → ASK SPEECH
+        # NORMAL MCQ
         # -----------------------------
-        if question["type"] == "mcqo" and digit == "3":
+        if question["type"] == "mcq":
 
-            prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
-            prompt_url = get_prompt_audio_url(prompt, "sw")
+            state[pid]["responses"][f"Q{q}_response"] = selected_option
+            save_participants(state)
 
             return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+</Response>""")
+
+
+        # -----------------------------
+        # MCQO
+        # -----------------------------
+        if question["type"] == "mcqo":
+
+            # YES / NO
+            if digit in ["1", "2"]:
+                state[pid]["responses"][f"Q{q}_response"] = selected_option
+                save_participants(state)
+
+                return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+</Response>""")
+
+            # -----------------------------
+            # OTHER → ASK SPEECH
+            # -----------------------------
+            if digit == "3":
+
+                # Save that OTHER was selected first
+                state[pid]["responses"][f"Q{q}_response"] = "Other"
+                save_participants(state)
+
+                prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
+                prompt_url = get_prompt_audio_url(prompt, "sw")
+
+                return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
 
 <Gather input="speech"
@@ -957,7 +1023,7 @@ def mcq_handler():
 </Response>""")
 
     # -----------------------------
-    # OTHERWISE MOVE FORWARD
+    # FALLBACK
     # -----------------------------
     return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -969,41 +1035,33 @@ def other_handler():
 
     q = int(request.args.get("q", "0"))
     speech = (request.values.get("SpeechResult") or "").strip()
+    call_sid = request.values.get("CallSid", "")
 
-    if speech:
+    if speech and looks_like_real_speech(speech):
 
-        if "responses" not in session:
-            session["responses"] = {}
+        state = load_participants()
+        pid, _ = find_participant_by_callsid(state, call_sid)
 
-        session["responses"][f"Q{q}_other"] = speech
+        if pid:
+
+            if "responses" not in state[pid]:
+                state[pid]["responses"] = {}
+
+            # 🔴 IMPORTANT: OVERWRITE RESPONSE
+            state[pid]["responses"][f"Q{q}_response"] = speech
+
+            save_participants(state)
+
+            log(f"MCQO OTHER Saved Q{q} = {speech}")
 
     return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
 </Response>""")
     
-@app.route("/call-status", methods=["POST"])
-def call_status():
-    call_sid = request.form.get("CallSid", "")
-    call_status_val = (request.form.get("CallStatus") or "").lower().strip()
-    log(f"CALL STATUS HIT | CallSid={call_sid} | CallStatus={call_status_val}")
-
-    state = load_participants()
-    pid, p = find_participant_by_callsid(state, call_sid)
-    if not pid:
-        return ("ok", 200)
-
-    mark_call_result(state, pid, call_status_val)
-
-    engaged = bool(p.get("engaged", False)) if p else False
-    if call_status_val == "completed" and not engaged:
-        state[pid]["status"] = "pending"
-
-    save_participants(state)
-    return ("ok", 200)
-
 @app.route("/recording-done", methods=["POST"])
 def recording_done():
+
     call_sid = request.form.get("CallSid", "unknown_call")
     recording_url = request.form.get("RecordingUrl")
     rec_status = (request.form.get("RecordingStatus") or "").lower()
@@ -1027,7 +1085,7 @@ def recording_done():
     engaged = bool(p.get("engaged", False)) if p else False
     last_call_status = (p.get("last_call_status") or "").lower() if p else ""
 
-    # Skip failed calls
+    # ---------------- SKIP FAILED ----------------
     if known_participant:
         if last_call_status in {"no-answer", "busy", "failed", "canceled"}:
             log("Skip pipeline: retryable failure.")
@@ -1037,12 +1095,9 @@ def recording_done():
             log("Skip pipeline: engaged=False.")
             return ("ok", 200)
 
-    # --------------------------
-    # Download recording WAV
-    # --------------------------
+    # ---------------- DOWNLOAD AUDIO ----------------
     wav_url = recording_url + ".wav"
     base = safe_base(call_sid)
-
     audio_path = os.path.join(AUDIO_DIR, base + "_FULLCALL.wav")
 
     try:
@@ -1056,18 +1111,20 @@ def recording_done():
         log(f"Failed to download recording: {e}")
         return ("ok", 200)
 
-    # --------------------------
-    # Queue for background ML processing
-    # --------------------------
+    # ---------------- QUEUE FOR BACKGROUND PROCESSING ----------------
     if known_participant:
+
+        # ❗ DO NOT TOUCH RESPONSES HERE
+        # They are already saved during IVR in participants.json
+
         state[participant_id]["processing_status"] = "pending"
         state[participant_id]["audio_path"] = audio_path
         state[participant_id]["recording_url"] = recording_url
+
         save_participants(state)
 
     log(f"Recording saved. Queued for background processing. File={audio_path}")
 
-    # Log minimal event
     log_call_event({
         "timestamp_utc": datetime.utcnow().isoformat(),
         "participant_id": participant_id or "",
