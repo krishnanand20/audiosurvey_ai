@@ -1,4 +1,6 @@
 # app/twilio_handler.py
+
+global scheduler_started
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -38,6 +40,8 @@ from app.tts import text_to_english_audio
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 IVR_AUDIO_DIR = os.path.join(BASE_DIR, "data", "ivr_audio")
+scheduler_started = False
+worker_started = False
 
 
 # --------------------------
@@ -307,7 +311,6 @@ def _load_users_from_config() -> dict:
     for name, meta in users.items():
         out[str(name).lower()] = {"password_hash": (meta or {}).get("password_hash", "")}
     return out
-
 
 def _verify_user(users: dict, username: str, password: str) -> bool:
     u = users.get((username or "").lower())
@@ -719,12 +722,6 @@ def health():
     return "ok", 200
 
 
-@app.route("/admin/dial_now", methods=["POST"])
-def admin_dial_now():
-    run_once(force=True)
-    return redirect("/admin?msg=Dial+Now+triggered")
-
-
 # --------------------------
 # INBOUND CALL ENTRYPOINT
 # --------------------------
@@ -1035,6 +1032,22 @@ def recording_done():
 
     return ("ok", 200)
 
+def start_background_services():
+
+    global scheduler_started
+    global worker_started
+
+    if not scheduler_started:
+        start_scheduler_in_background(interval_sec=15)
+        scheduler_started = True
+        print("✅ Scheduler started once")
+
+    if not worker_started:
+        t = Thread(target=process_pending_recordings, daemon=True)
+        t.start()
+        worker_started = True
+        print("✅ Worker started once")
+
 # --------------------------
 # CLI
 # --------------------------
@@ -1044,10 +1057,7 @@ if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "serve"
 
     if mode == "serve":
-        start_scheduler_in_background(interval_sec=15)
-        # Start background ML worker
-        t = Thread(target=process_pending_recordings, daemon=True)
-        t.start()
+        start_background_services()
         app.run(host="0.0.0.0", port=5050, debug=False, use_reloader=False)
 
     elif mode == "schedule":

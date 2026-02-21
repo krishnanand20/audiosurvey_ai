@@ -1,8 +1,8 @@
-OPEN|Maswali kuhusu Video ya Kupanga Watoto Vipindi 1 hadi 3. Maelekezo: Tafadhali jibu maswali kwa ukweli. Hakuna jibu sahihi au baya. Baadhi ya maswali ni kuhusu video ulizotazama. Mengine ni kuhusu maisha na maoni yako.
+OPEN|Maswali kuhusu Video ya MADO na Zamba Kupanga Watoto episode 3. Tafadhali jibu  maswali kwa ukweli. Hakuna jibu sahihi au Si sahihi. Maswali ni kuhusu video ulizotazama. Mengine ni kuhusu maisha na maoni yako.
 
-OPEN|Tafadhali sema jina lako la kwanza na la mwisho.
-OPEN|Tafadhali sema anwani yako kamili.
-OPEN|Tafadhali sema tarehe yako ya kuzaliwa.
+OPEN|Tafadhali sema jina lako la kwanza na la mwisho. Yaani, first and last name.
+OPEN|Tafadhali sema anwani yako kamili. Yaani, address.
+OPEN|Tafadhali sema tarehe yako ya kuzaliwa. Yaani, Birthday.
 
 OPEN|sehemu ya 1: vipindi 1 & 2 - (baada ya kutazama)
 
