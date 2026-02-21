@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from twilio.rest import Client
 
+from app import state
 from app.state import (
     load_participants,
     save_participants,
@@ -62,7 +63,8 @@ def run_once(force: bool = False) -> None:
             continue
 
         # Normal behavior uses can_call(), forced bypasses schedule/retry gating
-        if not force and not can_call(state, participant_id):
+        # NEW (Force-aware eligibility)
+        if not can_call(state, participant_id, force=force):
             continue
 
         # If force=True, still respect can_call's "max attempts" rule indirectly:
@@ -96,11 +98,15 @@ def run_once(force: bool = False) -> None:
 def start_scheduler_in_background(interval_sec: int = 15) -> None:
     def _loop():
         log(f"[Scheduler] started (interval={interval_sec}s)")
+
+        time.sleep(interval_sec)   # 🚨 WAIT FIRST
+
         while True:
             try:
                 run_once(force=False)
             except Exception as e:
                 log(f"[Scheduler ERROR] {repr(e)}")
+
             time.sleep(interval_sec)
 
     t = threading.Thread(target=_loop, daemon=True)

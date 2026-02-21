@@ -1,4 +1,6 @@
 # app/twilio_handler.py
+
+global scheduler_started
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -38,6 +40,8 @@ from app.tts import text_to_english_audio
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 IVR_AUDIO_DIR = os.path.join(BASE_DIR, "data", "ivr_audio")
+scheduler_started = False
+worker_started = False
 
 
 # --------------------------
@@ -185,10 +189,17 @@ def azure_tts_to_file(text: str, out_path: str, voice: str) -> None:
     result = synthesizer.speak_ssml_async(ssml).get()
 
     if result.reason != speechsdk.ResultReason.SynthesizingAudioCompleted:
-        cancellation = speechsdk.CancellationDetails.from_result(result)
-        raise RuntimeError(
-            f"Azure TTS failed: {cancellation.reason} | {cancellation.error_details}"
-        )
+
+        if result.reason == speechsdk.ResultReason.Canceled:
+            cancellation = result.cancellation_details
+            raise RuntimeError(
+                f"Azure TTS canceled: {cancellation.reason} | {cancellation.error_details}"
+            )
+
+        else:
+            raise RuntimeError(
+                f"Azure TTS failed with reason: {result.reason}"
+            )
 
 
 def get_prompt_audio_url(text: str, lang: str) -> str:
@@ -307,7 +318,6 @@ def _load_users_from_config() -> dict:
     for name, meta in users.items():
         out[str(name).lower()] = {"password_hash": (meta or {}).get("password_hash", "")}
     return out
-
 
 def _verify_user(users: dict, username: str, password: str) -> bool:
     u = users.get((username or "").lower())
@@ -575,28 +585,26 @@ def admin_conference_call():
         log(f"Conference ERROR: {type(e).__name__}: {e}")
         return redirect("/admin?msg=Failed+to+start+conference")
 
-
 @app.route("/conference_host", methods=["POST"])
 def conference_host():
+
     room = request.args.get("room")
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Dial>
     <Conference
-      startConferenceOnEnter="true"
+      startConferenceOnEnter="false"
       endConferenceOnExit="false"
       beep="false"
-      record="record-from-start"
-      recordingStatusCallback="{PUBLIC_BASE_URL}/recording-done"
-      recordingStatusCallbackMethod="POST"
-      recordingStatusCallbackEvent="completed">
+      waitUrl="{PUBLIC_BASE_URL}/conference_ivr?room={room}"
+      waitMethod="POST">
       {room}
     </Conference>
   </Dial>
 </Response>"""
-    return twiml(xml)
 
+    return twiml(xml)
 
 @app.route("/conference_join", methods=["POST"])
 def conference_join():
@@ -608,15 +616,12 @@ def conference_join():
     <Conference
       startConferenceOnEnter="false"
       endConferenceOnExit="false"
-      beep="false"
-      waitUrl="{PUBLIC_BASE_URL}/silence"
-      waitMethod="POST">
+      beep="false">
       {room}
     </Conference>
   </Dial>
 </Response>"""
     return twiml(xml)
-
 
 @app.route("/silence", methods=["POST", "GET"])
 def silence():
@@ -625,25 +630,65 @@ def silence():
   <Pause length="60"/>
 </Response>""")
 
-
 @app.route("/conference_ivr", methods=["POST"])
 def conference_ivr():
-    questions = load_structured_questions()
-    xml = '<?xml version="1.0" encoding="UTF-8"?><Response>'
+
+    room = request.args.get("room")
 
     intro = "Habari. Huu ni utafiti wa maswali."
     intro_url = get_prompt_audio_url(intro, "sw")
-    xml += f'<Play>{intro_url}</Play>'
-    xml += '<Pause length="1"/>'
 
-    for q in questions:
-        q_url = get_prompt_audio_url(q["question"], "sw")
-        xml += f'<Play>{q_url}</Play>'
-        xml += '<Pause length="2"/>'
+    xml = f"""
+<Response>
 
-    xml += '</Response>'
+<Play>{intro_url}</Play>
+
+<Redirect>
+{PUBLIC_BASE_URL}/conference_ivr_next?room={room}&q=0
+</Redirect>
+
+</Response>
+"""
+
     return twiml(xml)
 
+@app.route("/conference_ivr_next", methods=["POST","GET"])
+def conference_ivr_next():
+
+    room = request.values.get("room")
+    q = int(request.values.get("q","0"))
+
+    questions = load_structured_questions()
+
+    # finished IVR → admit host + moderator
+    if q >= len(questions):
+
+        return twiml(f"""
+<Response>
+<Dial>
+<Conference
+startConferenceOnEnter="true"
+endConferenceOnExit="false"
+beep="false">
+{room}
+</Conference>
+</Dial>
+</Response>
+""")
+
+    q_url = get_prompt_audio_url(questions[q]["question"], "sw")
+
+    return twiml(f"""
+<Response>
+
+<Play>{q_url}</Play>
+
+<Redirect method="POST">
+{PUBLIC_BASE_URL}/conference_ivr_next?room={room}&q={q+1}
+</Redirect>
+
+</Response>
+""")
 
 # --------------------------
 # Helpers
@@ -717,12 +762,6 @@ def load_structured_questions():
 @app.route("/health", methods=["GET"])
 def health():
     return "ok", 200
-
-
-@app.route("/admin/dial_now", methods=["POST"])
-def admin_dial_now():
-    run_once(force=True)
-    return redirect("/admin?msg=Dial+Now+triggered")
 
 
 # --------------------------
@@ -1035,6 +1074,22 @@ def recording_done():
 
     return ("ok", 200)
 
+def start_background_services():
+
+    global scheduler_started
+    global worker_started
+
+    if not scheduler_started:
+        start_scheduler_in_background(interval_sec=15)
+        scheduler_started = True
+        print("✅ Scheduler started once")
+
+    if not worker_started:
+        t = Thread(target=process_pending_recordings, daemon=True)
+        t.start()
+        worker_started = True
+        print("✅ Worker started once")
+
 # --------------------------
 # CLI
 # --------------------------
@@ -1044,10 +1099,7 @@ if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "serve"
 
     if mode == "serve":
-        start_scheduler_in_background(interval_sec=15)
-        # Start background ML worker
-        t = Thread(target=process_pending_recordings, daemon=True)
-        t.start()
+        start_background_services()
         app.run(host="0.0.0.0", port=5050, debug=False, use_reloader=False)
 
     elif mode == "schedule":

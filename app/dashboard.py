@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 
 from flask import Blueprint, request, redirect, session
 
+
 from app.state import (
     load_participants,
     save_participants,
@@ -17,6 +18,7 @@ from app.state import (
     is_paused,
 )
 from app.utils import schedule_participant
+from app.scheduler import run_once
 
 dashboard_bp = Blueprint("dashboard", __name__)
 NY_TZ = ZoneInfo("America/New_York")
@@ -94,11 +96,12 @@ def admin_home():
     total = len(state)
     counts = {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0}
     for _, p in state.items():
-        st = (p.get("status") or "pending").lower()
+        st = (p.get("status") or "idle").lower()
         if st in counts:
             counts[st] += 1
         else:
             counts["pending"] += 1
+
 
     rows_html = []
     for pid, p in sorted(state.items(), key=lambda x: str(x[0])):
@@ -477,12 +480,25 @@ def admin_upload_contacts():
 
     state = load_participants()
     count = 0
+
     for row in reader:
         pid = (row.get("participant_id") or "").strip()
         phone = (row.get("phone_e164") or "").strip()
         if not pid or not phone:
             continue
+
         upsert_participant(state, pid, phone)
+
+        # 🔒 VERY IMPORTANT → uploaded participants must NOT be callable yet
+        state[pid]["status"] = "idle"
+        state[pid]["scheduled_time_local"] = None
+        state[pid]["scheduled_time_utc"] = None
+        state[pid]["last_call_time"] = None
+        state[pid]["attempts"] = 0
+        state[pid]["engaged"] = False
+        state[pid]["last_call_sid"] = None
+        state[pid]["last_call_status"] = None
+
         count += 1
 
     save_participants(state)
@@ -539,13 +555,7 @@ def admin_resume():
     set_paused(False)
     return redirect("/admin?msg=Started")
 
-
 @dashboard_bp.route("/admin/dial_now", methods=["POST"])
 def admin_dial_now():
-    try:
-        from app.scheduler import run_once
-        run_once()
-    except Exception:
-        pass
-
+    run_once(force=True)
     return redirect("/admin?msg=Dial+Now+triggered")

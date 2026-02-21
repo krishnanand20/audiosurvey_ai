@@ -17,4 +17,8 @@ def schedule_participant(participant_id: str, local_time_str: str) -> None:
     state[participant_id]["scheduled_time_local"] = local_dt.isoformat()
     state[participant_id]["scheduled_time_utc"] = utc_dt.isoformat().replace("+00:00", "Z")
 
+    # Once scheduled, it's eligible in normal mode
+    if state[participant_id].get("status") not in {"completed", "failed"}:
+        state[participant_id]["status"] = "pending"
+
     save_participants(state)

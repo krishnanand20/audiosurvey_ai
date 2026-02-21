@@ -100,45 +100,38 @@ def upsert_participant(state: Dict[str, Any], participant_id: str, phone_e164: s
         state[participant_id]["phone_e164"] = phone_e164
 
 def can_call(state: Dict[str, Any], participant_id: str, force: bool = False) -> bool:
-    """
-    Normal mode (force=False):
-      - blocks completed/failed
-      - blocks attempts >= MAX_ATTEMPTS
-      - requires schedule if set (now >= scheduled_time_utc)
-      - requires retry gap
-
-    Force mode (force=True):
-      - STILL blocks completed/failed
-      - STILL blocks attempts >= MAX_ATTEMPTS
-      - IGNORE schedule + retry gap (call immediately)
-    """
     p = state.get(participant_id)
     if not p:
-        return True
+        return False
 
+    # Never call these again
     if p.get("status") in {"completed", "failed"}:
         return False
 
     if int(p.get("attempts", 0)) >= MAX_ATTEMPTS:
         return False
 
+    # Force mode ignores scheduling + retry gap
     if force:
-        return True  # ✅ ignore schedule + retry gap
+        return True
 
-    # --- Scheduling gate ---
+    # Normal mode MUST be scheduled
     sched_utc = p.get("scheduled_time_utc")
-    if sched_utc:
-        try:
-            sched_dt = datetime.fromisoformat(sched_utc.replace("Z", ""))
-            if _now_utc() < sched_dt:
-                return False
-        except Exception:
-            pass
+    if not sched_utc:
+        return False
 
-    # --- Retry gap gate ---
+    try:
+        sched_dt = datetime.fromisoformat(sched_utc.replace("Z", ""))
+        if _now_utc() < sched_dt:
+            return False
+    except Exception:
+        return False
+
+    # Retry gap check
     last_time = p.get("last_call_time")
     if not last_time:
         return True
+
     try:
         last_dt = datetime.fromisoformat(last_time)
     except Exception:
@@ -146,7 +139,30 @@ def can_call(state: Dict[str, Any], participant_id: str, force: bool = False) ->
 
     return (_now_utc() - last_dt) >= RETRY_GAP
 
-    # ---- Retry gap gate ----
+    # Never call these again
+    if p.get("status") in {"completed", "failed"}:
+        return False
+
+    if int(p.get("attempts", 0)) >= MAX_ATTEMPTS:
+        return False
+
+    # Force mode ignores scheduling + retry gap
+    if force:
+        return True
+
+    # Normal mode MUST be scheduled
+    sched_utc = p.get("scheduled_time_utc")
+    if not sched_utc:
+        return False
+
+    try:
+        sched_dt = datetime.fromisoformat(sched_utc.replace("Z", ""))
+        if _now_utc() < sched_dt:
+            return False
+    except Exception:
+        return False
+
+    # Retry gap check
     last_time = p.get("last_call_time")
     if not last_time:
         return True
