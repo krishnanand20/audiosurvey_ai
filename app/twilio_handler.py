@@ -2,6 +2,8 @@
 
 global scheduler_started
 from dotenv import load_dotenv
+
+from app import state
 load_dotenv()
 
 import os
@@ -809,8 +811,9 @@ def start():
     if pid:
         if "responses" not in state[pid]:
             state[pid]["responses"] = {}
-            save_participants(state)
-            log(f"Initialized response store for participant {pid}")
+        state[pid]["survey_q_counter"] = 0
+        save_participants(state)
+        log(f"Initialized response store for participant {pid}")
 
     if not questions:
         msg = "Hakuna maswali yaliyoandaliwa."
@@ -1008,14 +1011,18 @@ def mcq_handler():
 
         # NORMAL MCQ
         if question["type"] == "mcq":
-            state[pid]["responses"][f"q{q+1}"] = digit
+            state[pid]["survey_q_counter"] += 1
+            survey_q = state[pid]["survey_q_counter"]
+            state[pid]["responses"][f"q{survey_q}"] = digit
             save_participants(state)
 
         # MCQO
         elif question["type"] == "mcqo":
 
             if digit != "3":
-                state[pid]["responses"][f"q{q+1}"] = digit
+                state[pid]["survey_q_counter"] += 1
+                survey_q = state[pid]["survey_q_counter"]
+                state[pid]["responses"][f"q{survey_q}"] = digit
                 save_participants(state)
 
             else:
