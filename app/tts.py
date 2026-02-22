@@ -2,6 +2,7 @@
 
 import os
 from gtts import gTTS
+from app.logger import logger
 
 def text_to_english_audio(text: str, out_path: str):
     """

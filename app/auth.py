@@ -10,6 +10,7 @@ from functools import wraps
 from flask import request, session, redirect
 
 from werkzeug.security import check_password_hash
+from app.logger import logger
 
 NY_TZ = ZoneInfo("America/New_York")
 

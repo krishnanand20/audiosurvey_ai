@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from typing import Optional
 
 from twilio.rest import Client
+from app.logger import logger
 
 from app.state import (
     load_participants,

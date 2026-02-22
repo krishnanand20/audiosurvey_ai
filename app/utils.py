@@ -2,6 +2,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from app.state import load_participants, save_participants
+from app.logger import logger
 
 NY_TZ = ZoneInfo("America/New_York")
 UTC_TZ = ZoneInfo("UTC")

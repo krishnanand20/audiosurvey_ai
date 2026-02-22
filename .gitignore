@@ -38,3 +38,4 @@ data/state/*.bak_*
 
 # Logs
 *.log
+survey_output.xlsx

@@ -2,6 +2,8 @@
 
 global scheduler_started
 from dotenv import load_dotenv
+
+from app import state
 load_dotenv()
 
 import os
@@ -37,6 +39,7 @@ from app.state import (
 from app.transcribe import transcribe_audio
 from app.translate import translate_to_english_chunked
 from app.tts import text_to_english_audio
+from app.logger import logger
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 IVR_AUDIO_DIR = os.path.join(BASE_DIR, "data", "ivr_audio")
@@ -801,6 +804,16 @@ def voice():
 def start():
 
     questions = load_structured_questions()
+    call_sid = request.values.get("CallSid")
+    state = load_participants()
+    pid, p = find_participant_by_callsid(state, call_sid)
+
+    if pid:
+        if "responses" not in state[pid]:
+            state[pid]["responses"] = {}
+        state[pid]["survey_q_counter"] = 0
+        save_participants(state)
+        log(f"Initialized response store for participant {pid}")
 
     if not questions:
         msg = "Hakuna maswali yaliyoandaliwa."
@@ -856,6 +869,33 @@ def next_question():
 
     call_sid = request.values.get("CallSid", "")
     speech = (request.values.get("SpeechResult") or "").strip()
+
+    state = load_participants()
+    pid, _ = find_participant_by_callsid(state, call_sid)
+
+    if pid:
+
+        if "awaiting_other_for" in state[pid]:
+
+            that_q = state[pid]["awaiting_other_for"]
+
+            if "responses" not in state[pid]:
+                state[pid]["responses"] = {}
+
+            if looks_like_real_speech(speech):
+                state[pid]["responses"][f"q{that_q+1}_other"] = speech
+                log(f"Stored MCQO Other speech for Q{that_q+1}")
+
+            del state[pid]["awaiting_other_for"]
+            save_participants(state)
+
+            return twiml(f"""
+    <Response>
+    <Redirect method="POST">
+    {PUBLIC_BASE_URL}/next?q={q+1}
+    </Redirect>
+    </Response>
+    """)
 
     if call_sid and looks_like_real_speech(speech):
         state = load_participants()
@@ -954,6 +994,44 @@ def mcq_handler():
     q = int(request.args.get("q", "0"))
     digit = request.form.get("Digits", "")
 
+    call_sid = request.form.get("CallSid")
+    state = load_participants()
+    pid, _ = find_participant_by_callsid(state, call_sid)
+
+    if pid:
+        if "responses" not in state[pid]:
+            state[pid]["responses"] = {}
+
+    question = questions[q]
+    
+    if pid:
+
+        if "responses" not in state[pid]:
+            state[pid]["responses"] = {}
+
+        # NORMAL MCQ
+        if question["type"] == "mcq":
+            state[pid]["survey_q_counter"] += 1
+            survey_q = state[pid]["survey_q_counter"]
+            state[pid]["responses"][f"q{survey_q}"] = digit
+            save_participants(state)
+
+        # MCQO
+        elif question["type"] == "mcqo":
+
+            if digit != "3":
+                state[pid]["survey_q_counter"] += 1
+                survey_q = state[pid]["survey_q_counter"]
+                state[pid]["responses"][f"q{survey_q}"] = digit
+                save_participants(state)
+
+            else:
+                log(f"MCQO Other selected for Q{q+1}")
+                state[pid]["awaiting_other_for"] = q
+                save_participants(state)
+
+
+
     log(f"MCQ Input Received | Q={q} | Digit={digit}")
 
     # Get current question
@@ -979,7 +1057,7 @@ def mcq_handler():
 <Gather input="speech"
         timeout="{GATHER_TIMEOUT}"
         speechTimeout="{SPEECH_TIMEOUT}"
-        action="{PUBLIC_BASE_URL}/next?q={q+1}"
+        action="{PUBLIC_BASE_URL}/mcqo-other-handler?q={q}"
         method="POST">
 
     <Play>{prompt_url}</Play>
@@ -1017,8 +1095,54 @@ def call_status():
     if call_status_val == "completed" and not engaged:
         state[pid]["status"] = "pending"
 
+    if call_status_val == "completed":
+        try:
+            from app.export_excel import export_responses_to_excel
+            export_responses_to_excel()
+            log(f"Excel exported for participant {pid}")
+        except Exception as e:
+            log(f"Excel export failed: {e}")
+
     save_participants(state)
     return ("ok", 200)
+
+import pandas as pd
+
+
+@app.route("/admin/export_excel", methods=["GET"])
+def export_excel():
+
+    state = load_participants()
+
+    if not state:
+        return "No participants found", 400
+
+    rows = []
+
+    for pid, pdata in state.items():
+
+        if "responses" not in pdata:
+            continue
+
+        row = {}
+        row["participant_id"] = pid
+
+        for key, value in pdata["responses"].items():
+            row[key] = value
+
+        rows.append(row)
+
+    if not rows:
+        return "No responses found", 400
+
+    df = pd.DataFrame(rows)
+
+    os.makedirs("data/results", exist_ok=True)
+    path = "data/results/ivr_responses.xlsx"
+
+    df.to_excel(path, index=False)
+
+    return f"Excel exported to {path}", 200
 
 @app.route("/recording-done", methods=["POST"])
 def recording_done():

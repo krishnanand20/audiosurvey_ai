@@ -6,6 +6,7 @@ from app.state import load_participants, save_participants, mark_completed
 from app.transcribe import transcribe_audio
 from app.translate import translate_to_english_chunked
 from app.tts import text_to_english_audio
+from app.logger import logger
 
 
 TRANSCRIPTS_DIR = "data/transcripts"

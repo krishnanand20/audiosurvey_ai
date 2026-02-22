@@ -1,6 +1,7 @@
 import os
 import hashlib
 import azure.cognitiveservices.speech as speechsdk
+from app.logger import logger
 
 CACHE_DIR = "data/tts_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
