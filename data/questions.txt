@@ -53,7 +53,7 @@ MCQO|Umewahi kusikia kuwa kupanga watoto husababisha utasa, kutokwa damu nyingi,
 MCQO|Kabla ya leo, uliamini habari za kupanga watoto kutoka kwa wahudumu wa afya?|Ndiyo|Hapana|Nyingine
 
 INFO|sehemu ya 5: afya ya ngono na kinga
-OPEN|Maambukizo ya zinaa STIs hupitishwa kwa ngono. Baadhi yanaweza kusababisha ugonjwa mkubwa kama hayatatibiwa. Mfano ni Ukimwi, Klamidia, Kisonono, Kaswende, Malengelenge sehemu za siri, Trikomonia.
+INFO|Maambukizo ya zinaa STIs hupitishwa kwa ngono. Baadhi yanaweza kusababisha ugonjwa mkubwa kama hayatatibiwa. Mfano ni Ukimwi, Klamidia, Kisonono, Kaswende, Malengelenge sehemu za siri, Trikomonia.
 
 MCQO|Umewahi kuzungumza na mpenzi wako  kuhusu kujikinga na magonjwa ya zinaa?|Ndiyo|Hapana|Nyingine
 MCQO|Unaamini kondomu husaidia kuzuia magonjwa ya zinaa?|Ndiyo|Hapana|Nyingine
