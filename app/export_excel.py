@@ -1,50 +1,36 @@
 import pandas as pd
 from app.state import load_participants
-from app.twilio_handler import load_structured_questions
+from app.logger import logger
+
 
 def export_responses_to_excel():
 
     state = load_participants()
-    questions = load_structured_questions()
 
     rows = []
+    all_keys = set()
 
+    # collect all question keys first
+    for pid, p in state.items():
+        responses = p.get("responses", {})
+        for k in responses.keys():
+            all_keys.add(k)
+
+    all_keys = sorted(list(all_keys))
+
+    # now build uniform rows
     for pid, p in state.items():
 
+        row = {
+            "participant_id": pid
+        }
+
         responses = p.get("responses", {})
-        if not responses:
-            continue
 
-        row = {}
-        row["participant_id"] = pid
-
-        survey_q_counter = 1
-
-        for q in range(len(questions)):
-
-            question = questions[q]
-
-            if question["type"] not in ["mcq","mcqo"]:
-                continue
-
-            digit = responses.get(f"q{q+1}")
-
-            if digit:
-
-                try:
-                    option_text = question["options"][int(digit)-1]
-                except:
-                    option_text = digit
-
-                row[f"Q{survey_q_counter}"] = option_text
-
-            survey_q_counter += 1
+        for k in all_keys:
+            row[k] = responses.get(k, "")
 
         rows.append(row)
-
-    if not rows:
-        print("No responses found!")
-        return
 
     df = pd.DataFrame(rows)
 
