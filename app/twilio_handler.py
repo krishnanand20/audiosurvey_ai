@@ -801,6 +801,15 @@ def voice():
 def start():
 
     questions = load_structured_questions()
+    call_sid = request.values.get("CallSid")
+    state = load_participants()
+    pid, p = find_participant_by_callsid(state, call_sid)
+
+    if pid:
+        if "responses" not in state[pid]:
+            state[pid]["responses"] = {}
+            save_participants(state)
+            log(f"Initialized response store for participant {pid}")
 
     if not questions:
         msg = "Hakuna maswali yaliyoandaliwa."
@@ -954,6 +963,40 @@ def mcq_handler():
     q = int(request.args.get("q", "0"))
     digit = request.form.get("Digits", "")
 
+    call_sid = request.form.get("CallSid")
+    state = load_participants()
+    pid, _ = find_participant_by_callsid(state, call_sid)
+
+    if pid:
+        if "responses" not in state[pid]:
+            state[pid]["responses"] = {}
+
+    question = questions[q]
+    
+    if pid:
+
+        if "responses" not in state[pid]:
+            state[pid]["responses"] = {}
+
+        # NORMAL MCQ
+        if question["type"] == "mcq":
+            state[pid]["responses"][f"q{q+1}"] = digit
+            save_participants(state)
+
+        # MCQO
+        elif question["type"] == "mcqo":
+
+            if digit != "3":
+                state[pid]["responses"][f"q{q+1}"] = digit
+                save_participants(state)
+
+            else:
+                log(f"MCQO Other selected for Q{q+1}")
+                state[pid]["awaiting_other_for"] = q
+                save_participants(state)
+
+
+
     log(f"MCQ Input Received | Q={q} | Digit={digit}")
 
     # Get current question
@@ -979,7 +1022,7 @@ def mcq_handler():
 <Gather input="speech"
         timeout="{GATHER_TIMEOUT}"
         speechTimeout="{SPEECH_TIMEOUT}"
-        action="{PUBLIC_BASE_URL}/next?q={q+1}"
+        action="{PUBLIC_BASE_URL}/mcqo-other-handler?q={q}"
         method="POST">
 
     <Play>{prompt_url}</Play>

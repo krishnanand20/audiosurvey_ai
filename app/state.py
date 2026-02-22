@@ -139,41 +139,6 @@ def can_call(state: Dict[str, Any], participant_id: str, force: bool = False) ->
 
     return (_now_utc() - last_dt) >= RETRY_GAP
 
-    # Never call these again
-    if p.get("status") in {"completed", "failed"}:
-        return False
-
-    if int(p.get("attempts", 0)) >= MAX_ATTEMPTS:
-        return False
-
-    # Force mode ignores scheduling + retry gap
-    if force:
-        return True
-
-    # Normal mode MUST be scheduled
-    sched_utc = p.get("scheduled_time_utc")
-    if not sched_utc:
-        return False
-
-    try:
-        sched_dt = datetime.fromisoformat(sched_utc.replace("Z", ""))
-        if _now_utc() < sched_dt:
-            return False
-    except Exception:
-        return False
-
-    # Retry gap check
-    last_time = p.get("last_call_time")
-    if not last_time:
-        return True
-
-    try:
-        last_dt = datetime.fromisoformat(last_time)
-    except Exception:
-        return True
-
-    return (_now_utc() - last_dt) >= RETRY_GAP
-
 def mark_engaged(state: dict, participant_id: str) -> None:
     p = state.setdefault(participant_id, dict(DEFAULT))
     p["engaged"] = True
