@@ -866,6 +866,33 @@ def next_question():
     call_sid = request.values.get("CallSid", "")
     speech = (request.values.get("SpeechResult") or "").strip()
 
+    state = load_participants()
+    pid, _ = find_participant_by_callsid(state, call_sid)
+
+    if pid:
+
+        if "awaiting_other_for" in state[pid]:
+
+            that_q = state[pid]["awaiting_other_for"]
+
+            if "responses" not in state[pid]:
+                state[pid]["responses"] = {}
+
+            if looks_like_real_speech(speech):
+                state[pid]["responses"][f"q{that_q+1}_other"] = speech
+                log(f"Stored MCQO Other speech for Q{that_q+1}")
+
+            del state[pid]["awaiting_other_for"]
+            save_participants(state)
+
+            return twiml(f"""
+    <Response>
+    <Redirect method="POST">
+    {PUBLIC_BASE_URL}/next?q={q+1}
+    </Redirect>
+    </Response>
+    """)
+
     if call_sid and looks_like_real_speech(speech):
         state = load_participants()
         pid, _ = find_participant_by_callsid(state, call_sid)
@@ -1060,8 +1087,54 @@ def call_status():
     if call_status_val == "completed" and not engaged:
         state[pid]["status"] = "pending"
 
+    if call_status_val == "completed":
+        try:
+            from app.export_excel import export_responses_to_excel
+            export_responses_to_excel()
+            log(f"Excel exported for participant {pid}")
+        except Exception as e:
+            log(f"Excel export failed: {e}")
+
     save_participants(state)
     return ("ok", 200)
+
+import pandas as pd
+
+
+@app.route("/admin/export_excel", methods=["GET"])
+def export_excel():
+
+    state = load_participants()
+
+    if not state:
+        return "No participants found", 400
+
+    rows = []
+
+    for pid, pdata in state.items():
+
+        if "responses" not in pdata:
+            continue
+
+        row = {}
+        row["participant_id"] = pid
+
+        for key, value in pdata["responses"].items():
+            row[key] = value
+
+        rows.append(row)
+
+    if not rows:
+        return "No responses found", 400
+
+    df = pd.DataFrame(rows)
+
+    os.makedirs("data/results", exist_ok=True)
+    path = "data/results/ivr_responses.xlsx"
+
+    df.to_excel(path, index=False)
+
+    return f"Excel exported to {path}", 200
 
 @app.route("/recording-done", methods=["POST"])
 def recording_done():
