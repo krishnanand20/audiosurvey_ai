@@ -1,5 +1,6 @@
 import pandas as pd
 from app.state import load_participants
+from app.logger import logger
 
 
 def export_responses_to_excel():

@@ -5,7 +5,7 @@ import os
 import csv
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
+from app.logger import logger
 from flask import Blueprint, request, redirect, session
 
 

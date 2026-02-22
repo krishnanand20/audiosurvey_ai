@@ -5,6 +5,7 @@ import csv
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from zoneinfo import ZoneInfo
+from app.logger import logger
 
 STATE_DIR = "data/state"
 PARTICIPANTS_PATH = os.path.join(STATE_DIR, "participants.json")

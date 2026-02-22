@@ -37,6 +37,7 @@ from app.state import (
 from app.transcribe import transcribe_audio
 from app.translate import translate_to_english_chunked
 from app.tts import text_to_english_audio
+from app.logger import logger
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 IVR_AUDIO_DIR = os.path.join(BASE_DIR, "data", "ivr_audio")

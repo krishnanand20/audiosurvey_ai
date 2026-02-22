@@ -4,6 +4,7 @@ import time
 import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from app.logger import logger
 
 from twilio.rest import Client
 

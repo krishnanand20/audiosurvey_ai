@@ -3,6 +3,7 @@
 import whisper
 import os
 import json
+from app.logger import logger
 
 model = whisper.load_model("large-v3")
 

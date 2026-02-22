@@ -5,6 +5,7 @@ import json
 import time
 import re
 from googletrans import Translator
+from app.logger import logger
 
 translator = Translator()
 MAX_CHARS = 3000  # safe chunk size for googletrans scraping
