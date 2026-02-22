@@ -1128,48 +1128,21 @@ def export_excel():
         row["participant_id"] = pid
 
         for key, value in pdata["responses"].items():
-            questions = load_structured_questions()
+            row[key] = value
 
-            # Build mapping like:
-            # q1 → {1: option1, 2: option2}
-            mapping = {}
+        rows.append(row)
 
-            survey_q_counter = 0
+    if not rows:
+        return "No responses found", 400
 
-            for q in questions:
+    df = pd.DataFrame(rows)
 
-                if q["type"] in ["mcq","mcqo"]:
+    os.makedirs("data/results", exist_ok=True)
+    path = "data/results/ivr_responses.xlsx"
 
-                    survey_q_counter += 1
-                    opt_map = {}
+    df.to_excel(path, index=False)
 
-                    for idx, opt in enumerate(q.get("options", []), start=1):
-                        opt_map[str(idx)] = opt
-
-                    mapping[f"q{survey_q_counter}"] = opt_map
-
-
-            # Replace digits with meanings
-            for key, value in pdata["responses"].items():
-
-                if key in mapping:
-                    row[key] = mapping[key].get(str(value), value)
-                else:
-                    row[key] = value
-
-                    rows.append(row)
-
-                if not rows:
-                    return "No responses found", 400
-
-                df = pd.DataFrame(rows)
-
-                os.makedirs("data/results", exist_ok=True)
-                path = "data/results/ivr_responses.xlsx"
-
-                df.to_excel(path, index=False)
-
-                return f"Excel exported to {path}", 200
+    return f"Excel exported to {path}", 200
 
 @app.route("/recording-done", methods=["POST"])
 def recording_done():
