@@ -61,7 +61,7 @@ def _build_response_metadata():
 
         survey_q_counter += 1
         q_key = f"q{survey_q_counter}"
-        metadata[q_key] = {"type": q_type}
+        metadata[q_key] = {"type": q_type, "options": q.get("options", [])}
 
         if q_type == "mcqo":
             other_digit = None
@@ -73,6 +73,31 @@ def _build_response_metadata():
             metadata[q_key]["other_digit"] = other_digit
 
     return metadata
+
+
+def _decode_choice_value(value, options):
+    """
+    Convert stored DTMF digit (1/2/3...) to option text for Excel.
+    If value is not a valid digit for these options, keep raw value.
+    """
+    opts = list(options or [])
+    if not opts:
+        return value
+
+    raw = str(value).strip()
+    if not raw:
+        return value
+
+    try:
+        # Support values like "1", 1, or "1.0"
+        digit = int(float(raw))
+    except Exception:
+        return value
+
+    idx = digit - 1
+    if 0 <= idx < len(opts):
+        return opts[idx]
+    return value
 
 
 def _build_export_key_map(metadata):
@@ -137,6 +162,10 @@ def build_export_rows(state, participant_ids=None):
 
         row = {"participant_id": pid}
         for key, value in filtered.items():
+            rule = metadata.get(key, {})
+            q_type = rule.get("type")
+            if q_type in {"mcq", "mcqo"}:
+                value = _decode_choice_value(value, rule.get("options", []))
             row[export_key_map.get(key, key)] = value
         rows.append(row)
 

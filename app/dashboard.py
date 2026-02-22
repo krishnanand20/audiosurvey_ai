@@ -141,7 +141,7 @@ def _participants_rows_html(participants: list[dict]) -> str:
               <form class="inline schedule-form" method="POST" action="/admin/schedule">
                 <input type="hidden" name="participant_id" value="{p["participant_id"]}">
                 <input type="hidden" name="local_time" value="">
-                <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="{p["scheduled_input"]}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
+                <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="{p["scheduled_input"]}" data-initial="{p["scheduled_input"]}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
                 <button class="btn btn-sm btn-primary" type="submit">Set</button>
               </form>
             </td>
@@ -684,7 +684,7 @@ def admin_home():
             <form class="inline schedule-form" method="POST" action="/admin/schedule">
               <input type="hidden" name="participant_id" value="${{pid}}">
               <input type="hidden" name="local_time" value="">
-              <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="${{schedInput}}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
+              <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="${{schedInput}}" data-initial="${{schedInput}}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
               <button class="btn btn-sm btn-primary" type="submit">Set</button>
             </form>
           </td>
@@ -694,6 +694,17 @@ def admin_home():
 
     function normalizeScheduleInputToServer(value) {{
       return String(value || "").trim().replace("T", " ").replace(/\s+/g, " ");
+    }}
+
+    function syncScheduleDirtyFlag(input) {{
+      if (!input) return;
+      const initial = String(input.getAttribute("data-initial") || "").trim();
+      const current = String(input.value || "").trim();
+      if (current === initial) {{
+        input.removeAttribute("data-dirty");
+      }} else {{
+        input.setAttribute("data-dirty", "1");
+      }}
     }}
 
     function initSchedulePickers(root = document) {{
@@ -739,7 +750,20 @@ def admin_home():
         return;
       }}
 
+      ui.removeAttribute("data-dirty");
       hidden.value = normalizeScheduleInputToServer(uiVal);
+    }});
+
+    document.addEventListener("input", (e) => {{
+      const ui = e.target.closest("input.schedule-datetime[name='local_time_ui']");
+      if (!ui) return;
+      syncScheduleDirtyFlag(ui);
+    }});
+
+    document.addEventListener("change", (e) => {{
+      const ui = e.target.closest("input.schedule-datetime[name='local_time_ui']");
+      if (!ui) return;
+      syncScheduleDirtyFlag(ui);
     }});
 
     async function refreshDashboard() {{
@@ -748,7 +772,8 @@ def admin_home():
       try {{
         // Do not re-render while any date-time picker popup is open.
         const pickerOpen = !!document.querySelector(".flatpickr-calendar.open");
-        if (pickerOpen) return;
+        const pendingScheduleEdit = !!document.querySelector("input.schedule-datetime[data-dirty='1']");
+        if (pickerOpen || pendingScheduleEdit) return;
 
         const res = await fetch("/admin/live_state", {{
           method: "GET",
