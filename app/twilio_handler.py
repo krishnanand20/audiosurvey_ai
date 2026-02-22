@@ -753,6 +753,13 @@ def load_structured_questions():
                     "question": parts[1]
                 })
 
+            elif parts[0] == "INFO":
+                qs.append({
+                    "type": "info",
+                    "question": parts[1]
+
+                })
+
     return qs
 
 
@@ -897,6 +904,24 @@ def next_question():
 <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q}</Redirect>
 
 </Response>""")
+    
+    # ---------------- INFO ----------------
+    elif question["type"] == "info":
+
+        q_text = question["question"]
+        q_url = get_prompt_audio_url(q_text, "sw")
+
+        return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+    <Response>
+
+    <Play>{q_url}</Play>
+    <Pause length="1"/>
+
+    <Redirect method="POST">
+    {PUBLIC_BASE_URL}/next?q={q+1}
+    </Redirect>
+
+    </Response>""")
 
     # ---------------- OPEN ----------------
     else:
