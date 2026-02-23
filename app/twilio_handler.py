@@ -369,9 +369,6 @@ def _end_session() -> None:
 
     session.clear()
 
-    
-
-
 def _render_login_page(err: str = "") -> str:
     return f"""
 <!doctype html>
@@ -873,29 +870,23 @@ def next_question():
     state = load_participants()
     pid, _ = find_participant_by_callsid(state, call_sid)
 
-    if pid:
+        # --- Store OPEN (speech) answers ---
+    if pid and looks_like_real_speech(speech):
+        prev_q = q - 1
+        if 0 <= prev_q < len(questions):
+            prev_question = questions[prev_q]
+            if prev_question.get("type") == "open":
+                if "responses" not in state[pid]:
+                    state[pid]["responses"] = {}
+                if "survey_q_counter" not in state[pid]:
+                    state[pid]["survey_q_counter"] = 0
 
-        if "awaiting_other_for" in state[pid]:
+                state[pid]["survey_q_counter"] += 1
+                survey_q = state[pid]["survey_q_counter"]
+                state[pid]["responses"][f"q{survey_q}"] = speech
+                save_participants(state)
+                log(f"Stored OPEN speech for survey_q={survey_q} (structured_q_index={prev_q})")
 
-            that_q = state[pid]["awaiting_other_for"]
-
-            if "responses" not in state[pid]:
-                state[pid]["responses"] = {}
-
-            if looks_like_real_speech(speech):
-                state[pid]["responses"][f"q{that_q+1}_other"] = speech
-                log(f"Stored MCQO Other speech for Q{that_q+1}")
-
-            del state[pid]["awaiting_other_for"]
-            save_participants(state)
-
-            return twiml(f"""
-    <Response>
-    <Redirect method="POST">
-    {PUBLIC_BASE_URL}/next?q={q+1}
-    </Redirect>
-    </Response>
-    """)
 
     if call_sid and looks_like_real_speech(speech):
         state = load_participants()
@@ -1019,15 +1010,20 @@ def mcq_handler():
         # MCQO
         elif question["type"] == "mcqo":
 
-            if digit != "3":
-                state[pid]["survey_q_counter"] += 1
-                survey_q = state[pid]["survey_q_counter"]
-                state[pid]["responses"][f"q{survey_q}"] = digit
+            state[pid]["survey_q_counter"] += 1
+            survey_q = state[pid]["survey_q_counter"]
+
+            # Store digit ALWAYS (even if 3)
+            state[pid]["responses"][f"q{survey_q}"] = digit
+            save_participants(state)
+
+            # If "Other" selected → go collect speech
+            if digit == "3":
+                state[pid]["awaiting_other_for"] = q
                 save_participants(state)
 
             else:
                 log(f"MCQO Other selected for Q{q+1}")
-                state[pid]["awaiting_other_for"] = q
                 save_participants(state)
 
 
@@ -1050,18 +1046,19 @@ def mcq_handler():
 
         prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
         prompt_url = get_prompt_audio_url(prompt, "sw")
+        other_timeout = 4
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
 
+<Play>{prompt_url}</Play>
+<Pause length="1"/>
+
 <Gather input="speech"
-        timeout="{GATHER_TIMEOUT}"
+        timeout="{other_timeout}"
         speechTimeout="{SPEECH_TIMEOUT}"
         action="{PUBLIC_BASE_URL}/mcqo-other-handler?q={q}"
         method="POST">
-
-    <Play>{prompt_url}</Play>
-
 </Gather>
 
 <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
@@ -1097,52 +1094,53 @@ def call_status():
 
     if call_status_val == "completed":
         try:
-            from app.export_excel import export_responses_to_excel
-            export_responses_to_excel()
-            log(f"Excel exported for participant {pid}")
+            from app.export_excel import append_participant_response_to_excel
+            appended = append_participant_response_to_excel(pid)
+            if appended:
+                log(f"Excel row appended for participant {pid}")
+            else:
+                log(f"Excel append skipped for participant {pid} (no exportable responses)")
         except Exception as e:
             log(f"Excel export failed: {e}")
 
     save_participants(state)
     return ("ok", 200)
 
-import pandas as pd
-
-
 @app.route("/admin/export_excel", methods=["GET"])
 def export_excel():
+    from app.export_excel import export_responses_to_excel
 
-    state = load_participants()
-
-    if not state:
-        return "No participants found", 400
-
-    rows = []
-
-    for pid, pdata in state.items():
-
-        if "responses" not in pdata:
-            continue
-
-        row = {}
-        row["participant_id"] = pid
-
-        for key, value in pdata["responses"].items():
-            row[key] = value
-
-        rows.append(row)
-
-    if not rows:
+    export_responses_to_excel(append=True)
+    path = "data/results/ivr_responses.xlsx"
+    if not os.path.exists(path):
         return "No responses found", 400
 
-    df = pd.DataFrame(rows)
+    return f"Excel appended to {path}", 200
+    
+@app.route("/mcqo-other-handler", methods=["POST"])
+def mcqo_other_handler():
 
-    os.makedirs("data/results", exist_ok=True)
-    path = "data/results/ivr_responses.xlsx"
+    call_sid = request.values.get("CallSid")
+    speech = (request.values.get("SpeechResult") or "").strip()
+    state = load_participants()
 
-    df.to_excel(path, index=False)
+    pid, _ = find_participant_by_callsid(state, call_sid)
 
-    return f"Excel exported to {path}", 200
+    # DO NOT increment counter here
+    # DO NOT store speech response
+    if looks_like_real_speech(speech):
+        log(f"MCQO Other speech captured (not stored) | chars={len(speech)}")
+    else:
+        log("MCQO Other speech not detected")
+
+    q = int(request.args.get("q", 0))
+
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Redirect method="POST">{PUBLIC_BASE_URL}/next?q={q+1}</Redirect>
+</Response>"""
+
+    return twiml(xml)
 
 @app.route("/recording-done", methods=["POST"])
 def recording_done():

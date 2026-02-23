@@ -6,7 +6,7 @@ import csv
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from app.logger import logger
-from flask import Blueprint, request, redirect, session
+from flask import Blueprint, request, redirect, session, jsonify
 
 
 from app.state import (
@@ -16,6 +16,7 @@ from app.state import (
     mask_phone,
     set_paused,
     is_paused,
+    reset_state,
 )
 from app.utils import schedule_participant
 from app.scheduler import run_once
@@ -51,6 +52,17 @@ def fmt_dt(s: str | None) -> str:
         return s
 
 
+def fmt_dt_input(s: str | None) -> str:
+    if not s:
+        return ""
+    try:
+        dt = datetime.fromisoformat(s)
+        return dt.strftime("%Y-%m-%dT%H:%M")
+    except Exception:
+        t = str(s).strip().replace(" ", "T")
+        return t[:16]
+
+
 def _read_questions_text() -> str:
     path = "data/questions.txt"
     try:
@@ -80,6 +92,65 @@ def _whoami() -> str:
     return (session.get("user") or "").strip()
 
 
+def engaged_badge(engaged: bool) -> str:
+    cls = "eng-badge eng-yes" if engaged else "eng-badge eng-no"
+    label = "Engaged" if engaged else "Not engaged"
+    return f'<span class="{cls}"><span class="eng-dot"></span>{label}</span>'
+
+
+def _dashboard_snapshot(state: dict) -> tuple[int, dict, list[dict]]:
+    total = len(state)
+    counts = {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0}
+    participants = []
+
+    for pid, p in sorted(state.items(), key=lambda x: str(x[0])):
+        st = (p.get("status") or "pending").lower().strip()
+        if st in counts:
+            counts[st] += 1
+        else:
+            counts["pending"] += 1
+
+        participants.append(
+            {
+                "participant_id": str(pid),
+                "phone_masked": mask_phone(p.get("phone_e164")),
+                "status": p.get("status") or "pending",
+                "attempts": int(p.get("attempts", 0) or 0),
+                "engaged": bool(p.get("engaged", False)),
+                "scheduled_local": fmt_dt(p.get("scheduled_time_local")),
+                "scheduled_input": fmt_dt_input(p.get("scheduled_time_local")).replace("T", " "),
+            }
+        )
+
+    return total, counts, participants
+
+
+def _participants_rows_html(participants: list[dict]) -> str:
+    rows_html = []
+    for p in participants:
+        rows_html.append(
+            f"""
+          <tr>
+            <td class="mono">{p["participant_id"]}</td>
+            <td class="mono">{p["phone_masked"]}</td>
+            <td>{pill(p["status"])}</td>
+            <td class="mono">{p["attempts"]}</td>
+            <td>{engaged_badge(p["engaged"])}</td>
+            <td class="mono">{p["scheduled_local"]}</td>
+            <td>
+              <form class="inline schedule-form" method="POST" action="/admin/schedule">
+                <input type="hidden" name="participant_id" value="{p["participant_id"]}">
+                <input type="hidden" name="local_time" value="">
+                <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="{p["scheduled_input"]}" data-initial="{p["scheduled_input"]}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
+                <button class="btn btn-sm btn-primary" type="submit">Set</button>
+              </form>
+            </td>
+          </tr>
+        """
+        )
+    return "\n".join(rows_html)
+
+
 # ----------------------------
 # Routes
 # ----------------------------
@@ -93,43 +164,9 @@ def admin_home():
     msg = (request.args.get("msg") or "").strip()
     err = (request.args.get("err") or "").strip()
 
-    total = len(state)
-    counts = {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0}
-    for _, p in state.items():
-        st = (p.get("status") or "idle").lower()
-        if st in counts:
-            counts[st] += 1
-        else:
-            counts["pending"] += 1
+    total, counts, participants = _dashboard_snapshot(state)
 
-
-    rows_html = []
-    for pid, p in sorted(state.items(), key=lambda x: str(x[0])):
-        phone_masked = mask_phone(p.get("phone_e164"))
-        st = p.get("status") or "pending"
-        attempts = p.get("attempts", 0)
-        engaged = bool(p.get("engaged", False))
-        sched_local = fmt_dt(p.get("scheduled_time_local"))
-
-        rows_html.append(f"""
-          <tr>
-            <td class="mono">{pid}</td>
-            <td class="mono">{phone_masked}</td>
-            <td>{pill(st)}</td>
-            <td class="mono">{attempts}</td>
-            <td>{'✅' if engaged else '—'}</td>
-            <td class="mono">{sched_local}</td>
-            <td>
-              <form class="inline" method="POST" action="/admin/schedule">
-                <input type="hidden" name="participant_id" value="{pid}">
-                <input class="input input-sm" name="local_time" placeholder="YYYY-MM-DD HH:MM" />
-                <button class="btn btn-sm btn-primary" type="submit">Schedule</button>
-              </form>
-            </td>
-          </tr>
-        """)
-
-    rows = "\n".join(rows_html) if rows_html else """
+    rows = _participants_rows_html(participants) if participants else """
       <tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>
     """
 
@@ -143,6 +180,8 @@ def admin_home():
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AudioSurvey Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css">
   <style>
     :root {{
       --bg: #0b1020;
@@ -226,6 +265,35 @@ def admin_home():
     .pill-warn {{ border-color: rgba(245,159,0,.35); background: rgba(245,159,0,.12); }}
     .pill-bad {{ border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.12); }}
     .pill-neutral {{ border-color: rgba(154,164,195,.35); background: rgba(154,164,195,.10); }}
+    .eng-badge {{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }}
+    .eng-dot {{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      display: inline-block;
+    }}
+    .eng-yes {{
+      border-color: rgba(32,201,151,.35);
+      background: rgba(32,201,151,.10);
+      color: #c8f5e8;
+    }}
+    .eng-yes .eng-dot {{ background: #20c997; }}
+    .eng-no {{
+      border-color: rgba(154,164,195,.30);
+      background: rgba(154,164,195,.10);
+      color: #d0d6ea;
+    }}
+    .eng-no .eng-dot {{ background: #9aa4c3; }}
 
     .banner {{
       border-radius: 14px; padding: 10px 12px;
@@ -239,8 +307,9 @@ def admin_home():
 
     table {{
       width: 100%;
-      border-collapse: collapse;
-      overflow: hidden;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow: visible;
       border-radius: 14px;
       border: 1px solid var(--line);
       background: rgba(0,0,0,.12);
@@ -259,6 +328,99 @@ def admin_home():
     }}
     tr:hover td {{ background: rgba(255,255,255,.03); }}
     .inline {{ display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }}
+    .schedule-form {{
+      width: 100%;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      gap: 10px;
+    }}
+    .schedule-form .btn {{ flex-shrink: 0; }}
+    .schedule-datetime {{
+      min-width: 240px;
+      flex: 1;
+      max-width: 360px;
+    }}
+    @media (max-width: 820px) {{
+      .schedule-form {{ flex-wrap: wrap; }}
+      .schedule-datetime {{ max-width: 100%; }}
+    }}
+    .flatpickr-calendar {{
+      background: #0d1830;
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 14px 30px rgba(0,0,0,.45);
+      border-radius: 12px;
+      overflow: hidden;
+    }}
+    .flatpickr-months,
+    .flatpickr-weekdays {{
+      background: #12234a;
+    }}
+    .flatpickr-months .flatpickr-month,
+    .flatpickr-current-month .flatpickr-monthDropdown-months,
+    .flatpickr-current-month input.cur-year,
+    .flatpickr-weekday,
+    .flatpickr-day {{
+      color: #e8ecff;
+    }}
+    .flatpickr-monthDropdown-months,
+    .flatpickr-current-month input.cur-year {{
+      background: rgba(255,255,255,.08);
+      border-radius: 8px;
+    }}
+    .flatpickr-months .flatpickr-prev-month,
+    .flatpickr-months .flatpickr-next-month {{
+      color: #e8ecff;
+      fill: #e8ecff;
+      border-radius: 8px;
+      width: 34px;
+      height: 34px;
+      top: 4px;
+      padding: 6px;
+    }}
+    .flatpickr-months .flatpickr-prev-month:hover,
+    .flatpickr-months .flatpickr-next-month:hover {{
+      background: rgba(255,255,255,.12);
+    }}
+    .flatpickr-day.selected,
+    .flatpickr-day.selected:hover,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange {{
+      background: rgba(124,92,255,.95);
+      border-color: rgba(124,92,255,.95);
+    }}
+    .flatpickr-day.today {{
+      border-color: rgba(32,201,151,.9);
+    }}
+    .flatpickr-day.prevMonthDay,
+    .flatpickr-day.nextMonthDay {{
+      color: rgba(232,236,255,.45);
+    }}
+    .flatpickr-day:hover {{
+      background: rgba(255,255,255,.16);
+    }}
+    .flatpickr-time {{
+      border-top: 1px solid rgba(255,255,255,.14);
+    }}
+    .flatpickr-time input,
+    .flatpickr-time .flatpickr-am-pm {{
+      color: #e8ecff;
+      font-weight: 700;
+    }}
+    .flatpickr-time input:hover,
+    .flatpickr-time .flatpickr-am-pm:hover {{
+      background: rgba(255,255,255,.14);
+    }}
+    .flatpickr-confirm {{
+      background: rgba(124,92,255,.25);
+      border-top: 1px solid rgba(255,255,255,.14);
+      color: #e8ecff;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }}
+    .flatpickr-confirm:hover {{
+      background: rgba(124,92,255,.38);
+    }}
 
     .kpi {{
       display: grid; grid-template-columns: repeat(4, 1fr);
@@ -337,14 +499,18 @@ def admin_home():
           <button class="btn btn-bad" type="submit">Stop</button>
         </form>
 
+        <form method="POST" action="/admin/reset_state" onsubmit="return confirm('This will reset participants and call log (with backup files). Continue?');">
+          <button class="btn btn-bad" type="submit">State Refresh</button>
+        </form>
+
         <span class="muted">Calls go out only when participants are eligible.</span>
       </div>
 
       <div class="kpi">
-        <div class="k"><div class="n mono">{total}</div><div class="l">Total</div></div>
-        <div class="k"><div class="n mono">{counts["pending"]}</div><div class="l">Pending</div></div>
-        <div class="k"><div class="n mono">{counts["in_progress"]}</div><div class="l">In progress</div></div>
-        <div class="k"><div class="n mono">{counts["completed"]}</div><div class="l">Completed</div></div>
+        <div class="k"><div id="kpiTotal" class="n mono">{total}</div><div class="l">Total</div></div>
+        <div class="k"><div id="kpiPending" class="n mono">{counts["pending"]}</div><div class="l">Pending</div></div>
+        <div class="k"><div id="kpiInProgress" class="n mono">{counts["in_progress"]}</div><div class="l">In progress</div></div>
+        <div class="k"><div id="kpiCompleted" class="n mono">{counts["completed"]}</div><div class="l">Completed</div></div>
       </div>
     </div>
 
@@ -399,7 +565,7 @@ def admin_home():
     <div class="card">
       <h3 style="margin:0 0 10px 0;">Participants</h3>
       <div class="muted" style="margin-bottom:10px;">
-        Tip: schedule time is NYC time as <span class="mono">YYYY-MM-DD HH:MM</span>.
+        Tip: click schedule field, choose date/time, press <span class="mono">✓</span> in calendar, then press <span class="mono">Set</span>.
       </div>
 
       <table>
@@ -414,7 +580,7 @@ def admin_home():
             <th>Schedule</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="participantsTbody">
           {rows}
         </tbody>
       </table>
@@ -423,6 +589,8 @@ def admin_home():
     <div style="height:24px;"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.js"></script>
   <script>
     // Live NYC clock
     const clockEl = document.getElementById("nycClock");
@@ -462,11 +630,212 @@ def admin_home():
         fileName.textContent = f ? f.name : "No file selected";
       }});
     }}
+
+    // Live dashboard table + KPI refresh (no full page reload)
+    const kpiTotal = document.getElementById("kpiTotal");
+    const kpiPending = document.getElementById("kpiPending");
+    const kpiInProgress = document.getElementById("kpiInProgress");
+    const kpiCompleted = document.getElementById("kpiCompleted");
+    const participantsTbody = document.getElementById("participantsTbody");
+    let pollInFlight = false;
+
+    const esc = (v) => String(v ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
+    function statusPill(statusRaw) {{
+      const status = String(statusRaw || "pending");
+      const s = status.toLowerCase().trim();
+      let cls = "pill pill-neutral";
+      if (s === "completed") cls = "pill pill-ok";
+      else if (s === "failed") cls = "pill pill-bad";
+      else if (s === "in_progress" || s === "in-progress") cls = "pill pill-warn";
+      return `<span class="${{cls}}">${{esc(status)}}</span>`;
+    }}
+
+    function engagedBadge(engaged) {{
+      if (engaged) {{
+        return '<span class="eng-badge eng-yes"><span class="eng-dot"></span>Engaged</span>';
+      }}
+      return '<span class="eng-badge eng-no"><span class="eng-dot"></span>Not engaged</span>';
+    }}
+
+    function participantRow(p) {{
+      const pid = esc(p.participant_id);
+      const phone = esc(p.phone_masked || "");
+      const status = statusPill(p.status);
+      const attempts = esc(p.attempts ?? 0);
+      const engaged = engagedBadge(!!p.engaged);
+      const sched = esc(p.scheduled_local || "");
+      const schedInput = esc(p.scheduled_input || "");
+
+      return `
+        <tr>
+          <td class="mono">${{pid}}</td>
+          <td class="mono">${{phone}}</td>
+          <td>${{status}}</td>
+          <td class="mono">${{attempts}}</td>
+          <td>${{engaged}}</td>
+          <td class="mono">${{sched}}</td>
+          <td>
+            <form class="inline schedule-form" method="POST" action="/admin/schedule">
+              <input type="hidden" name="participant_id" value="${{pid}}">
+              <input type="hidden" name="local_time" value="">
+              <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="${{schedInput}}" data-initial="${{schedInput}}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
+              <button class="btn btn-sm btn-primary" type="submit">Set</button>
+            </form>
+          </td>
+        </tr>
+      `;
+    }}
+
+    function normalizeScheduleInputToServer(value) {{
+      return String(value || "").trim().replace("T", " ").replace(/\s+/g, " ");
+    }}
+
+    function syncScheduleDirtyFlag(input) {{
+      if (!input) return;
+      const initial = String(input.getAttribute("data-initial") || "").trim();
+      const current = String(input.value || "").trim();
+      if (current === initial) {{
+        input.removeAttribute("data-dirty");
+      }} else {{
+        input.setAttribute("data-dirty", "1");
+      }}
+    }}
+
+    function initSchedulePickers(root = document) {{
+      if (typeof flatpickr !== "function") return;
+      const inputs = root.querySelectorAll("input.schedule-datetime[name='local_time_ui']");
+      inputs.forEach((input) => {{
+        if (input._flatpickr) return;
+        const fpPlugins = [];
+        if (typeof confirmDatePlugin === "function") {{
+          fpPlugins.push(new confirmDatePlugin({{
+            confirmIcon: "✓",
+            confirmText: " OK",
+            showAlways: false,
+            theme: "dark"
+          }}));
+        }}
+        flatpickr(input, {{
+          enableTime: true,
+          time_24hr: true,
+          minuteIncrement: 1,
+          dateFormat: "Y-m-d H:i",
+          allowInput: true,
+          disableMobile: true,
+          appendTo: document.body,
+          position: "auto center",
+          plugins: fpPlugins,
+        }});
+      }});
+    }}
+
+    document.addEventListener("submit", (e) => {{
+      const form = e.target.closest("form.schedule-form");
+      if (!form) return;
+
+      const ui = form.querySelector("input.schedule-datetime[name='local_time_ui']");
+      const hidden = form.querySelector("input[type='hidden'][name='local_time']");
+      if (!ui || !hidden) return;
+
+      const uiVal = String(ui.value || "").trim();
+      if (!uiVal) {{
+        e.preventDefault();
+        ui.focus();
+        return;
+      }}
+
+      ui.removeAttribute("data-dirty");
+      hidden.value = normalizeScheduleInputToServer(uiVal);
+    }});
+
+    document.addEventListener("input", (e) => {{
+      const ui = e.target.closest("input.schedule-datetime[name='local_time_ui']");
+      if (!ui) return;
+      syncScheduleDirtyFlag(ui);
+    }});
+
+    document.addEventListener("change", (e) => {{
+      const ui = e.target.closest("input.schedule-datetime[name='local_time_ui']");
+      if (!ui) return;
+      syncScheduleDirtyFlag(ui);
+    }});
+
+    async function refreshDashboard() {{
+      if (pollInFlight) return;
+      pollInFlight = true;
+      try {{
+        // Do not re-render while any date-time picker popup is open.
+        const pickerOpen = !!document.querySelector(".flatpickr-calendar.open");
+        const pendingScheduleEdit = !!document.querySelector("input.schedule-datetime[data-dirty='1']");
+        if (pickerOpen || pendingScheduleEdit) return;
+
+        const res = await fetch("/admin/live_state", {{
+          method: "GET",
+          headers: {{ "Accept": "application/json" }},
+          cache: "no-store"
+        }});
+        if (!res.ok) return;
+        const data = await res.json();
+
+        if (kpiTotal) kpiTotal.textContent = String(data.total ?? 0);
+        if (kpiPending) kpiPending.textContent = String(data.counts?.pending ?? 0);
+        if (kpiInProgress) kpiInProgress.textContent = String(data.counts?.in_progress ?? 0);
+        if (kpiCompleted) kpiCompleted.textContent = String(data.counts?.completed ?? 0);
+
+        if (participantsTbody) {{
+          const active = document.activeElement;
+          const editingSchedule = !!(
+            active &&
+            participantsTbody.contains(active) &&
+            active.classList &&
+            active.classList.contains("schedule-datetime")
+          );
+          if (editingSchedule) {{
+            return;
+          }}
+
+          const ps = Array.isArray(data.participants) ? data.participants : [];
+          if (!ps.length) {{
+            participantsTbody.innerHTML = '<tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>';
+          }} else {{
+            participantsTbody.innerHTML = ps.map(participantRow).join("");
+            initSchedulePickers(participantsTbody);
+          }}
+        }}
+      }} catch (_e) {{
+        // no-op: keep UI stable if one poll fails
+      }} finally {{
+        pollInFlight = false;
+      }}
+    }}
+
+    initSchedulePickers(document);
+    refreshDashboard();
+    setInterval(refreshDashboard, 1000);
   </script>
 </body>
 </html>
 """
     return html
+
+
+@dashboard_bp.route("/admin/live_state", methods=["GET"])
+def admin_live_state():
+    state = load_participants()
+    total, counts, participants = _dashboard_snapshot(state)
+    return jsonify(
+        {
+            "total": total,
+            "counts": counts,
+            "participants": participants,
+        }
+    )
 
 
 @dashboard_bp.route("/admin/upload_contacts", methods=["POST"])
@@ -528,7 +897,7 @@ def admin_save_questions():
 @dashboard_bp.route("/admin/schedule", methods=["POST"])
 def admin_schedule():
     pid = (request.form.get("participant_id") or "").strip()
-    local_time = (request.form.get("local_time") or "").strip()
+    local_time = (request.form.get("local_time") or "").strip().replace("T", " ")
 
     if not pid:
         return redirect("/admin?err=Missing+participant_id")
@@ -559,3 +928,12 @@ def admin_resume():
 def admin_dial_now():
     run_once(force=True)
     return redirect("/admin?msg=Dial+Now+triggered")
+
+
+@dashboard_bp.route("/admin/reset_state", methods=["POST"])
+def admin_reset_state():
+    try:
+        reset_state(reset_call_log=True, backup=True)
+    except Exception as e:
+        return redirect("/admin?err=" + _safe_q(str(e)))
+    return redirect("/admin?msg=State+reset+complete")
