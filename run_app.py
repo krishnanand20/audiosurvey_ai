@@ -1,28 +1,110 @@
+import json
 import os
-import time
-import webbrowser
+import shutil
 import subprocess
 import sys
+import time
+import urllib.request
+import webbrowser
 
-def main():
-    # Start the flask app (your module)
-    # Use python -m to match your current setup
-    cmd = [sys.executable, "-m", "app.twilio_handler", "serve"]
 
-    # Start in same folder so relative paths (data/...) work
-    p = subprocess.Popen(cmd, cwd=os.path.dirname(os.path.abspath(__file__)))
+def _fetch_ngrok_https_url() -> str:
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:4040/api/tunnels", timeout=1.5) as res:
+            data = json.loads(res.read().decode("utf-8"))
+    except Exception:
+        return ""
 
-    base_url = (os.getenv("PUBLIC_BASE_URL") or "").rstrip("/")
-    open_url = (os.getenv("APP_OPEN_URL") or "").strip()
+    for tunnel in data.get("tunnels", []):
+        public_url = (tunnel or {}).get("public_url", "")
+        if public_url.startswith("https://"):
+            return public_url.rstrip("/")
+    return ""
+
+
+def _start_ngrok(workdir: str, port: int) -> subprocess.Popen:
+    ngrok_bin = shutil.which("ngrok")
+    if not ngrok_bin:
+        raise RuntimeError("ngrok not found in PATH")
+
+    return subprocess.Popen(
+        [ngrok_bin, "http", str(port)],
+        cwd=workdir,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
+def _ensure_public_base_url(env: dict, workdir: str, port: int = 5050):
+    current = (env.get("PUBLIC_BASE_URL") or "").rstrip("/")
+
+    # Reuse an already running ngrok tunnel if present.
+    existing = _fetch_ngrok_https_url()
+    if existing:
+        env["PUBLIC_BASE_URL"] = existing
+        return existing, None
+
+    ngrok_proc = _start_ngrok(workdir=workdir, port=port)
+    for _ in range(40):
+        if ngrok_proc.poll() is not None:
+            break
+        tunnel_url = _fetch_ngrok_https_url()
+        if tunnel_url:
+            env["PUBLIC_BASE_URL"] = tunnel_url
+            return tunnel_url, ngrok_proc
+        time.sleep(0.5)
+
+    if ngrok_proc.poll() is None:
+        ngrok_proc.terminate()
+
+    if current:
+        return current, None
+
+    raise RuntimeError("Could not create ngrok tunnel and PUBLIC_BASE_URL is not set")
+
+
+def main() -> None:
+    workdir = os.path.dirname(os.path.abspath(__file__))
+    env = os.environ.copy()
+
+    auto_ngrok = (env.get("AUTO_START_NGROK") or "1").strip().lower() not in {
+        "0",
+        "false",
+        "no",
+    }
+
+    ngrok_proc = None
+    base_url = (env.get("PUBLIC_BASE_URL") or "").rstrip("/")
+
+    if auto_ngrok:
+        try:
+            base_url, ngrok_proc = _ensure_public_base_url(env=env, workdir=workdir, port=5050)
+            print(f"Using PUBLIC_BASE_URL={base_url}")
+        except Exception as exc:
+            print(f"Failed to initialize ngrok: {exc}")
+            sys.exit(1)
+
+    app_proc = subprocess.Popen(
+        [sys.executable, "-m", "app.twilio_handler", "serve"],
+        cwd=workdir,
+        env=env,
+    )
+
+    open_url = (env.get("APP_OPEN_URL") or "").strip()
     if not open_url:
         open_url = base_url if base_url else "http://127.0.0.1:5050/admin"
 
-    # Give server a second to boot, then open the configured website
     time.sleep(1.5)
     webbrowser.open(open_url)
 
-    # Wait for server process to exit
-    p.wait()
+    try:
+        app_proc.wait()
+    finally:
+        if app_proc.poll() is None:
+            app_proc.terminate()
+        if ngrok_proc and ngrok_proc.poll() is None:
+            ngrok_proc.terminate()
+
 
 if __name__ == "__main__":
     main()
