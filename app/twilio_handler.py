@@ -12,6 +12,7 @@ import json
 import yaml
 import requests
 import hashlib
+from urllib.parse import quote_plus
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
@@ -19,7 +20,7 @@ from flask import Flask, request, Response, redirect, session, send_from_directo
 from werkzeug.security import check_password_hash
 from flask import send_from_directory
 
-from threading import Thread
+from threading import Thread, Lock
 from app.background_worker import process_pending_recordings
 
 from app.dashboard import dashboard_bp
@@ -45,6 +46,8 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 IVR_AUDIO_DIR = os.path.join(BASE_DIR, "data", "ivr_audio")
 scheduler_started = False
 worker_started = False
+conference_ivr_announced = set()
+conference_ivr_lock = Lock()
 
 
 # --------------------------
@@ -565,25 +568,38 @@ def admin_conference_call():
         from twilio.rest import Client
         client = Client(TWILIO_SID, TWILIO_TOKEN)
 
-        client.calls.create(
-            to=n1,
-            from_=TWILIO_FROM,
-            url=f"{PUBLIC_BASE_URL}/conference_host?room={room}",
-            method="POST"
-        )
+        try:
+            call_1 = client.calls.create(
+                to=n1,
+                from_=TWILIO_FROM,
+                url=f"{PUBLIC_BASE_URL}/conference_host?room={room}",
+                method="POST"
+            )
+        except Exception as e:
+            raise RuntimeError(f"First leg failed for {mask_phone(n1)}: {e}") from e
 
-        client.calls.create(
-            to=n2,
-            from_=TWILIO_FROM,
-            url=f"{PUBLIC_BASE_URL}/conference_join?room={room}",
-            method="POST"
+        try:
+            call_2 = client.calls.create(
+                to=n2,
+                from_=TWILIO_FROM,
+                url=f"{PUBLIC_BASE_URL}/conference_join?room={room}",
+                method="POST"
+            )
+        except Exception as e:
+            raise RuntimeError(f"Second leg failed for {mask_phone(n2)}: {e}") from e
+
+        log(
+            "Conference started "
+            f"| room={room} | leg1={call_1.sid} ({mask_phone(n1)}) "
+            f"| leg2={call_2.sid} ({mask_phone(n2)})"
         )
 
         return redirect("/admin?msg=Conference+call+started")
 
     except Exception as e:
-        log(f"Conference ERROR: {type(e).__name__}: {e}")
-        return redirect("/admin?msg=Failed+to+start+conference")
+        err = f"{type(e).__name__}: {e}"
+        log(f"Conference ERROR | room={room} | n1={mask_phone(n1)} | n2={mask_phone(n2)} | {err}")
+        return redirect("/admin?msg=Failed+to+start+conference&err=" + quote_plus(err[:350]))
 
 @app.route("/conference_host", methods=["POST"])
 def conference_host():
@@ -594,11 +610,12 @@ def conference_host():
 <Response>
   <Dial>
     <Conference
-      startConferenceOnEnter="false"
+      startConferenceOnEnter="true"
       endConferenceOnExit="false"
       beep="false"
-      waitUrl="{PUBLIC_BASE_URL}/conference_ivr?room={room}"
-      waitMethod="POST">
+      statusCallback="{PUBLIC_BASE_URL}/conference_status?room={room}"
+      statusCallbackMethod="POST"
+      statusCallbackEvent="join leave start end">
       {room}
     </Conference>
   </Dial>
@@ -614,14 +631,54 @@ def conference_join():
 <Response>
   <Dial>
     <Conference
-      startConferenceOnEnter="false"
+      startConferenceOnEnter="true"
       endConferenceOnExit="false"
-      beep="false">
+      beep="false"
+      statusCallback="{PUBLIC_BASE_URL}/conference_status?room={room}"
+      statusCallbackMethod="POST"
+      statusCallbackEvent="join leave start end">
       {room}
     </Conference>
   </Dial>
 </Response>"""
     return twiml(xml)
+
+@app.route("/conference_status", methods=["POST"])
+def conference_status():
+    room = (request.values.get("room") or request.args.get("room") or "").strip()
+    conf_sid = (request.values.get("ConferenceSid") or "").strip()
+    event = (request.values.get("StatusCallbackEvent") or "").strip().lower()
+
+    if not room or not conf_sid:
+        return "", 204
+
+    # Start announcement only once and only when at least two participants are in.
+    if "join" not in event and "start" not in event:
+        return "", 204
+
+    with conference_ivr_lock:
+        if room in conference_ivr_announced:
+            return "", 204
+
+    try:
+        from twilio.rest import Client
+        client = Client(TWILIO_SID, TWILIO_TOKEN)
+
+        participants = client.conferences(conf_sid).participants.list(limit=20)
+        if len(participants) >= 2:
+            with conference_ivr_lock:
+                if room not in conference_ivr_announced:
+                    announce_url = f"{PUBLIC_BASE_URL}/conference_announce?room={room}&q=0"
+                    client.conferences(conf_sid).update(
+                        announce_url=announce_url,
+                        announce_method="POST",
+                    )
+                    conference_ivr_announced.add(room)
+                    log(f"Conference IVR announce started | room={room} | sid={conf_sid}")
+    except Exception as e:
+        log(f"Conference status handler ERROR | room={room} | sid={conf_sid} | {type(e).__name__}: {e}")
+
+    return "", 204
 
 @app.route("/silence", methods=["POST", "GET"])
 def silence():
@@ -638,13 +695,14 @@ def conference_ivr():
     intro = "Habari. Huu ni utafiti wa maswali."
     intro_url = get_prompt_audio_url(intro, "sw")
 
+    nxt = f"{PUBLIC_BASE_URL}/conference_ivr_next?room={room}&q=0"
     xml = f"""
 <Response>
 
-<Play>{intro_url}</Play>
+<Play>{xml_escape(intro_url)}</Play>
 
 <Redirect>
-{PUBLIC_BASE_URL}/conference_ivr_next?room={room}&q=0
+{xml_escape(nxt)}
 </Redirect>
 
 </Response>
@@ -660,7 +718,7 @@ def conference_ivr_next():
 
     questions = load_structured_questions()
 
-    # finished IVR → admit host + moderator
+    # Legacy flow: finished IVR -> admit host + moderator.
     if q >= len(questions):
 
         return twiml(f"""
@@ -678,17 +736,42 @@ beep="false">
 
     q_url = get_prompt_audio_url(questions[q]["question"], "sw")
 
+    nxt = f"{PUBLIC_BASE_URL}/conference_ivr_next?room={room}&q={q+1}"
     return twiml(f"""
 <Response>
 
-<Play>{q_url}</Play>
+<Play>{xml_escape(q_url)}</Play>
 
 <Redirect method="POST">
-{PUBLIC_BASE_URL}/conference_ivr_next?room={room}&q={q+1}
+{xml_escape(nxt)}
 </Redirect>
 
 </Response>
 """)
+
+
+@app.route("/conference_announce", methods=["POST", "GET"])
+def conference_announce():
+    room = (request.values.get("room") or request.args.get("room") or "").strip()
+    q = int(request.values.get("q", "0"))
+
+    prompts = ["Habari. Huu ni utafiti wa maswali."]
+    questions = load_structured_questions()
+    for item in questions:
+        text = (item.get("question") or "").strip()
+        if text:
+            prompts.append(text)
+
+    if q >= len(prompts):
+        return twiml("""<?xml version="1.0" encoding="UTF-8"?><Response></Response>""")
+
+    p_url = get_prompt_audio_url(prompts[q], "sw")
+    nxt = f"{PUBLIC_BASE_URL}/conference_announce?room={room}&q={q+1}"
+    return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Play>{xml_escape(p_url)}</Play>
+  <Redirect method="POST">{xml_escape(nxt)}</Redirect>
+</Response>""")
 
 # --------------------------
 # Helpers
