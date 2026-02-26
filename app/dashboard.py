@@ -503,6 +503,14 @@ def admin_home():
           <button class="btn btn-bad" type="submit">State Refresh</button>
         </form>
 
+        <form method="GET" action="/admin/export_excel">
+          <button class="btn" type="submit">Export Excel</button>
+        </form>
+
+        <form method="GET" action="/admin/export_excel_english">
+          <button class="btn btn-good" type="submit">Export English Excel</button>
+        </form>
+
         <span class="muted">Calls go out only when participants are eligible.</span>
       </div>
 
