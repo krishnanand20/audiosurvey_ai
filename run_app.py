@@ -63,6 +63,23 @@ def _ensure_public_base_url(env: dict, workdir: str, port: int = 5050):
     raise RuntimeError("Could not create ngrok tunnel and PUBLIC_BASE_URL is not set")
 
 
+def _default_open_url(env: dict, base_url: str, port: int = 5050) -> str:
+    explicit = (env.get("APP_OPEN_URL") or "").strip()
+    if explicit:
+        return explicit
+
+    open_public = (env.get("OPEN_PUBLIC_URL") or "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+    if base_url and not open_public and "ngrok" in base_url.lower():
+        return f"http://127.0.0.1:{port}/admin"
+
+    return base_url if base_url else f"http://127.0.0.1:{port}/admin"
+
+
 def main() -> None:
     workdir = os.path.dirname(os.path.abspath(__file__))
     env = os.environ.copy()
@@ -90,9 +107,10 @@ def main() -> None:
         env=env,
     )
 
-    open_url = (env.get("APP_OPEN_URL") or "").strip()
-    if not open_url:
-        open_url = base_url if base_url else "http://127.0.0.1:5050/admin"
+    open_url = _default_open_url(env=env, base_url=base_url, port=5050)
+
+    if base_url and "ngrok" in base_url.lower() and open_url.startswith("http://127.0.0.1"):
+        print("Opening local admin URL to avoid ngrok browser warning page. Set OPEN_PUBLIC_URL=1 to open ngrok URL.")
 
     time.sleep(1.5)
     webbrowser.open(open_url)
