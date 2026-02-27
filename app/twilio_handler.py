@@ -1110,12 +1110,34 @@ def call_status():
 def export_excel():
     from app.export_excel import export_responses_to_excel
 
-    export_responses_to_excel(append=True)
-    path = "data/results/ivr_responses.xlsx"
+    path = os.path.join(BASE_DIR, "data", "results", "ivr_responses.xlsx")
+    if not os.path.exists(path):
+        export_responses_to_excel(append=False)
+
     if not os.path.exists(path):
         return "No responses found", 400
 
-    return f"Excel appended to {path}", 200
+    return send_from_directory(
+        os.path.dirname(path),
+        os.path.basename(path),
+        as_attachment=True,
+    )
+
+
+@app.route("/admin/export_excel_english", methods=["GET"])
+def export_excel_english():
+    from app.export_excel import export_excel_in_english
+
+    source_path = os.path.join(BASE_DIR, "data", "results", "ivr_responses.xlsx")
+    output_path = os.path.join(BASE_DIR, "data", "results", "ivr_responses_english.xlsx")
+    out_path = export_excel_in_english(source_path=source_path, output_path=output_path)
+
+    if not out_path or not os.path.exists(out_path):
+        return "No responses found", 400
+
+    out_dir = os.path.dirname(out_path)
+    out_name = os.path.basename(out_path)
+    return send_from_directory(out_dir, out_name, as_attachment=True)
     
 @app.route("/mcqo-other-handler", methods=["POST"])
 def mcqo_other_handler():

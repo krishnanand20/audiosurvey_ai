@@ -3,8 +3,10 @@ from app.state import load_participants
 import os
 import re
 import yaml
+from app.translate import translate_to_english_chunked
 
 RESULTS_PATH = "data/results/ivr_responses.xlsx"
+RESULTS_EN_PATH = "data/results/ivr_responses_english.xlsx"
 
 
 def _questions_file_path(default_path="data/questions.txt"):
@@ -231,3 +233,46 @@ def append_participant_response_to_excel(participant_id):
 
     final_df.to_excel(RESULTS_PATH, index=False)
     return True
+
+
+def _translate_cell_to_english(value, cache):
+    if pd.isna(value):
+        return value
+
+    if isinstance(value, (int, float, bool)):
+        return value
+
+    text = str(value).strip()
+    if not text:
+        return value
+
+    if text in cache:
+        return cache[text]
+
+    translated = (translate_to_english_chunked(text) or "").strip()
+    cache[text] = translated or text
+    return cache[text]
+
+
+def export_excel_in_english(source_path=RESULTS_PATH, output_path=RESULTS_EN_PATH):
+    """
+    Build an English copy of ivr_responses.xlsx by translating response cells.
+    """
+    if not os.path.exists(source_path):
+        return None
+
+    df = pd.read_excel(source_path)
+    if df.empty:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        df.to_excel(output_path, index=False)
+        return output_path
+
+    cache = {}
+    for col in df.columns:
+        if str(col).strip().lower() == "participant_id":
+            continue
+        df[col] = df[col].apply(lambda v: _translate_cell_to_english(v, cache))
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    df.to_excel(output_path, index=False)
+    return output_path
