@@ -897,7 +897,7 @@ def next_question():
             log(f"ENGAGED=True for participant {pid} | CallSid={call_sid}")
 
     if q >= len(questions):
-        bye = "Asante. Kwaheri."
+        bye = "Kwaheri."
         bye_url = get_prompt_audio_url(bye, "sw")
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -914,7 +914,7 @@ def next_question():
 
         options_text = ""
         for i, opt in enumerate(question["options"], start=1):
-            options_text += f"Bonyeza {i} kwa {opt}. "
+            options_text += f"finya {i} kwa {opt}. "
 
         full_q = f"{q_text}. {options_text}"
         q_url = get_prompt_audio_url(full_q, "sw")
