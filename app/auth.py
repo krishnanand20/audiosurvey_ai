@@ -1,6 +1,7 @@
 # app/auth.py
 from __future__ import annotations
 
+
 import os
 import json
 import time
@@ -85,7 +86,7 @@ def record_fail(username: str) -> None:
     now = int(time.time())
 
     fails = st.setdefault("fails", {}).setdefault(k, [])
-    # keep only recent fails
+    # keep only recent fails onlyy
     fails = [t for t in fails if now - int(t) <= WINDOW_SECONDS]
     fails.append(now)
     st["fails"][k] = fails
