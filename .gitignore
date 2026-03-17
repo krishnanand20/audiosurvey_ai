@@ -18,6 +18,7 @@ data/contacts.csv
 data/state/participants.json
 data/state/call_log.csv
 data/audio/
+data/audio_processed/
 data/transcripts/
 data/translations/
 data/english_audio/
@@ -41,4 +42,5 @@ data/state/*.bak_*
 
 # Logs
 *.log
+data/auth_log.jsonl
 survey_output.xlsx

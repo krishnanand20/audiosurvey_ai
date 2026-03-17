@@ -2,11 +2,27 @@ import pandas as pd
 from app.state import load_participants
 import os
 import re
+import sys
 import yaml
 from app.translate import translate_to_english_chunked
+from app.logger import logger, silence_noisy_library_logs
 
 RESULTS_PATH = "data/results/ivr_responses.xlsx"
 RESULTS_EN_PATH = "data/results/ivr_responses_english.xlsx"
+
+
+def _render_terminal_progress(prefix: str, current: int, total: int, stage: str) -> None:
+    total = max(1, int(total))
+    current = max(0, min(int(current), total))
+    pct = int(round((current / total) * 100))
+    filled = max(0, min(20, round(pct / 5)))
+    bar = "#" * filled + "-" * (20 - filled)
+    line = f"[{prefix}] [{bar}] {pct:>3}% | {stage}"
+    sys.stdout.write("\r" + line.ljust(140))
+    sys.stdout.flush()
+    if current >= total:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
 
 def _questions_file_path(default_path="data/questions.txt"):
@@ -268,11 +284,30 @@ def export_excel_in_english(source_path=RESULTS_PATH, output_path=RESULTS_EN_PAT
         return output_path
 
     cache = {}
+    work_items = []
     for col in df.columns:
         if str(col).strip().lower() == "participant_id":
             continue
-        df[col] = df[col].apply(lambda v: _translate_cell_to_english(v, cache))
+        for idx in df.index:
+            work_items.append((idx, col))
+
+    total_items = len(work_items)
+    done = 0
+    if total_items:
+        _render_terminal_progress("ExcelExport", 0, total_items, "Translating responses to English")
+
+    with silence_noisy_library_logs():
+        for idx, col in work_items:
+            df.at[idx, col] = _translate_cell_to_english(df.at[idx, col], cache)
+            done += 1
+            _render_terminal_progress(
+                "ExcelExport",
+                done,
+                total_items,
+                f"Translating responses to English ({done}/{total_items})",
+            )
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     df.to_excel(output_path, index=False)
+    logger.info(f"English Excel export saved: {output_path}")
     return output_path

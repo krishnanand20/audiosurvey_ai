@@ -3,6 +3,10 @@
 global scheduler_started
 from dotenv import load_dotenv
 
+from app.runtime_warnings import suppress_runtime_warnings
+
+suppress_runtime_warnings()
+
 from app import state
 load_dotenv()
 
@@ -13,6 +17,7 @@ import yaml
 import requests
 import hashlib
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 from zoneinfo import ZoneInfo
 
 from flask import Flask, request, Response, redirect, session, send_from_directory
@@ -25,6 +30,7 @@ from app.background_worker import process_pending_recordings
 from app.dashboard import dashboard_bp
 from app.scheduler import start_scheduler_in_background, run_once
 from app.utils import schedule_participant
+from app.file_naming import build_participant_timestamp_base
 from app.state import (
     load_participants,
     save_participants,
@@ -58,6 +64,19 @@ def log(msg: str) -> None:
     ny = datetime.now(NY_TZ).isoformat(timespec="seconds")
     utc = datetime.now(UTC_TZ).isoformat(timespec="seconds").replace("+00:00", "Z")
     print(f"[NYC {ny} | UTC {utc}] {msg}")
+
+
+def _preview_text(text: str, limit: int = 120) -> str:
+    s = " ".join((text or "").split())
+    if len(s) <= limit:
+        return s
+    return s[: limit - 3] + "..."
+
+
+def log_prompt_sent(call_sid: str, participant_id: Optional[str], label: str, text: str) -> None:
+    pid = participant_id or "-"
+    cs = call_sid or "-"
+    log(f'PROMPT SENT | CallSid={cs} | Participant={pid} | {label} | Text="{_preview_text(text)}"')
 
 
 # --------------------------
@@ -708,9 +727,11 @@ def xml_escape(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def safe_base(call_sid: str) -> str:
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    return f"{call_sid}_{ts}"
+def safe_base(participant_id: Optional[str], fallback_id: Optional[str] = None) -> str:
+    return build_participant_timestamp_base(
+        participant_id=participant_id,
+        fallback_id=fallback_id,
+    )
 
 
 def looks_like_real_speech(s: str) -> bool:
@@ -730,6 +751,17 @@ def find_participant_by_callsid(state: dict, call_sid: str):
         if p.get("last_call_sid") == call_sid:
             return pid, p
     return None, None
+
+
+def get_mcqo_other_digit(question: dict) -> Optional[str]:
+    if (question or {}).get("type") != "mcqo":
+        return None
+
+    for i, opt in enumerate(question.get("options", []), start=1):
+        opt_norm = (opt or "").strip().lower()
+        if opt_norm in {"other", "nyingine"}:
+            return str(i)
+    return None
 
 def load_structured_questions():
     qs = []
@@ -824,6 +856,7 @@ def start():
         intro_text = questions[i]["question"]
         intro_url = get_prompt_audio_url(intro_text, "sw")
         intro_xml += f"<Play>{intro_url}</Play><Pause length='1'/>"
+        log_prompt_sent(call_sid or "", pid, f"intro_{i+1}", intro_text)
 
     if len(questions) <= 2:
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -834,6 +867,7 @@ def start():
 
     first_question = questions[2]["question"]
     q_url = get_prompt_audio_url(first_question, "sw")
+    log_prompt_sent(call_sid or "", pid, "q1_open", first_question)
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -899,6 +933,7 @@ def next_question():
     if q >= len(questions):
         bye = "Kwaheri."
         bye_url = get_prompt_audio_url(bye, "sw")
+        log_prompt_sent(call_sid, pid, "survey_complete", bye)
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Play>{bye_url}</Play>
@@ -918,6 +953,7 @@ def next_question():
 
         full_q = f"{q_text}. {options_text}"
         q_url = get_prompt_audio_url(full_q, "sw")
+        log_prompt_sent(call_sid, pid, f"q{q+1}_{question['type']}", full_q)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -941,6 +977,7 @@ def next_question():
 
         q_text = question["question"]
         q_url = get_prompt_audio_url(q_text, "sw")
+        log_prompt_sent(call_sid, pid, f"q{q+1}_info", q_text)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
     <Response>
@@ -959,6 +996,7 @@ def next_question():
 
         q_text = question["question"]
         q_url = get_prompt_audio_url(q_text, "sw")
+        log_prompt_sent(call_sid, pid, f"q{q+1}_open", q_text)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -1009,6 +1047,7 @@ def mcq_handler():
 
         # MCQO
         elif question["type"] == "mcqo":
+            other_digit = get_mcqo_other_digit(question)
 
             state[pid]["survey_q_counter"] += 1
             survey_q = state[pid]["survey_q_counter"]
@@ -1018,17 +1057,14 @@ def mcq_handler():
             save_participants(state)
 
             # If "Other" selected → go collect speech
-            if digit == "3":
+            if other_digit and digit == other_digit:
                 state[pid]["awaiting_other_for"] = q
-                save_participants(state)
-
-            else:
-                log(f"MCQO Other selected for Q{q+1}")
+                log(f"MCQO Other selected | Participant={pid} | Q={q+1}")
                 save_participants(state)
 
 
 
-    log(f"MCQ Input Received | Q={q} | Digit={digit}")
+    log(f"MCQ Input Received | Participant={pid or '-'} | Q={q} | Digit={digit}")
 
     # Get current question
     if q >= len(questions):
@@ -1040,13 +1076,15 @@ def mcq_handler():
     question = questions[q]
 
     # -------------------------------------------------
-    # ONLY IF MCQO AND user presses 3 → go to speech
+    # ONLY IF MCQO and the selected digit is the configured "Other" option
     # -------------------------------------------------
-    if question["type"] == "mcqo" and digit == "3":
+    other_digit = get_mcqo_other_digit(question)
+    if question["type"] == "mcqo" and other_digit and digit == other_digit:
 
         prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
         prompt_url = get_prompt_audio_url(prompt, "sw")
         other_timeout = 4
+        log_prompt_sent(call_sid or "", pid, f"q{q+1}_mcqo_other", prompt)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -1079,10 +1117,10 @@ def mcq_handler():
 def call_status():
     call_sid = request.form.get("CallSid", "")
     call_status_val = (request.form.get("CallStatus") or "").lower().strip()
-    log(f"CALL STATUS HIT | CallSid={call_sid} | CallStatus={call_status_val}")
 
     state = load_participants()
     pid, p = find_participant_by_callsid(state, call_sid)
+    log(f"CALL STATUS HIT | CallSid={call_sid} | Participant={pid or '-'} | CallStatus={call_status_val}")
     if not pid:
         return ("ok", 200)
 
@@ -1203,9 +1241,9 @@ def recording_done():
     # Download recording WAV
     # --------------------------
     wav_url = recording_url + ".wav"
-    base = safe_base(call_sid)
+    base = safe_base(participant_id, fallback_id=call_sid)
 
-    audio_path = os.path.join(AUDIO_DIR, base + "_FULLCALL.wav")
+    audio_path = os.path.join(AUDIO_DIR, base + ".wav")
 
     try:
         r = requests.get(wav_url, auth=(TWILIO_SID, TWILIO_TOKEN), timeout=60)

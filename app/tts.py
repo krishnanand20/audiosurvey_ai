@@ -1,8 +1,13 @@
 # app/tts.py
 
 import os
+
+from app.runtime_warnings import suppress_runtime_warnings
+
+suppress_runtime_warnings()
+
 from gtts import gTTS
-from app.logger import logger
+from app.logger import logger, silence_noisy_library_logs
 
 def text_to_english_audio(text: str, out_path: str):
     """
@@ -13,8 +18,9 @@ def text_to_english_audio(text: str, out_path: str):
         # Create an empty placeholder file name logic (skip silently)
         return False
 
-    tts = gTTS(text=text, lang="en")
-    tts.save(out_path)
+    with silence_noisy_library_logs():
+        tts = gTTS(text=text, lang="en")
+        tts.save(out_path)
     return True
 
 

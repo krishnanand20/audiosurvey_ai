@@ -4,8 +4,13 @@ import os
 import json
 import time
 import re
+
+from app.runtime_warnings import suppress_runtime_warnings
+
+suppress_runtime_warnings()
+
 from googletrans import Translator
-from app.logger import logger
+from app.logger import logger, silence_noisy_library_logs
 
 translator = Translator()
 MAX_CHARS = 3000  # safe chunk size for googletrans scraping
@@ -65,7 +70,8 @@ def translate_to_english_chunked(text: str, retries: int = 3, sleep_sec: float =
 
         for attempt in range(1, retries + 1):
             try:
-                res = translator.translate(chunk, src="sw", dest="en")
+                with silence_noisy_library_logs():
+                    res = translator.translate(chunk, src="sw", dest="en")
                 if res is None or res.text is None:
                     raise RuntimeError("googletrans returned None")
                 out_chunks.append(res.text)

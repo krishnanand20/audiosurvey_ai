@@ -12,6 +12,17 @@ ivr:
   say_voice: "alice"
   speech_language: "sw-KE"
 
+audio_processing:
+  enabled: true
+  backend: "deepfilternet"
+  processed_dir: "data/audio_processed"
+  temp_dir: "data/audio_processed/tmp"
+  output_sample_rate: 16000
+  model_sample_rate: 48000
+  channel_mode: "mixdown"
+  caller_channel: 0
+  keep_intermediate_files: false
+
 auth:
   users:
     krishnanand:
