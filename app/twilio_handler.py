@@ -30,6 +30,7 @@ from app.background_worker import process_pending_recordings
 from app.dashboard import dashboard_bp
 from app.scheduler import start_scheduler_in_background, run_once
 from app.utils import schedule_participant
+from app.file_naming import build_participant_timestamp_base
 from app.state import (
     load_participants,
     save_participants,
@@ -726,9 +727,11 @@ def xml_escape(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def safe_base(call_sid: str) -> str:
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    return f"{call_sid}_{ts}"
+def safe_base(participant_id: Optional[str], fallback_id: Optional[str] = None) -> str:
+    return build_participant_timestamp_base(
+        participant_id=participant_id,
+        fallback_id=fallback_id,
+    )
 
 
 def looks_like_real_speech(s: str) -> bool:
@@ -1238,9 +1241,9 @@ def recording_done():
     # Download recording WAV
     # --------------------------
     wav_url = recording_url + ".wav"
-    base = safe_base(call_sid)
+    base = safe_base(participant_id, fallback_id=call_sid)
 
-    audio_path = os.path.join(AUDIO_DIR, base + "_FULLCALL.wav")
+    audio_path = os.path.join(AUDIO_DIR, base + ".wav")
 
     try:
         r = requests.get(wav_url, auth=(TWILIO_SID, TWILIO_TOKEN), timeout=60)

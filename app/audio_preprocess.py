@@ -171,7 +171,7 @@ def preprocess_recording(
     stem = Path(src_path).stem
     prepared_path = os.path.join(temp_dir, f"{stem}_df_input.wav")
     enhanced_path = os.path.join(temp_dir, f"{stem}_df_enhanced.wav")
-    final_path = os.path.join(processed_dir, f"{stem}_clean.wav")
+    final_path = os.path.join(processed_dir, f"{stem}.wav")
 
     if progress_cb:
         progress_cb(25, "Preparing audio for denoise")
