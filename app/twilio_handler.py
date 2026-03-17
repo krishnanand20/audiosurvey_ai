@@ -3,6 +3,10 @@
 global scheduler_started
 from dotenv import load_dotenv
 
+from app.runtime_warnings import suppress_runtime_warnings
+
+suppress_runtime_warnings()
+
 from app import state
 load_dotenv()
 
@@ -13,6 +17,7 @@ import yaml
 import requests
 import hashlib
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 from zoneinfo import ZoneInfo
 
 from flask import Flask, request, Response, redirect, session, send_from_directory
@@ -58,6 +63,19 @@ def log(msg: str) -> None:
     ny = datetime.now(NY_TZ).isoformat(timespec="seconds")
     utc = datetime.now(UTC_TZ).isoformat(timespec="seconds").replace("+00:00", "Z")
     print(f"[NYC {ny} | UTC {utc}] {msg}")
+
+
+def _preview_text(text: str, limit: int = 120) -> str:
+    s = " ".join((text or "").split())
+    if len(s) <= limit:
+        return s
+    return s[: limit - 3] + "..."
+
+
+def log_prompt_sent(call_sid: str, participant_id: Optional[str], label: str, text: str) -> None:
+    pid = participant_id or "-"
+    cs = call_sid or "-"
+    log(f'PROMPT SENT | CallSid={cs} | Participant={pid} | {label} | Text="{_preview_text(text)}"')
 
 
 # --------------------------
@@ -824,6 +842,7 @@ def start():
         intro_text = questions[i]["question"]
         intro_url = get_prompt_audio_url(intro_text, "sw")
         intro_xml += f"<Play>{intro_url}</Play><Pause length='1'/>"
+        log_prompt_sent(call_sid or "", pid, f"intro_{i+1}", intro_text)
 
     if len(questions) <= 2:
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -834,6 +853,7 @@ def start():
 
     first_question = questions[2]["question"]
     q_url = get_prompt_audio_url(first_question, "sw")
+    log_prompt_sent(call_sid or "", pid, "q1_open", first_question)
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -899,6 +919,7 @@ def next_question():
     if q >= len(questions):
         bye = "Kwaheri."
         bye_url = get_prompt_audio_url(bye, "sw")
+        log_prompt_sent(call_sid, pid, "survey_complete", bye)
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Play>{bye_url}</Play>
@@ -918,6 +939,7 @@ def next_question():
 
         full_q = f"{q_text}. {options_text}"
         q_url = get_prompt_audio_url(full_q, "sw")
+        log_prompt_sent(call_sid, pid, f"q{q+1}_{question['type']}", full_q)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -941,6 +963,7 @@ def next_question():
 
         q_text = question["question"]
         q_url = get_prompt_audio_url(q_text, "sw")
+        log_prompt_sent(call_sid, pid, f"q{q+1}_info", q_text)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
     <Response>
@@ -959,6 +982,7 @@ def next_question():
 
         q_text = question["question"]
         q_url = get_prompt_audio_url(q_text, "sw")
+        log_prompt_sent(call_sid, pid, f"q{q+1}_open", q_text)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -1047,6 +1071,7 @@ def mcq_handler():
         prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
         prompt_url = get_prompt_audio_url(prompt, "sw")
         other_timeout = 4
+        log_prompt_sent(call_sid or "", pid, f"q{q+1}_mcqo_other", prompt)
 
         return twiml(f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>

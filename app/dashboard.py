@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import csv
 from datetime import datetime
+from typing import Optional
 from zoneinfo import ZoneInfo
 from app.logger import logger
 from flask import Blueprint, request, redirect, session, jsonify
@@ -42,7 +43,7 @@ def pill(status: str) -> str:
     return f'<span class="{cls}">{(status or "pending")}</span>'
 
 
-def fmt_dt(s: str | None) -> str:
+def fmt_dt(s: Optional[str]) -> str:
     if not s:
         return ""
     try:
@@ -52,7 +53,7 @@ def fmt_dt(s: str | None) -> str:
         return s
 
 
-def fmt_dt_input(s: str | None) -> str:
+def fmt_dt_input(s: Optional[str]) -> str:
     if not s:
         return ""
     try:
@@ -934,7 +935,10 @@ def admin_resume():
 
 @dashboard_bp.route("/admin/dial_now", methods=["POST"])
 def admin_dial_now():
-    run_once(force=True)
+    try:
+        run_once(force=True)
+    except Exception as e:
+        return redirect("/admin?err=" + _safe_q(str(e)))
     return redirect("/admin?msg=Dial+Now+triggered")
 
 

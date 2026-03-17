@@ -2,6 +2,7 @@
 import os
 import json
 import csv
+import threading
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from zoneinfo import ZoneInfo
@@ -13,6 +14,7 @@ CALL_LOG_PATH = os.path.join(STATE_DIR, "call_log.csv")
 SETTINGS_PATH = os.path.join(STATE_DIR, "settings.json")
 
 os.makedirs(STATE_DIR, exist_ok=True)
+STATE_IO_LOCK = threading.RLock()
 
 DEFAULT = {
     "status": "pending",          # pending | in_progress | completed | failed
@@ -58,29 +60,31 @@ def migrate_add_fields(state: Dict[str, Any]) -> bool:
     return changed
 
 def load_participants() -> Dict[str, Any]:
-    if not os.path.exists(PARTICIPANTS_PATH):
-        return {}
-    try:
-        with open(PARTICIPANTS_PATH, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if not content:
-                return {}
-            state = json.loads(content)
-        if migrate_add_fields(state):
-            save_participants(state)
-        return state
-    except (json.JSONDecodeError, OSError):
+    with STATE_IO_LOCK:
+        if not os.path.exists(PARTICIPANTS_PATH):
+            return {}
         try:
-            os.rename(PARTICIPANTS_PATH, PARTICIPANTS_PATH + ".corrupt")
-        except OSError:
-            pass
-        return {}
+            with open(PARTICIPANTS_PATH, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if not content:
+                    return {}
+                state = json.loads(content)
+            if migrate_add_fields(state):
+                save_participants(state)
+            return state
+        except (json.JSONDecodeError, OSError):
+            try:
+                os.rename(PARTICIPANTS_PATH, PARTICIPANTS_PATH + ".corrupt")
+            except OSError:
+                pass
+            return {}
 
 def save_participants(state: dict) -> None:
-    tmp_path = PARTICIPANTS_PATH + ".tmp"
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-    os.replace(tmp_path, PARTICIPANTS_PATH)
+    with STATE_IO_LOCK:
+        tmp_path = f"{PARTICIPANTS_PATH}.{threading.get_ident()}.tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(state, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_path, PARTICIPANTS_PATH)
 
 def reset_for_retry(state: dict, participant_id: str, reset_attempts: bool = False) -> None:
     p = state.get(participant_id)
@@ -177,32 +181,35 @@ def mark_call_result(state: dict, participant_id: str, call_status: str) -> None
         p["status"] = "in_progress"
 
 def log_call_event(row: Dict[str, Any]) -> None:
-    file_exists = os.path.exists(CALL_LOG_PATH)
-    headers = [
-  "timestamp_utc", "participant_id", "phone_masked", "direction",
-  "call_sid", "recording_url",
-  "audio_path", "transcript_path", "translation_path", "english_audio_path"
-]
-    with open(CALL_LOG_PATH, "a", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=headers)
-        if not file_exists:
-            w.writeheader()
-        w.writerow({k: row.get(k, "") for k in headers})
+    with STATE_IO_LOCK:
+        file_exists = os.path.exists(CALL_LOG_PATH)
+        headers = [
+      "timestamp_utc", "participant_id", "phone_masked", "direction",
+      "call_sid", "recording_url",
+      "audio_path", "transcript_path", "translation_path", "english_audio_path"
+    ]
+        with open(CALL_LOG_PATH, "a", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=headers)
+            if not file_exists:
+                w.writeheader()
+            w.writerow({k: row.get(k, "") for k in headers})
 
 def load_settings() -> Dict[str, Any]:
-    if not os.path.exists(SETTINGS_PATH):
-        return {"paused": False}
-    try:
-        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {"paused": False}
+    with STATE_IO_LOCK:
+        if not os.path.exists(SETTINGS_PATH):
+            return {"paused": False}
+        try:
+            with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {"paused": False}
 
 def save_settings(settings: Dict[str, Any]) -> None:
-    tmp = SETTINGS_PATH + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(settings, f, indent=2)
-    os.replace(tmp, SETTINGS_PATH)
+    with STATE_IO_LOCK:
+        tmp = f"{SETTINGS_PATH}.{threading.get_ident()}.tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=2)
+        os.replace(tmp, SETTINGS_PATH)
 
 def set_paused(paused: bool) -> None:
     s = load_settings()
@@ -213,20 +220,21 @@ def is_paused() -> bool:
     return bool(load_settings().get("paused", False))
 
 def reset_state(reset_call_log: bool = False, backup: bool = True) -> None:
-    os.makedirs(STATE_DIR, exist_ok=True)
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    with STATE_IO_LOCK:
+        os.makedirs(STATE_DIR, exist_ok=True)
+        ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
 
-    if os.path.exists(PARTICIPANTS_PATH):
-        if backup:
-            os.rename(PARTICIPANTS_PATH, f"{PARTICIPANTS_PATH}.bak_{ts}")
-        else:
-            os.remove(PARTICIPANTS_PATH)
+        if os.path.exists(PARTICIPANTS_PATH):
+            if backup:
+                os.rename(PARTICIPANTS_PATH, f"{PARTICIPANTS_PATH}.bak_{ts}")
+            else:
+                os.remove(PARTICIPANTS_PATH)
 
-    if reset_call_log and os.path.exists(CALL_LOG_PATH):
-        if backup:
-            os.rename(CALL_LOG_PATH, f"{CALL_LOG_PATH}.bak_{ts}")
-        else:
-            os.remove(CALL_LOG_PATH)
+        if reset_call_log and os.path.exists(CALL_LOG_PATH):
+            if backup:
+                os.rename(CALL_LOG_PATH, f"{CALL_LOG_PATH}.bak_{ts}")
+            else:
+                os.remove(CALL_LOG_PATH)
 
-    # Reset settings (paused=false)
-    save_settings({"paused": False})
+        # Reset settings (paused=false)
+        save_settings({"paused": False})
