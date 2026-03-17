@@ -749,6 +749,17 @@ def find_participant_by_callsid(state: dict, call_sid: str):
             return pid, p
     return None, None
 
+
+def get_mcqo_other_digit(question: dict) -> Optional[str]:
+    if (question or {}).get("type") != "mcqo":
+        return None
+
+    for i, opt in enumerate(question.get("options", []), start=1):
+        opt_norm = (opt or "").strip().lower()
+        if opt_norm in {"other", "nyingine"}:
+            return str(i)
+    return None
+
 def load_structured_questions():
     qs = []
     if not os.path.exists(QUESTIONS_FILE):
@@ -1033,6 +1044,7 @@ def mcq_handler():
 
         # MCQO
         elif question["type"] == "mcqo":
+            other_digit = get_mcqo_other_digit(question)
 
             state[pid]["survey_q_counter"] += 1
             survey_q = state[pid]["survey_q_counter"]
@@ -1042,17 +1054,14 @@ def mcq_handler():
             save_participants(state)
 
             # If "Other" selected → go collect speech
-            if digit == "3":
+            if other_digit and digit == other_digit:
                 state[pid]["awaiting_other_for"] = q
-                save_participants(state)
-
-            else:
-                log(f"MCQO Other selected for Q{q+1}")
+                log(f"MCQO Other selected | Participant={pid} | Q={q+1}")
                 save_participants(state)
 
 
 
-    log(f"MCQ Input Received | Q={q} | Digit={digit}")
+    log(f"MCQ Input Received | Participant={pid or '-'} | Q={q} | Digit={digit}")
 
     # Get current question
     if q >= len(questions):
@@ -1064,9 +1073,10 @@ def mcq_handler():
     question = questions[q]
 
     # -------------------------------------------------
-    # ONLY IF MCQO AND user presses 3 → go to speech
+    # ONLY IF MCQO and the selected digit is the configured "Other" option
     # -------------------------------------------------
-    if question["type"] == "mcqo" and digit == "3":
+    other_digit = get_mcqo_other_digit(question)
+    if question["type"] == "mcqo" and other_digit and digit == other_digit:
 
         prompt = "Umechagua nyingine. Tafadhali sema jibu lako sasa."
         prompt_url = get_prompt_audio_url(prompt, "sw")
@@ -1104,10 +1114,10 @@ def mcq_handler():
 def call_status():
     call_sid = request.form.get("CallSid", "")
     call_status_val = (request.form.get("CallStatus") or "").lower().strip()
-    log(f"CALL STATUS HIT | CallSid={call_sid} | CallStatus={call_status_val}")
 
     state = load_participants()
     pid, p = find_participant_by_callsid(state, call_sid)
+    log(f"CALL STATUS HIT | CallSid={call_sid} | Participant={pid or '-'} | CallStatus={call_status_val}")
     if not pid:
         return ("ok", 200)
 
