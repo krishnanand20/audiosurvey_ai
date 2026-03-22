@@ -1226,6 +1226,7 @@ def recording_done():
     phone_masked = mask_phone(phone)
     engaged = bool(p.get("engaged", False)) if p else False
     last_call_status = (p.get("last_call_status") or "").lower() if p else ""
+    processing_status = "saved_unknown_participant"
 
     # Skip failed calls
     if known_participant:
@@ -1233,12 +1234,9 @@ def recording_done():
             log("Skip pipeline: retryable failure.")
             return ("ok", 200)
 
-        if not engaged:
-            log("Skip pipeline: engaged=False.")
-            return ("ok", 200)
-
     # --------------------------
-    # Download recording WAV
+    # Download recording WAV for any completed call we received a recording for.
+    # ML processing still only runs for calls where we detected real engagement.
     # --------------------------
     wav_url = recording_url + ".wav"
     base = safe_base(participant_id, fallback_id=call_sid)
@@ -1260,12 +1258,24 @@ def recording_done():
     # Queue for background ML processing
     # --------------------------
     if known_participant:
-        state[participant_id]["processing_status"] = "pending"
         state[participant_id]["audio_path"] = audio_path
         state[participant_id]["recording_url"] = recording_url
+        state[participant_id]["last_recording_url"] = recording_url
+        if engaged:
+            state[participant_id]["processing_status"] = "pending"
+            processing_status = "pending"
+        else:
+            state[participant_id]["processing_status"] = "saved_no_engagement"
+            processing_status = "saved_no_engagement"
         save_participants(state)
+    elif os.path.exists(audio_path):
+        processing_status = "saved"
 
-    log(f"Recording saved. Queued for background processing. File={audio_path}")
+    if processing_status == "pending":
+        log(f"Recording saved. Queued for background processing. File={audio_path}")
+    else:
+        reason = "participant not engaged" if known_participant else "participant not found in state"
+        log(f"Recording saved without ML processing. File={audio_path} | Reason={reason}")
 
     # Log minimal event
     log_call_event({
@@ -1276,7 +1286,7 @@ def recording_done():
         "call_sid": call_sid,
         "recording_url": recording_url,
         "audio_path": audio_path,
-        "processing_status": "pending"
+        "processing_status": processing_status,
     })
 
     return ("ok", 200)
