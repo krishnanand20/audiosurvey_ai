@@ -22,6 +22,7 @@ DEFAULT = {
     "last_call_time": None,       # ISO UTC string
     "last_call_sid": None,
     "last_call_status": None,     # Twilio CallStatus
+    "last_excel_export_call_sid": None,
     "engaged": False,             # True only if we saw real SpeechResult
     "last_recording_url": None,
     "last_outputs": {},

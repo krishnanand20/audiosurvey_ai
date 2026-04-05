@@ -34,6 +34,8 @@ from app.file_naming import build_participant_timestamp_base
 from app.state import (
     load_participants,
     save_participants,
+    upsert_participant,
+    mark_call_started,
     mark_engaged,
     mark_completed,
     mark_call_result,
@@ -753,6 +755,123 @@ def find_participant_by_callsid(state: dict, call_sid: str):
     return None, None
 
 
+def canonical_phone(phone: Optional[str]) -> str:
+    return "".join(ch for ch in (phone or "") if ch.isdigit())
+
+
+def find_participant_by_phone(state: dict, phone: str):
+    target = canonical_phone(phone)
+    if not target:
+        return None, None
+
+    for pid, p in state.items():
+        if canonical_phone(p.get("phone_e164")) == target:
+            return pid, p
+    return None, None
+
+
+def participant_phone_candidates(direction: str, from_number: str, to_number: str):
+    direction = (direction or "").lower().strip()
+    twilio_from_phone = canonical_phone(TWILIO_FROM)
+    candidates = []
+
+    def add_candidate(source: str, phone: str) -> None:
+        normalized = canonical_phone(phone)
+        if not normalized:
+            return
+        if any(canonical_phone(existing) == normalized for _, existing in candidates):
+            return
+        candidates.append((source, (phone or "").strip()))
+
+    if direction == "inbound":
+        add_candidate("from", from_number)
+        add_candidate("to", to_number)
+        return candidates
+
+    if direction.startswith("outbound"):
+        add_candidate("to", to_number)
+        if canonical_phone(from_number) != twilio_from_phone:
+            add_candidate("from", from_number)
+        return candidates
+
+    add_candidate("from", from_number)
+    if canonical_phone(to_number) != twilio_from_phone:
+        add_candidate("to", to_number)
+    return candidates
+
+
+def ensure_participant_for_call(call_sid: str, direction: str, from_number: str, to_number: str):
+    resolution = "unresolved"
+    changed = False
+
+    with state.STATE_IO_LOCK:
+        current_state = load_participants()
+        pid, p = find_participant_by_callsid(current_state, call_sid)
+        if pid:
+            return pid, p, "call_sid", False
+
+        phone_candidates = participant_phone_candidates(direction, from_number, to_number)
+        for source, phone in phone_candidates:
+            pid, p = find_participant_by_phone(current_state, phone)
+            if pid:
+                resolution = f"phone:{source}"
+                break
+
+        if not pid:
+            caller_phone = next((phone for _, phone in phone_candidates if canonical_phone(phone)), "")
+            participant_id = canonical_phone(caller_phone) or (call_sid or f"caller_{int(time.time())}")
+            upsert_participant(current_state, participant_id, caller_phone)
+            pid = participant_id
+            p = current_state[pid]
+            resolution = "created"
+            changed = True
+
+        if pid and call_sid and current_state[pid].get("last_call_sid") != call_sid:
+            mark_call_started(current_state, pid, call_sid)
+            changed = True
+
+        if changed:
+            save_participants(current_state)
+
+        return pid, current_state.get(pid), resolution, changed
+
+
+def append_excel_for_call_if_needed(participant_id: Optional[str], call_sid: str, source: str) -> bool:
+    pid = (participant_id or "").strip()
+    cs = (call_sid or "").strip()
+    if not pid or not cs:
+        return False
+
+    with state.STATE_IO_LOCK:
+        current_state = load_participants()
+        participant = current_state.get(pid)
+        if not participant:
+            return False
+
+        if participant.get("last_excel_export_call_sid") == cs:
+            log(f"Excel append skipped for participant {pid} via {source} (already exported for CallSid={cs})")
+            return False
+
+        try:
+            from app.export_excel import append_participant_response_to_excel
+            appended = append_participant_response_to_excel(pid)
+        except Exception as e:
+            log(f"Excel export failed via {source}: {e}")
+            return False
+
+        if not appended:
+            log(f"Excel append skipped for participant {pid} via {source} (no exportable responses)")
+            return False
+
+        current_state = load_participants()
+        if pid in current_state:
+            current_state[pid]["last_excel_export_call_sid"] = cs
+            save_participants(current_state)
+
+        log(f"Excel row appended for participant {pid} via {source}")
+        return True
+
+
 def get_mcqo_other_digit(question: dict) -> Optional[str]:
     if (question or {}).get("type") != "mcqo":
         return None
@@ -812,6 +931,26 @@ def voice():
     Start recording immediately (20 minutes)
     Then go directly to survey intro.
     """
+    call_sid = (request.values.get("CallSid") or "").strip()
+    direction = (request.values.get("Direction") or "").strip()
+    from_number = (request.values.get("From") or "").strip()
+    to_number = (request.values.get("To") or "").strip()
+    participant_id, _, resolution, _ = ensure_participant_for_call(
+        call_sid=call_sid,
+        direction=direction,
+        from_number=from_number,
+        to_number=to_number,
+    )
+
+    log(
+        "VOICE WEBHOOK HIT | "
+        f"CallSid={call_sid or '-'} | "
+        f"Direction={direction or '-'} | "
+        f"From={mask_phone(from_number)} | "
+        f"To={mask_phone(to_number)} | "
+        f"Participant={participant_id or '-'} | "
+        f"Resolution={resolution}"
+    )
 
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -833,16 +972,24 @@ def voice():
 def start():
 
     questions = load_structured_questions()
-    call_sid = request.values.get("CallSid")
+    call_sid = (request.values.get("CallSid") or "").strip()
+    direction = (request.values.get("Direction") or "").strip()
+    from_number = (request.values.get("From") or "").strip()
+    to_number = (request.values.get("To") or "").strip()
+    pid, _, resolution, _ = ensure_participant_for_call(
+        call_sid=call_sid,
+        direction=direction,
+        from_number=from_number,
+        to_number=to_number,
+    )
     state = load_participants()
-    pid, p = find_participant_by_callsid(state, call_sid)
 
     if pid:
         if "responses" not in state[pid]:
             state[pid]["responses"] = {}
         state[pid]["survey_q_counter"] = 0
         save_participants(state)
-        log(f"Initialized response store for participant {pid}")
+        log(f"Initialized response store for participant {pid} | Resolution={resolution}")
 
     if not questions:
         msg = "Hakuna maswali yaliyoandaliwa."
@@ -1130,18 +1277,11 @@ def call_status():
     if call_status_val == "completed" and not engaged:
         state[pid]["status"] = "pending"
 
-    if call_status_val == "completed":
-        try:
-            from app.export_excel import append_participant_response_to_excel
-            appended = append_participant_response_to_excel(pid)
-            if appended:
-                log(f"Excel row appended for participant {pid}")
-            else:
-                log(f"Excel append skipped for participant {pid} (no exportable responses)")
-        except Exception as e:
-            log(f"Excel export failed: {e}")
-
     save_participants(state)
+
+    if call_status_val == "completed":
+        append_excel_for_call_if_needed(pid, call_sid, "call-status")
+
     return ("ok", 200)
 
 @app.route("/admin/export_excel", methods=["GET"])
@@ -1288,6 +1428,9 @@ def recording_done():
         "audio_path": audio_path,
         "processing_status": processing_status,
     })
+
+    if known_participant:
+        append_excel_for_call_if_needed(participant_id, call_sid, "recording-done")
 
     return ("ok", 200)
 
