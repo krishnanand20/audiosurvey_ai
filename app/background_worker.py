@@ -9,6 +9,7 @@ from app.transcribe import transcribe_audio
 from app.translate import translate_to_english_chunked
 from app.tts import text_to_english_audio
 from app.logger import logger
+from app.runtime_status import mark_worker_started, mark_worker_heartbeat
 
 
 TRANSCRIPTS_DIR = "data/transcripts"
@@ -21,6 +22,7 @@ os.makedirs(EN_AUDIO_DIR, exist_ok=True)
 
 
 def log(msg):
+    mark_worker_heartbeat()
     if getattr(log, "_progress_active", False):
         sys.stdout.write("\n")
         sys.stdout.flush()
@@ -29,6 +31,7 @@ def log(msg):
 
 
 def log_progress(participant_id: str, percent: int, stage: str) -> None:
+    mark_worker_heartbeat()
     pct = max(0, min(100, int(percent)))
     filled = max(0, min(20, round(pct / 5)))
     bar = "#" * filled + "-" * (20 - filled)
@@ -55,7 +58,9 @@ def process_pending_recordings():
     that webhook marked as 'pending'
     """
 
+    mark_worker_started()
     while True:
+        mark_worker_heartbeat()
         state = load_participants()
 
         for pid, p in state.items():
@@ -67,6 +72,7 @@ def process_pending_recordings():
                 continue
 
             try:
+                mark_worker_heartbeat()
                 # Mark as processing
                 state[pid]["processing_status"] = "processing"
                 save_participants(state)
@@ -135,6 +141,7 @@ def process_pending_recordings():
                 mark_completed(state, pid, p.get("recording_url"), outputs)
                 state[pid]["processing_status"] = "completed"
                 save_participants(state)
+                mark_worker_heartbeat()
 
                 log_progress(pid, 100, "Processing complete")
                 log_success(pid)
@@ -144,4 +151,5 @@ def process_pending_recordings():
                 state[pid]["processing_status"] = "failed"
                 save_participants(state)
 
+        mark_worker_heartbeat()
         time.sleep(5)

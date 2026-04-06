@@ -5,6 +5,7 @@ import threading
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from app.logger import logger
+from app.runtime_status import mark_scheduler_started, mark_scheduler_heartbeat
 
 from twilio.rest import Client
 
@@ -85,7 +86,7 @@ def run_once(force: bool = False) -> None:
             status_callback_method="POST",
         )
 
-        mark_call_started(state, participant_id, call.sid)
+        mark_call_started(state, participant_id, call.sid, direction="outgoing")
         log(f"Calling {participant_id} -> {phone} | CallSid={call.sid}")
         any_called = True
 
@@ -98,15 +99,20 @@ def run_once(force: bool = False) -> None:
 
 def start_scheduler_in_background(interval_sec: int = 15) -> None:
     def _loop():
+        mark_scheduler_started()
         log(f"[Scheduler] started (interval={interval_sec}s)")
+        mark_scheduler_heartbeat()
 
         time.sleep(interval_sec)   # 🚨 WAIT FIRST
 
         while True:
             try:
+                mark_scheduler_heartbeat()
                 run_once(force=False)
             except Exception as e:
                 log(f"[Scheduler ERROR] {repr(e)}")
+            finally:
+                mark_scheduler_heartbeat()
 
             time.sleep(interval_sec)
 

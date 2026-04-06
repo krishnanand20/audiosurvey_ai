@@ -6,6 +6,7 @@ import csv
 from datetime import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo
+from twilio.rest import Client
 from app.logger import logger
 from flask import Blueprint, request, redirect, session, jsonify
 
@@ -21,6 +22,7 @@ from app.state import (
 )
 from app.utils import schedule_participant
 from app.scheduler import run_once
+from app.runtime_status import get_runtime_snapshot
 
 dashboard_bp = Blueprint("dashboard", __name__)
 NY_TZ = ZoneInfo("America/New_York")
@@ -99,6 +101,79 @@ def engaged_badge(engaged: bool) -> str:
     return f'<span class="{cls}"><span class="eng-dot"></span>{label}</span>'
 
 
+def direction_badge(direction: Optional[str]) -> str:
+    d = (direction or "").lower().strip()
+    if d == "incoming":
+        return '<span class="pill pill-ok">Incoming</span>'
+    if d == "outgoing":
+        return '<span class="pill pill-warn">Outgoing</span>'
+    return '<span class="pill pill-neutral">-</span>'
+
+
+END_CALL_BLOCKED_STATUSES = {"completed", "canceled", "busy", "failed", "no-answer", "hangup-requested"}
+
+
+def participant_has_endable_call(p: dict) -> bool:
+    last_call_status = (p.get("last_call_status") or "").lower().strip()
+    return bool(
+        p.get("last_call_sid")
+        and (p.get("status") or "").lower().strip() == "in_progress"
+        and last_call_status not in END_CALL_BLOCKED_STATUSES
+    )
+
+
+def service_badge(code: str, label: str) -> str:
+    cls = "pill pill-neutral"
+    if code in {"running", "low"}:
+        cls = "pill pill-ok"
+    elif code in {"paused", "starting", "medium"}:
+        cls = "pill pill-warn"
+    elif code in {"down", "high"}:
+        cls = "pill pill-bad"
+    return f'<span class="{cls}">{label}</span>'
+
+
+def load_level_snapshot(state: dict) -> dict:
+    active_calls = sum(
+        1 for p in state.values()
+        if (p.get("status") or "").lower().strip() == "in_progress"
+    )
+    worker_jobs = sum(
+        1 for p in state.values()
+        if (p.get("processing_status") or "").lower().strip() in {"pending", "processing"}
+    )
+    score = active_calls + worker_jobs
+
+    if score >= 5:
+        status = "high"
+        label = "High"
+    elif score >= 2:
+        status = "medium"
+        label = "Medium"
+    else:
+        status = "low"
+        label = "Low"
+
+    detail = f"{active_calls} active calls | {worker_jobs} worker jobs"
+    return {
+        "status": status,
+        "label": label,
+        "detail": detail,
+        "active_calls": active_calls,
+        "worker_jobs": worker_jobs,
+    }
+
+
+def system_info_snapshot(state: dict, paused: bool) -> dict:
+    runtime = get_runtime_snapshot(paused=paused)
+    load = load_level_snapshot(state)
+    return {
+        "scheduler": runtime["scheduler"],
+        "worker": runtime["worker"],
+        "load": load,
+    }
+
+
 def _dashboard_snapshot(state: dict) -> tuple[int, dict, list[dict]]:
     total = len(state)
     counts = {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0}
@@ -115,6 +190,9 @@ def _dashboard_snapshot(state: dict) -> tuple[int, dict, list[dict]]:
             {
                 "participant_id": str(pid),
                 "phone_masked": mask_phone(p.get("phone_e164")),
+                "last_call_direction": p.get("last_call_direction") or "",
+                "last_call_sid": p.get("last_call_sid") or "",
+                "last_call_status": p.get("last_call_status") or "",
                 "status": p.get("status") or "pending",
                 "attempts": int(p.get("attempts", 0) or 0),
                 "engaged": bool(p.get("engaged", False)),
@@ -129,11 +207,21 @@ def _dashboard_snapshot(state: dict) -> tuple[int, dict, list[dict]]:
 def _participants_rows_html(participants: list[dict]) -> str:
     rows_html = []
     for p in participants:
+        can_end_call = participant_has_endable_call(p)
+        end_call_html = ""
+        if can_end_call:
+            end_call_html = f"""
+              <form method="POST" action="/admin/end_call" onsubmit="return confirm('End active call for {p["participant_id"]}?');">
+                <input type="hidden" name="participant_id" value="{p["participant_id"]}">
+                <button class="btn btn-sm btn-bad" type="submit">End Call</button>
+              </form>
+            """
         rows_html.append(
             f"""
           <tr>
             <td class="mono">{p["participant_id"]}</td>
             <td class="mono">{p["phone_masked"]}</td>
+            <td>{direction_badge(p.get("last_call_direction"))}</td>
             <td>{pill(p["status"])}</td>
             <td class="mono">{p["attempts"]}</td>
             <td>{engaged_badge(p["engaged"])}</td>
@@ -145,6 +233,7 @@ def _participants_rows_html(participants: list[dict]) -> str:
                 <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="{p["scheduled_input"]}" data-initial="{p["scheduled_input"]}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
                 <button class="btn btn-sm btn-primary" type="submit">Set</button>
               </form>
+              {end_call_html}
             </td>
           </tr>
         """
@@ -166,9 +255,10 @@ def admin_home():
     err = (request.args.get("err") or "").strip()
 
     total, counts, participants = _dashboard_snapshot(state)
+    system_info = system_info_snapshot(state, paused=paused)
 
     rows = _participants_rows_html(participants) if participants else """
-      <tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>
+      <tr><td colspan="8" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>
     """
 
     initial_clock = datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -305,6 +395,24 @@ def admin_home():
     }}
     .banner.err {{ border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.10); }}
     .banner.ok {{ border-color: rgba(32,201,151,.35); background: rgba(32,201,151,.10); }}
+    .tech-grid {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }}
+    .tech-item {{
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,.14);
+      min-width: 0;
+    }}
+    .tech-label {{ color: var(--muted); font-size: 12px; margin-bottom: 8px; }}
+    .tech-detail {{ margin-top: 8px; color: var(--muted); font-size: 12px; }}
+    @media (max-width: 820px) {{
+      .tech-grid {{ grid-template-columns: 1fr; }}
+    }}
 
     table {{
       width: 100%;
@@ -329,6 +437,7 @@ def admin_home():
     }}
     tr:hover td {{ background: rgba(255,255,255,.03); }}
     .inline {{ display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }}
+    td > form + form {{ margin-top: 8px; }}
     .schedule-form {{
       width: 100%;
       align-items: center;
@@ -458,10 +567,53 @@ def admin_home():
       flex: 1;
       min-width: 220px;
     }}
+    .refresh-overlay[hidden] {{ display: none; }}
+    .refresh-overlay {{
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      background: rgba(11,16,32,.82);
+      backdrop-filter: blur(8px);
+      padding: 20px;
+    }}
+    .refresh-card {{
+      width: min(420px, 100%);
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(18,26,51,.94);
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      padding: 22px 20px;
+      text-align: center;
+    }}
+    .refresh-spinner {{
+      width: 42px;
+      height: 42px;
+      margin: 0 auto 14px;
+      border-radius: 999px;
+      border: 3px solid rgba(255,255,255,.12);
+      border-top-color: #20c997;
+      animation: refreshSpin 0.9s linear infinite;
+    }}
+    .refresh-title {{ font-size: 18px; font-weight: 800; margin-bottom: 8px; }}
+    .refresh-text {{ color: var(--muted); font-size: 13px; line-height: 1.5; }}
+    @keyframes refreshSpin {{
+      from {{ transform: rotate(0deg); }}
+      to {{ transform: rotate(360deg); }}
+    }}
   </style>
 </head>
 
 <body>
+  <div id="refreshOverlay" class="refresh-overlay" hidden>
+    <div class="refresh-card">
+      <div class="refresh-spinner"></div>
+      <div class="refresh-title">System is refreshing</div>
+      <div id="refreshOverlayText" class="refresh-text">Please wait while participant state and call logs are reset.</div>
+    </div>
+  </div>
+
   <div class="wrap">
     <div class="top">
       <div class="title">
@@ -492,6 +644,10 @@ def admin_home():
           <button class="btn btn-primary" type="submit">Dial Now</button>
         </form>
 
+        <form method="POST" action="/admin/end_all_calls" onsubmit="return confirm('End all active calls right now?');">
+          <button class="btn btn-bad" type="submit">End All Calls</button>
+        </form>
+
         <form method="POST" action="/admin/resume">
           <button class="btn btn-good" type="submit">Start</button>
         </form>
@@ -500,7 +656,7 @@ def admin_home():
           <button class="btn btn-bad" type="submit">Stop</button>
         </form>
 
-        <form method="POST" action="/admin/reset_state" onsubmit="return confirm('This will reset participants and call log (with backup files). Continue?');">
+        <form id="stateRefreshForm" method="POST" action="/admin/reset_state">
           <button class="btn btn-bad" type="submit">State Refresh</button>
         </form>
 
@@ -520,6 +676,22 @@ def admin_home():
         <div class="k"><div id="kpiPending" class="n mono">{counts["pending"]}</div><div class="l">Pending</div></div>
         <div class="k"><div id="kpiInProgress" class="n mono">{counts["in_progress"]}</div><div class="l">In progress</div></div>
         <div class="k"><div id="kpiCompleted" class="n mono">{counts["completed"]}</div><div class="l">Completed</div></div>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-item">
+          <div class="tech-label">Scheduler Status</div>
+          <div id="techScheduler">{service_badge(system_info["scheduler"]["status"], system_info["scheduler"]["label"])}</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-label">Worker Status</div>
+          <div id="techWorker">{service_badge(system_info["worker"]["status"], system_info["worker"]["label"])}</div>
+        </div>
+        <div class="tech-item">
+          <div class="tech-label">Live Load Level</div>
+          <div id="techLoad">{service_badge(system_info["load"]["status"], system_info["load"]["label"])}</div>
+          <div id="techLoadDetail" class="tech-detail">{system_info["load"]["detail"]}</div>
+        </div>
       </div>
     </div>
 
@@ -582,6 +754,7 @@ def admin_home():
           <tr>
             <th>ID</th>
             <th>Phone</th>
+            <th>Direction</th>
             <th>Status</th>
             <th>Attempts</th>
             <th>Engaged</th>
@@ -645,6 +818,13 @@ def admin_home():
     const kpiPending = document.getElementById("kpiPending");
     const kpiInProgress = document.getElementById("kpiInProgress");
     const kpiCompleted = document.getElementById("kpiCompleted");
+    const techScheduler = document.getElementById("techScheduler");
+    const techWorker = document.getElementById("techWorker");
+    const techLoad = document.getElementById("techLoad");
+    const techLoadDetail = document.getElementById("techLoadDetail");
+    const refreshOverlay = document.getElementById("refreshOverlay");
+    const refreshOverlayText = document.getElementById("refreshOverlayText");
+    const stateRefreshForm = document.getElementById("stateRefreshForm");
     const participantsTbody = document.getElementById("participantsTbody");
     let pollInFlight = false;
 
@@ -672,19 +852,65 @@ def admin_home():
       return '<span class="eng-badge eng-no"><span class="eng-dot"></span>Not engaged</span>';
     }}
 
+    function directionBadge(directionRaw) {{
+      const d = String(directionRaw || "").toLowerCase().trim();
+      if (d === "incoming") return '<span class="pill pill-ok">Incoming</span>';
+      if (d === "outgoing") return '<span class="pill pill-warn">Outgoing</span>';
+      return '<span class="pill pill-neutral">-</span>';
+    }}
+
+    function serviceBadge(statusRaw, labelRaw) {{
+      const status = String(statusRaw || "").toLowerCase().trim();
+      const label = esc(labelRaw || "-");
+      let cls = "pill pill-neutral";
+      if (["running", "low"].includes(status)) cls = "pill pill-ok";
+      else if (["paused", "starting", "medium"].includes(status)) cls = "pill pill-warn";
+      else if (["down", "high"].includes(status)) cls = "pill pill-bad";
+      return `<span class="${{cls}}">${{label}}</span>`;
+    }}
+
+    function showRefreshOverlay(message) {{
+      if (refreshOverlayText) {{
+        refreshOverlayText.textContent = String(message || "Please wait while participant state and call logs are reset.");
+      }}
+      if (refreshOverlay) {{
+        refreshOverlay.hidden = false;
+      }}
+    }}
+
+    function hideRefreshOverlay() {{
+      if (refreshOverlay) {{
+        refreshOverlay.hidden = true;
+      }}
+    }}
+
     function participantRow(p) {{
       const pid = esc(p.participant_id);
       const phone = esc(p.phone_masked || "");
+      const direction = directionBadge(p.last_call_direction);
       const status = statusPill(p.status);
+      const lastCallStatus = String(p.last_call_status || "").toLowerCase().trim();
+      const canEndCall = !!(
+        p.last_call_sid &&
+        String(p.status || "").toLowerCase().trim() === "in_progress" &&
+        !["completed", "canceled", "busy", "failed", "no-answer", "hangup-requested"].includes(lastCallStatus)
+      );
       const attempts = esc(p.attempts ?? 0);
       const engaged = engagedBadge(!!p.engaged);
       const sched = esc(p.scheduled_local || "");
       const schedInput = esc(p.scheduled_input || "");
+      const endCall = canEndCall ? `
+        <form method="POST" action="/admin/end_call" onsubmit="return confirm('End active call for ${{pid}}?');">
+          <input type="hidden" name="participant_id" value="${{pid}}">
+          <button class="btn btn-sm btn-bad" type="submit">End Call</button>
+        </form>
+      ` : "";
 
       return `
         <tr>
           <td class="mono">${{pid}}</td>
           <td class="mono">${{phone}}</td>
+          <td>${{direction}}</td>
           <td>${{status}}</td>
           <td class="mono">${{attempts}}</td>
           <td>${{engaged}}</td>
@@ -696,6 +922,7 @@ def admin_home():
               <input class="input input-sm schedule-datetime" type="text" name="local_time_ui" value="${{schedInput}}" data-initial="${{schedInput}}" placeholder="YYYY-MM-DD HH:MM" autocomplete="off" />
               <button class="btn btn-sm btn-primary" type="submit">Set</button>
             </form>
+            ${{endCall}}
           </td>
         </tr>
       `;
@@ -775,6 +1002,36 @@ def admin_home():
       syncScheduleDirtyFlag(ui);
     }});
 
+    if (stateRefreshForm) {{
+      stateRefreshForm.addEventListener("submit", async (e) => {{
+        e.preventDefault();
+        const confirmed = window.confirm("This will reset participants and call log (with backup files). Continue?");
+        if (!confirmed) return;
+
+        const submitBtn = stateRefreshForm.querySelector("button[type='submit']");
+        if (submitBtn) submitBtn.disabled = true;
+        showRefreshOverlay("Please wait while participant state and call logs are reset.");
+        console.log("State refresh started");
+
+        try {{
+          const res = await fetch(stateRefreshForm.action, {{
+            method: "POST",
+            credentials: "same-origin",
+            headers: {{
+              "X-Requested-With": "XMLHttpRequest"
+            }}
+          }});
+
+          const targetUrl = res.url || "/admin?msg=State+reset+complete";
+          window.location.assign(targetUrl);
+        }} catch (_err) {{
+          hideRefreshOverlay();
+          if (submitBtn) submitBtn.disabled = false;
+          window.alert("State refresh failed. Please try again.");
+        }}
+      }});
+    }}
+
     async function refreshDashboard() {{
       if (pollInFlight) return;
       pollInFlight = true;
@@ -796,6 +1053,10 @@ def admin_home():
         if (kpiPending) kpiPending.textContent = String(data.counts?.pending ?? 0);
         if (kpiInProgress) kpiInProgress.textContent = String(data.counts?.in_progress ?? 0);
         if (kpiCompleted) kpiCompleted.textContent = String(data.counts?.completed ?? 0);
+        if (techScheduler) techScheduler.innerHTML = serviceBadge(data.system_info?.scheduler?.status, data.system_info?.scheduler?.label);
+        if (techWorker) techWorker.innerHTML = serviceBadge(data.system_info?.worker?.status, data.system_info?.worker?.label);
+        if (techLoad) techLoad.innerHTML = serviceBadge(data.system_info?.load?.status, data.system_info?.load?.label);
+        if (techLoadDetail) techLoadDetail.textContent = String(data.system_info?.load?.detail || "");
 
         if (participantsTbody) {{
           const active = document.activeElement;
@@ -811,7 +1072,7 @@ def admin_home():
 
           const ps = Array.isArray(data.participants) ? data.participants : [];
           if (!ps.length) {{
-            participantsTbody.innerHTML = '<tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>';
+            participantsTbody.innerHTML = '<tr><td colspan="8" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>';
           }} else {{
             participantsTbody.innerHTML = ps.map(participantRow).join("");
             initSchedulePickers(participantsTbody);
@@ -838,11 +1099,13 @@ def admin_home():
 def admin_live_state():
     state = load_participants()
     total, counts, participants = _dashboard_snapshot(state)
+    system_info = system_info_snapshot(state, paused=is_paused())
     return jsonify(
         {
             "total": total,
             "counts": counts,
             "participants": participants,
+            "system_info": system_info,
         }
     )
 
@@ -876,6 +1139,7 @@ def admin_upload_contacts():
         state[pid]["engaged"] = False
         state[pid]["last_call_sid"] = None
         state[pid]["last_call_status"] = None
+        state[pid]["last_call_direction"] = None
 
         count += 1
 
@@ -942,10 +1206,94 @@ def admin_dial_now():
     return redirect("/admin?msg=Dial+Now+triggered")
 
 
+@dashboard_bp.route("/admin/end_call", methods=["POST"])
+def admin_end_call():
+    pid = (request.form.get("participant_id") or "").strip()
+    if not pid:
+        return redirect("/admin?err=Missing+participant_id")
+
+    state = load_participants()
+    participant = state.get(pid)
+    if not participant:
+        return redirect("/admin?err=Participant+not+found")
+
+    call_sid = (participant.get("last_call_sid") or "").strip()
+    status = (participant.get("status") or "").lower().strip()
+    if not call_sid:
+        return redirect("/admin?err=No+active+call+SID+for+" + _safe_q(pid))
+    if status != "in_progress":
+        return redirect("/admin?err=Participant+" + _safe_q(pid) + "+does+not+have+an+active+call")
+
+    twilio_sid = (os.getenv("TWILIO_ACCOUNT_SID") or "").strip()
+    twilio_token = (os.getenv("TWILIO_AUTH_TOKEN") or "").strip()
+    if not twilio_sid or not twilio_token:
+        return redirect("/admin?err=Missing+Twilio+credentials")
+
+    try:
+        client = Client(twilio_sid, twilio_token)
+        client.calls(call_sid).update(status="completed")
+        participant["last_call_status"] = "hangup-requested"
+        save_participants(state)
+    except Exception as e:
+        return redirect("/admin?err=" + _safe_q(str(e)))
+
+    return redirect("/admin?msg=End+Call+requested+for+" + _safe_q(pid))
+
+
+@dashboard_bp.route("/admin/end_all_calls", methods=["POST"])
+def admin_end_all_calls():
+    state = load_participants()
+    active_items = [
+        (pid, p)
+        for pid, p in state.items()
+        if participant_has_endable_call(p)
+    ]
+
+    if not active_items:
+        return redirect("/admin?err=No+active+tracked+calls+to+end")
+
+    twilio_sid = (os.getenv("TWILIO_ACCOUNT_SID") or "").strip()
+    twilio_token = (os.getenv("TWILIO_AUTH_TOKEN") or "").strip()
+    if not twilio_sid or not twilio_token:
+        return redirect("/admin?err=Missing+Twilio+credentials")
+
+    client = Client(twilio_sid, twilio_token)
+    ended = 0
+    failed: list[str] = []
+
+    for pid, participant in active_items:
+        call_sid = (participant.get("last_call_sid") or "").strip()
+        if not call_sid:
+            continue
+        try:
+            client.calls(call_sid).update(status="completed")
+            participant["last_call_status"] = "hangup-requested"
+            ended += 1
+        except Exception:
+            failed.append(str(pid))
+
+    if ended:
+        save_participants(state)
+
+    if failed and not ended:
+        return redirect("/admin?err=Failed+to+end+calls+for+" + _safe_q(",".join(failed)))
+    if failed:
+        return redirect(
+            "/admin?msg=End+Call+requested+for+"
+            + _safe_q(str(ended))
+            + "+calls&err=Failed+for+"
+            + _safe_q(",".join(failed))
+        )
+
+    return redirect("/admin?msg=End+Call+requested+for+" + _safe_q(str(ended)) + "+calls")
+
+
 @dashboard_bp.route("/admin/reset_state", methods=["POST"])
 def admin_reset_state():
+    logger.info("Admin requested state refresh")
     try:
         reset_state(reset_call_log=True, backup=True)
     except Exception as e:
+        logger.exception("State refresh failed")
         return redirect("/admin?err=" + _safe_q(str(e)))
     return redirect("/admin?msg=State+reset+complete")
