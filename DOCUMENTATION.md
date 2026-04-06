@@ -1,30 +1,58 @@
----
-title: " "
-pdf_options:
-  displayHeaderFooter: false
-  margin:
-    top: 15mm
-    bottom: 15mm
-    left: 15mm
-    right: 15mm
-  printBackground: true
----
+<div style="background:#ffffff;padding:56px 64px;box-sizing:border-box;">
 
-<style>
-  h1, h2, h3, h4 { page-break-after: avoid; }
-  tr { page-break-inside: avoid; }
-</style>
+<div style="border-top:4px solid #2563eb;margin-bottom:48px;"></div>
 
-<p align="center">
-  <strong>AudioSurvey AI</strong><br/>
-  <em>AI-Powered Multilingual IVR Voice Survey Platform</em>
-</p>
+<div style="font-size:9.5pt;letter-spacing:5px;color:#2563eb;text-transform:uppercase;font-weight:600;margin-bottom:14px;">AI Research Technology Platform</div>
 
-<p align="center">
-  <code>Version 1.1.0</code> &nbsp;|&nbsp; <code>Last Updated: 2026-03-20</code> &nbsp;|&nbsp; <code>Classification: Internal</code>
-</p>
+<div style="font-size:48pt;font-weight:900;color:#0f172a;letter-spacing:-2px;line-height:1;margin-bottom:8px;">AudioSurvey AI</div>
 
----
+<div style="height:4px;width:320px;background:linear-gradient(90deg,#2563eb,#7c3aed,rgba(124,58,237,0));margin:18px 0 22px 0;"></div>
+
+<div style="font-size:19pt;color:#1d4ed8;font-weight:300;letter-spacing:0.5px;margin-bottom:4px;">Technical Architecture &amp; System Documentation</div>
+<div style="font-size:11pt;color:#475569;margin-bottom:48px;">Comprehensive reference for system design, APIs, data models, and operations</div>
+
+<table style="border-collapse:collapse;width:100%;max-width:600px;margin-bottom:40px;">
+  <tr style="border-bottom:1px solid #e2e8f0;">
+    <td style="padding:12px 0;color:#94a3b8;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;width:180px;">Document Version</td>
+    <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#1e293b;border-left:3px solid #2563eb;">1.2.0</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e2e8f0;">
+    <td style="padding:12px 0;color:#94a3b8;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Release Date</td>
+    <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#1e293b;border-left:3px solid #2563eb;">April 6, 2026</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e2e8f0;">
+    <td style="padding:12px 0;color:#94a3b8;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Author</td>
+    <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#1e293b;border-left:3px solid #2563eb;">Krishnanand</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e2e8f0;">
+    <td style="padding:12px 0;color:#94a3b8;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Project Status</td>
+    <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#059669;border-left:3px solid #10b981;">Completed</td>
+  </tr>
+  <tr style="border-bottom:1px solid #e2e8f0;">
+    <td style="padding:12px 0;color:#94a3b8;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Classification</td>
+    <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#dc2626;border-left:3px solid #ef4444;"><strong>Confidential — Restricted Distribution</strong></td>
+  </tr>
+  <tr>
+    <td style="padding:12px 0;color:#94a3b8;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Core Stack</td>
+    <td style="padding:12px 24px;font-size:10.5pt;font-weight:600;color:#1d4ed8;border-left:3px solid #2563eb;">Python · Flask · Twilio · Azure Cognitive Services · OpenAI Whisper · PyTorch</td>
+  </tr>
+</table>
+
+<div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:10px;padding:26px 30px;max-width:680px;">
+  <div style="font-size:9pt;letter-spacing:2.5px;color:#2563eb;text-transform:uppercase;font-weight:600;margin-bottom:10px;">Abstract</div>
+  <p style="color:#334155;font-size:11pt;line-height:1.75;margin:0;">AudioSurvey AI is an AI-powered multilingual Interactive Voice Response (IVR) survey platform designed for academic and public health field research. The system conducts fully automated telephone surveys in Kiswahili, targeting African refugee populations, through a combination of Twilio cloud telephony, Azure Neural Text-to-Speech, OpenAI Whisper speech recognition, and a four-stage ML post-processing pipeline comprising noise removal, transcription, translation, and English audio generation. Survey data is exported to structured Excel workbooks for analysis. The platform is managed via a secure web-based admin dashboard with real-time participant tracking, scheduled outbound calling, inbound call handling, and conference call capabilities.</p>
+</div>
+
+<div style="margin-top:50px;border-top:1px solid #e2e8f0;padding-top:18px;display:flex;justify-content:space-between;font-size:9pt;">
+  <span style="color:#64748b;">AudioSurvey AI Research Platform</span>
+  <span style="color:#64748b;">Technical Architecture &amp; System Documentation · v1.2.0</span>
+  <span style="color:#64748b;">© 2026 · All Rights Reserved</span>
+</div>
+<div style="border-bottom:4px solid #2563eb;margin-top:14px;"></div>
+
+</div>
+
+<div style="page-break-after:always;"></div>
 
 # Project Documentation
 
@@ -32,17 +60,28 @@ pdf_options:
 
 | Version | Date | Author | Change Description |
 |---------|------|--------|--------------------|
-| 1.0.0 | 2026-02-22 | Krishnanand | Initial release — core IVR engine, Twilio integration, Whisper STT, admin dashboard |
+| 0.1.0 | 2026-01-22 | Krishnanand | Initial project setup — TTS, transcription, and translation modules scaffolded |
+| 0.2.0 | 2026-01-22 | Krishnanand | IVR pipeline operational — inbound and outbound calling working end-to-end |
+| 0.3.0 | 2026-01-22 | Krishnanand | Security improvements — `.env` for secrets, safe config template added |
+| 0.4.0 | 2026-01-23 | Krishnanand | README added, contacts CSV excluded from version control |
+| 0.5.0 | 2026-01-26 | Krishnanand | State management, call logs, and caller handler functions updated |
+| 0.6.0 | 2026-02-22 | Krishnanand | 5-March calling milestone — initial full call flow verified |
+| 1.0.0 | 2026-02-22 | Krishnanand | **First stable release** — core IVR engine, Twilio integration, Whisper STT, admin dashboard |
 | 1.0.1 | 2026-02-26 | Krishnanand | Excel export support for survey responses |
 | 1.0.2 | 2026-03-01 | Krishnanand | Excel formatting corrections, UX/UI upgrade, audio channel fix for full-call recordings |
 | 1.0.3 | 2026-03-03 | Krishnanand | Updated survey questions, system cleanup |
-| 1.0.4 | 2026-03-04 | Krishnanand | English translation export, "Convert to English" button added |
-| 1.0.5 | 2026-03-05 | Krishnanand | Authentication system — login/logout, brute-force protection, session management |
-| 1.0.6 | 2026-03-05 | Krishnanand | Full call testing, results saved and verified end-to-end |
+| 1.0.4 | 2026-03-04 | Krishnanand | English translation export, "Convert to English" button added to dashboard |
+| 1.0.5 | 2026-03-05 | Krishnanand | Authentication system — login/logout, PBKDF2 password hashing, brute-force protection, session management |
+| 1.0.6 | 2026-03-05 | Krishnanand | Full call testing milestone — results saved and verified end-to-end |
 | 1.0.7 | 2026-03-08 | Krishnanand | MCQO digit bug fix, hardcoded button logic corrected |
-| 1.0.8 | 2026-03-10 | Krishnanand | DeepFilterNet background noise removal, random crash fix, log improvements |
+| 1.0.8 | 2026-03-10 | Krishnanand | DeepFilterNet background noise removal integrated, random crash fix, log improvements |
 | 1.0.9 | 2026-03-15 | Krishnanand | macOS DMG packaging, icon generator update |
-| 1.1.0 | 2026-03-17 | Krishnanand | File naming convention refactored, auth info cleanup, documentation |
+| 1.1.0 | 2026-03-17 | Krishnanand | File naming convention refactored for clarity; auth info cleanup; DOCUMENTATION.md created |
+| 1.1.1 | 2026-03-21 | Krishnanand | Full audio recording logic redesigned — recording now starts at `/voice` entry, not after survey completion |
+| 1.1.2 | 2026-04-01 | Krishnanand | Study guide and presentation documentation added (`STUDY_GUIDE.md`) |
+| 1.1.3 | 2026-04-05 | Krishnanand | Inbound call response collection — inbound callers now matched to participants and routed through full survey + export flow |
+| 1.1.4 | 2026-04-05 | Krishnanand | Call direction tracking — `direction` field added to call log and dashboard display (`Incoming` / `Outgoing`) |
+| 1.2.0 | 2026-04-06 | Krishnanand | **Major release** — improved inbound call handling, auto participant creation for unknown callers, per-call End Call controls, End All Calls, live tech info panel, `runtime_status.py` module, redesigned login page, safer call/export state updates |
 
 ---
 
@@ -61,12 +100,13 @@ pdf_options:
 | 9 | [Configuration Reference](#9-configuration-reference) | All configuration files and environment variables |
 | 10 | [Admin Dashboard](#10-admin-dashboard) | UI features, live polling, user workflows |
 | 11 | [Background Services](#11-background-services) | Scheduler, ML worker, and concurrency model |
-| 12 | [Error Handling & Resilience](#12-error-handling--resilience) | Fault tolerance, retry logic, graceful degradation |
-| 13 | [Logging & Observability](#13-logging--observability) | Logging architecture, audit trails, monitoring |
-| 14 | [Deployment Guide](#14-deployment-guide) | Local setup, ngrok tunneling, macOS DMG packaging |
-| 15 | [Directory Structure](#15-directory-structure) | Complete project tree with annotations |
-| 16 | [Dependency Matrix](#16-dependency-matrix) | Third-party libraries and their roles |
-| 17 | [Glossary](#17-glossary) | Domain terminology and abbreviations |
+| 12 | [Inbound Call Handling](#12-inbound-call-handling) | Inbound caller routing, participant matching, direction tracking |
+| 13 | [Error Handling & Resilience](#13-error-handling--resilience) | Fault tolerance, retry logic, graceful degradation |
+| 14 | [Logging & Observability](#14-logging--observability) | Logging architecture, runtime status, audit trails |
+| 15 | [Deployment Guide](#15-deployment-guide) | Local setup, ngrok tunneling, macOS DMG packaging |
+| 16 | [Directory Structure](#16-directory-structure) | Complete project tree with annotations |
+| 17 | [Dependency Matrix](#17-dependency-matrix) | Third-party libraries and their roles |
+| 18 | [Glossary](#18-glossary) | Domain terminology and abbreviations |
 
 ---
 
@@ -78,14 +118,15 @@ AudioSurvey AI is an AI-powered multilingual Interactive Voice Response (IVR) su
 
 ### 1.2 Business Context
 
-The platform was built for academic and public health research. It is designed as a **flexible, multi-survey system** — the survey topic, questions, and thematic sections are fully configurable via the `data/questions.txt` file. Researchers can deploy different surveys for different studies without any code changes.
+The platform was built for academic and public health research. It is designed as a **flexible, multi-survey system** — the survey topic, questions, and thematic sections are fully configurable via the `data/questions.txt` file. Researchers can deploy different surveys for different studies without any code changes. Both outbound scheduled calling and inbound participant-initiated calls are fully supported, routing through the same survey and ML processing pipeline.
 
 ### 1.3 Key Capabilities
 
 | Capability | Description |
 |------------|-------------|
 | **Automated Outbound Calling** | Scheduled batch dialing of research participants via Twilio |
-| **Inbound Call Support** | Participants can call in and complete the survey |
+| **Inbound Call Support** | Participants can call in; auto-matched to existing records or auto-created |
+| **Call Direction Tracking** | All calls tagged as `inbound` or `outbound-api`, shown in dashboard |
 | **Multilingual IVR** | Survey prompts spoken in Kiswahili via Azure Neural TTS |
 | **Multi-Format Questions** | INFO, OPEN (speech), MCQ (DTMF keypad), MCQO (MCQ + "Other" speech) |
 | **Full-Call Recording** | Complete audio capture of every call (up to 30 minutes) |
@@ -94,8 +135,10 @@ The platform was built for academic and public health research. It is designed a
 | **Machine Translation** | Automatic Kiswahili to English translation |
 | **English Audio Generation** | TTS synthesis of translated responses |
 | **Structured Data Export** | Excel export of MCQ/MCQO responses (original + English) |
-| **Admin Dashboard** | Real-time web UI for managing participants, scheduling, and monitoring |
+| **Admin Dashboard** | Real-time web UI — participant management, live status, call controls |
+| **Per-Call & Global Call Controls** | End individual calls or all active calls from the admin UI |
 | **Conference Calling** | Three-way call support for researcher-moderated interviews |
+| **Runtime Status Panel** | Live tech info — scheduler status, worker status, system load |
 | **macOS Distribution** | Packaged as a native .app inside a DMG installer |
 
 ### 1.4 Technology Summary
@@ -114,6 +157,7 @@ The platform was built for academic and public health research. It is designed a
 | **Audio Processing** | FFmpeg, pydub |
 | **Data Export** | pandas + openpyxl |
 | **Tunneling** | ngrok |
+| **Runtime Monitoring** | `runtime_status.py` (heartbeat-based) |
 | **Packaging** | macOS .app bundle + DMG |
 
 ---
@@ -142,16 +186,16 @@ The platform was built for academic and public health research. It is designed a
 |   +--------------+  +--------------+  +--------------+                |
 |                                                                       |
 |   +--------------+  +--------------+  +--------------+                |
-|   | Conference   |  | Excel Export |  | ngrok Tunnel |                |
-|   | Call Module  |  |              |  | Integration  |                |
+|   | Conference   |  | Excel Export |  | Inbound Call |                |
+|   | Call Module  |  |              |  | Handler      |                |
 |   +--------------+  +--------------+  +--------------+                |
 |                                                                       |
-|   +-----------------------------+                                     |
-|   |     BACKGROUND SERVICES     |                                     |
-|   |  +----------+ +-----------+ |                                     |
-|   |  | Scheduler| | ML Worker | |                                     |
-|   |  | (15s)    | | (5s poll) | |                                     |
-|   |  +----------+ +-----------+ |                                     |
+|   +-----------------------------+  +-----------------------------+    |
+|   |     BACKGROUND SERVICES     |  |   RUNTIME STATUS MODULE     |    |
+|   |  +----------+ +-----------+ |  |  Scheduler & Worker         |    |
+|   |  | Scheduler| | ML Worker | |  |  heartbeat tracking         |    |
+|   |  | (15s)    | | (5s poll) | |  |                             |    |
+|   |  +----------+ +-----------+ |  +-----------------------------+    |
 |   +-----------------------------+                                     |
 +-----------------------------------------------------------------------+
              |                     |
@@ -176,7 +220,8 @@ The platform was built for academic and public health research. It is designed a
 
 **Data flow summary:**
 
-- Participant Phone <--> Twilio <--> ngrok <--> IVR Webhook Handlers
+- Participant Phone (outbound or inbound) <--> Twilio <--> ngrok <--> IVR Webhook Handlers
+- Inbound callers matched to participants by phone or auto-created
 - Admin Browser --> ngrok --> Auth Module --> Dashboard
 - IVR Handlers --> Azure TTS --> data/ivr_audio/
 - IVR Handlers --> Recording Done --> ML Worker
@@ -197,7 +242,7 @@ The platform was built for academic and public health research. It is designed a
 |   |  Speaker)        |           +--------+---------+            |
 |   +--------+---------+                    |                      |
 |            |                              |                      |
-|            | PSTN/VoIP                    | HTTPS                |
+|   PSTN/VoIP (outbound or inbound)         | HTTPS                |
 |            v                              v                      |
 |   +------------------+                                           |
 |   | Twilio Cloud     |                                           |
@@ -240,6 +285,8 @@ The platform was built for academic and public health research. It is designed a
 |   | (daemon, 15s loop)|   | (daemon, 5s poll) |                  |
 |   +-------------------+   +-------------------+                  |
 |            |                       |                             |
+|    mark_scheduler_heartbeat()  mark_worker_heartbeat()           |
+|            |                       |                             |
 |            +----------+------------+                             |
 |                       |                                          |
 |                       v                                          |
@@ -275,6 +322,7 @@ The platform was built for academic and public health research. It is designed a
             |          |                                       |
             v          v                                       v
          state.py   state.py                              translate.py
+       runtime_status.py
 
   twilio_handler.py ---+----------+-----------+
                        |          |           |
@@ -296,30 +344,32 @@ The platform was built for academic and public health research. It is designed a
                azure_tts.py (Azure TTS)
                runtime_warnings.py (Warning Suppression)
                twilio_utils.py (Twilio Call Helpers)
+               runtime_status.py (Heartbeat Monitoring)  [NEW v1.2.0]
 ```
 
 ### 3.2 Module Descriptions
 
 | Module | Lines | Responsibility |
 |--------|-------|---------------|
-| `twilio_handler.py` | ~1,330 | Core Flask application. Defines all IVR webhook routes, Azure TTS for call prompts, auth login/logout flows, conference calling, recording download, and application bootstrap. Acts as the central orchestrator. |
-| `dashboard.py` | ~950 | Admin web dashboard. Renders the single-page HTML UI with inline CSS/JS. Handles participant management routes (upload, schedule, pause/resume, reset, dial now). Includes live-polling JSON endpoint. |
-| `state.py` | ~240 | Thread-safe participant state management. Handles JSON persistence with atomic writes, call eligibility logic (`can_call`), state transitions, retry gap enforcement, and participant schema migration. |
-| `export_excel.py` | ~310 | Builds structured Excel exports from participant responses. Decodes DTMF digits back to option text, filters out OPEN responses, supports both original-language and English-translated exports. |
-| `background_worker.py` | ~150 | Continuous polling worker that processes completed recordings through the 4-stage ML pipeline (denoise, transcribe, translate, TTS). Shows terminal progress bars. |
-| `scheduler.py` | ~115 | Timed call dispatcher. Runs every 15 seconds, checks participant eligibility, and places Twilio calls for scheduled participants. Supports force-dial mode. |
-| `audio_preprocess.py` | ~210 | Audio noise removal pipeline using DeepFilterNet. Handles FFmpeg-based channel extraction/resampling, PyTorch-based noise removal, and output resampling for Whisper. |
-| `transcribe.py` | ~50 | Whisper large-v3 speech-to-text. Transcribes audio files with Swahili language hint, returns text and detected language. Supports both single-file and directory batch modes. |
-| `translate.py` | ~135 | Chunked Google Translate integration. Splits long texts at sentence boundaries, retries failed chunks, marks failures with placeholder tags. |
-| `tts.py` | ~55 | Google TTS (gTTS) wrapper for generating English MP3 audio from translated text. Skips files with translation failure markers. |
-| `auth.py` | ~165 | Standalone authentication module (partially duplicated in `twilio_handler.py`). Provides brute-force protection, session management, and credential verification. |
+| `twilio_handler.py` | ~1,780 | Core Flask application. IVR webhook routes, inbound call matching, Azure TTS, auth, conference calling, recording download, call controls, Excel export trigger, application bootstrap. Central orchestrator. |
+| `dashboard.py` | ~1,280 | Admin web dashboard. HTML UI with inline CSS/JS. Participant management, live-polling, scheduling, pause/resume, state reset, call controls (End Call, End All), live tech status panel. |
+| `runtime_status.py` | ~92 | Background service health tracking. Heartbeat-based scheduler and worker status reporting. Exposes `get_runtime_snapshot()` for dashboard live info. |
+| `state.py` | ~241 | Thread-safe participant state management. JSON persistence with atomic writes, call eligibility logic (`can_call`), state transitions, retry gap enforcement, participant schema migration. |
+| `export_excel.py` | ~314 | Builds structured Excel exports from participant responses. Decodes DTMF digits back to option text, filters OPEN responses, supports original-language and English-translated exports. |
+| `background_worker.py` | ~148 | Continuous polling worker that processes completed recordings through the 4-stage ML pipeline (denoise → transcribe → translate → TTS). Terminal progress bars and heartbeat updates. |
+| `scheduler.py` | ~114 | Timed call dispatcher. Runs every 15 seconds, checks participant eligibility, places Twilio calls. Supports force-dial mode. Updates scheduler heartbeat. |
+| `audio_preprocess.py` | ~210 | Audio noise removal pipeline using DeepFilterNet. FFmpeg-based channel extraction/resampling, PyTorch noise removal, output resampling for Whisper. |
+| `transcribe.py` | ~48 | Whisper large-v3 speech-to-text. Swahili language hint, returns text and detected language. Single-file and directory batch modes. |
+| `translate.py` | ~134 | Chunked Google Translate integration. Splits on sentence boundaries, retries failed chunks, marks failures with placeholder tags. |
+| `tts.py` | ~55 | Google TTS (gTTS) wrapper for generating English MP3 audio from translated text. |
+| `auth.py` | ~165 | Authentication helpers. Brute-force protection, session management, credential verification. |
 | `utils.py` | ~25 | Scheduling utility. Converts NYC local time to UTC and updates participant state. |
-| `azure_tts.py` | ~50 | Standalone Azure TTS module with disk caching. Used for generating call prompt audio. |
-| `file_naming.py` | ~28 | Safe filename generation. Sanitizes participant IDs and generates timestamped base names. |
-| `logger.py` | ~75 | Colored console logging via `colorlog`. Silences noisy third-party library logs. Provides context manager for extra-quiet operations. |
-| `runtime_warnings.py` | ~15 | Suppresses urllib3 OpenSSL compatibility warnings. |
-| `run_app.py` | ~130 | Application launcher. Auto-starts ngrok, sets environment variables, launches Flask, opens browser. |
-| `main.py` | ~28 | Standalone batch processor for offline audio to transcript to translation to TTS pipeline. |
+| `azure_tts.py` | ~49 | Standalone Azure TTS module with SHA1 disk caching. Generates IVR call prompt audio. |
+| `file_naming.py` | ~28 | Safe filename generation. Sanitizes participant IDs, generates timestamped base names. |
+| `logger.py` | ~76 | Colored console logging via `colorlog`. Silences noisy third-party library logs. Context manager for quiet operations. |
+| `runtime_warnings.py` | ~16 | Suppresses urllib3/OpenSSL compatibility warnings at startup. |
+| `run_app.py` | ~129 | Application launcher. Auto-starts ngrok, sets environment variables, launches Flask subprocess, opens browser. |
+| `main.py` | ~28 | Standalone batch processor for offline audio → transcript → translation → TTS pipeline. |
 
 ---
 
@@ -340,11 +390,9 @@ The platform was built for academic and public health research. It is designed a
     |                      |-- set_paused(false)               |
     |                      |                  |                 |
     |                      |    +--[Every 15 seconds]--+       |
+    |                      |    | mark_scheduler_heartbeat()   |
     |                      |    | load_participants()  |       |
     |                      |    | can_call() check     |       |
-    |                      |    |    Checks: status,   |       |
-    |                      |    |    attempts, schedule |       |
-    |                      |    |    time, retry gap   |       |
     |                      |    +----------------------+       |
     |                      |                  |                 |
     |                      |                  |-- calls.create --->
@@ -355,7 +403,7 @@ The platform was built for academic and public health research. It is designed a
     |                      |                  |                 |
     |-- Ring ------------->|                  |                 |
     |<-- Answer -----------|                  |                 |
-    |-- POST /voice --------------------->|                    |
+    |-- POST /voice --------------------->|   direction=outbound|
     |                      |              | Start recording    |
     |                      |              |-- Redirect /start  |
     |-- POST /start --------------------->|                    |
@@ -368,7 +416,6 @@ The platform was built for academic and public health research. It is designed a
     |    | POST /next?q=N        |            |                 |
     |    | Store response        |            |                 |
     |    | Generate TTS          |            |                 |
-    |    | Play question + Gather|            |                 |
     |    +-----------------------+            |                 |
     |                      |                  |                 |
     |<-- Play "Kwaheri" + Hangup ------------|                 |
@@ -380,35 +427,64 @@ The platform was built for academic and public health research. It is designed a
     |                      |              | processing = pending
 ```
 
-### 4.2 ML Processing Pipeline
+### 4.2 Inbound Call Lifecycle (v1.2.0)
 
 ```
- INPUT                STAGE 1                STAGE 2          STAGE 3              STAGE 4      OUTPUTS
-                   Audio Preprocessing     Transcription     Translation         English TTS
-
-+-----------+     +---------------+     +-----------+     +-------------+     +---------+     +-----------+
-| Raw       |     | FFmpeg        |     |           |     | Language    |     |         |     | Cleaned   |
-| Recording |---->| Channel       |     |           |     | Detection   |     |         |     | WAV       |
-| (Stereo   |     | Extract +     |     |           |     |     |       |     |         |     +-----------+
-|  WAV)     |     | Resample 48kHz|     |           |     |  +--+--+   |     |         |     | Transcript|
-+-----------+     +-------+-------+     |           |     |  |     |   |     |         |     | .txt      |
-                          |             |           |     |  v     v   |     |         |     +-----------+
-                  +-------+-------+     |           |     |lang  lang  |     |         |     | Translation
-                  | DeepFilterNet |     |           |     |=en   !=en  |     |         |     | .txt      |
-                  | Noise Removal |     |           |     | |     |    |     |         |     +-----------+
-                  | (PyTorch)     |     |           |     | |   Chunk  |     |         |     | English   |
-                  +-------+-------+     | Whisper   |     |Copy Splitter|    |         |     | .mp3      |
-                          |             | large-v3  |     |as-is (3000) |    |         |     +-----------+
-                  +-------+-------+     | lang='sw' |     | |     |    |     |         |
-                  | FFmpeg        |     | temp=0.0  |     | | Google   |     | gTTS    |
-                  | Resample 16kHz|---->|           |---->| |Translate |---->| lang=en |
-                  | Mono PCM     |     |           |     | | sw->en   |     |         |
-                  +---------------+     +-----------+     | |(3 retries|     +---------+
-                                                          | |  Join   |
-                                                          +--+-------+
+  PARTICIPANT           TWILIO             IVR HANDLER        STATE
+    |                      |                   |                 |
+    |-- Dials Twilio #---->|                   |                 |
+    |                      |-- POST /voice --->|                 |
+    |                      |   From=+254...    |                 |
+    |                      |   Direction=inbound                 |
+    |                      |                   |                 |
+    |                      |        Match caller by phone?       |
+    |                      |              |          |           |
+    |                      |             Yes         No          |
+    |                      |              |          |           |
+    |                      |         Use existing   Auto-create  |
+    |                      |         participant    new participant
+    |                      |         record         from caller # |
+    |                      |              |          |           |
+    |                      |              +----+-----+           |
+    |                      |                   |                 |
+    |                      |              mark_call_started()    |
+    |                      |              (direction=inbound)    |
+    |                      |                   |                 |
+    |                      | [Same IVR flow as outbound]         |
+    |                      |   /start, /next, /mcq-handler, etc. |
+    |                      |                   |                 |
+    |                      |-- POST /call-status               |
+    |                      |-- POST /recording-done            |
+    |                      |              append_to_excel()     |
+    |                      |              processing = pending  |
 ```
 
-### 4.3 Recording Callback Flow
+### 4.3 ML Processing Pipeline
+
+```
+ INPUT         STAGE 1               STAGE 2        STAGE 3           STAGE 4     OUTPUTS
+            Audio Preprocessing   Transcription   Translation       English TTS
+
++-------+  +---------------+    +-----------+  +-------------+  +---------+  +-----------+
+| Raw   |  | FFmpeg        |    |           |  | Language    |  |         |  | Cleaned   |
+| WAV   |->| Channel Mix + |    |           |  | Detection   |  |         |  | WAV       |
+|       |  | Resample 48kHz|    |           |  |   |         |  |         |  +-----------+
++-------+  +-------+-------+    |           |  |lang=en lang |  |         |  | Transcript|
+                   |             |           |  |  |    !=en  |  |         |  | .txt (sw) |
+           +-------+-------+    | Whisper   |  |  v      v   |  |         |  +-----------+
+           | DeepFilterNet |    | large-v3  |  | Copy  Chunk |  |         |  | Translation
+           | Noise Removal |    | lang="sw" |->| as-is  3000 |->| gTTS    |  | .txt (en) |
+           | (PyTorch)     |    | temp=0.0  |  | (en)  chars |  | lang=en |  +-----------+
+           +-------+-------+    | fp16=False|  |  |    |     |  |         |  | English   |
+                   |             +-----------+  |  |  Translate  |         |  | .mp3      |
+           +-------+-------+                   |  |  3 retries  +---------+  +-----------+
+           | FFmpeg        |                   |  +------+------+
+           | Resample 16kHz|                   +---------|------+
+           +---------------+                             v
+                                                  data/translations/
+```
+
+### 4.4 Recording Callback Flow
 
 ```
   Twilio POST /recording-done
@@ -429,7 +505,7 @@ The platform was built for academic and public health research. It is designed a
                           No          Yes
                            |           |
                    Download WAV    Call status retryable failure?
-                   anyway          (no-answer/busy/failed/canceled)
+                   (saved)         (no-answer/busy/failed/canceled)
                                        |           |
                                       Yes         No
                                        |           |
@@ -438,39 +514,38 @@ The platform was built for academic and public health research. It is designed a
                                                   No          Yes
                                                    |           |
                                              Skip pipeline   Download WAV from Twilio
-                                             (no speech)         |
+                                             (saved_no_engagement)  |
                                                             Save to data/audio/
                                                                  |
                                                             Set processing_status = pending
                                                                  |
-                                                            Log call event to CSV
+                                                            Log to call_log.csv
                                                                  |
-                                                            Background Worker
-                                                            picks up next cycle
+                                                            Background Worker picks up
 ```
 
-### 4.4 Excel Export Data Flow
+### 4.5 Excel Export Data Flow
 
 ```
   INPUT                         PROCESSING                         OUTPUT
 
   +---------------+     +---------------------+     +---------------------------+
   | questions.txt |---->| Build Response      |     | ivr_responses.xlsx        |
-  +---------------+     | Metadata            |     | (Kiswahili)               |
+  +---------------+     | Metadata            |     | (Kiswahili option text)   |
                         +----------+----------+     +-------------+-------------+
   +-----------------+              |                               |
   | participants.json|-->| Filter Responses   |     Cell-by-cell translate
   +-----------------+   | (exclude OPEN)      |                    |
                         +----------+----------+     +-------------+-------------+
-                                   |                | Translation Cache         |
+                                   |                | Translation Cache (dict)  |
                         +----------+----------+     +-------------+-------------+
                         | Decode DTMF         |                    |
-                        | -> Option Text      |     +-------------+-------------+
+                        | digit -> Option Text|     +-------------+-------------+
                         +----------+----------+     | ivr_responses_english.xlsx|
-                                   |                | (English)                 |
-                        +----------+----------+     +---------------------------+
+                                   |                +---------------------------+
+                        +----------+----------+
                         | Renumber Question   |
-                        | Keys                |
+                        | Keys (q1, q2, ...)  |
                         +----------+----------+
                                    |
                         +----------+----------+
@@ -484,17 +559,18 @@ The platform was built for academic and public health research. It is designed a
 
 ### 5.1 Public Endpoints (No Auth Required)
 
-These endpoints are accessible without authentication — they are called by Twilio webhooks or used for health checks.
+These endpoints are accessible without authentication — called by Twilio webhooks or used for health checks.
 
 #### `POST /voice`
-> **Twilio Inbound Call Entrypoint**
+> **Call Entrypoint — Outbound and Inbound**
 
-Initiates full-call recording and redirects to the survey start.
+Initiates full-call recording and redirects to the survey start. For inbound calls, attempts to match the caller by phone number or auto-creates a participant.
 
 | Parameter | Source | Description |
 |-----------|--------|-------------|
 | `CallSid` | Twilio | Unique call identifier |
-| `From` | Twilio | Caller phone number |
+| `From` | Twilio | Caller phone number (used for inbound matching) |
+| `Direction` | Twilio | `inbound` or `outbound-api` |
 
 **Response:** TwiML — starts `<Recording>`, redirects to `/start`
 
@@ -531,22 +607,22 @@ Core question loop. Stores previous answer, advances to next question based on t
 #### `POST /mcq-handler?q={index}`
 > **MCQ/MCQO DTMF Handler**
 
-Processes keypad digit for multiple choice questions. If MCQO and "Other" selected, redirects to speech capture.
+Processes keypad digit. If MCQO and "Other" selected, redirects to speech capture.
 
 | Parameter | Source | Description |
 |-----------|--------|-------------|
 | `q` | Query string | Question index |
-| `Digits` | Twilio | Pressed DTMF digit (1-9) |
+| `Digits` | Twilio | Pressed DTMF digit (1–9) |
 | `CallSid` | Twilio | Call identifier |
 
-**Response:** TwiML — either redirects to next question or to `/mcqo-other-handler`
+**Response:** TwiML — next question or `/mcqo-other-handler`
 
 ---
 
 #### `POST /mcqo-other-handler?q={index}`
 > **MCQO "Other" Speech Handler**
 
-Captures (but does not store) the free-speech "Other" response and moves to the next question.
+Captures the free-speech "Other" response and moves to next question.
 
 | Parameter | Source | Description |
 |-----------|--------|-------------|
@@ -560,12 +636,12 @@ Captures (but does not store) the free-speech "Other" response and moves to the 
 #### `POST /call-status`
 > **Twilio Call Status Webhook**
 
-Receives call completion events. Updates participant state and triggers Excel export on completion.
+Receives call completion events. Updates participant state, triggers Excel export on completion.
 
 | Parameter | Source | Description |
 |-----------|--------|-------------|
 | `CallSid` | Twilio | Call identifier |
-| `CallStatus` | Twilio | One of: `completed`, `no-answer`, `busy`, `failed`, `canceled` |
+| `CallStatus` | Twilio | `completed`, `no-answer`, `busy`, `failed`, `canceled` |
 
 **Response:** `200 OK`
 
@@ -581,6 +657,7 @@ Downloads the completed recording WAV and queues it for ML processing.
 | `CallSid` | Twilio | Call identifier |
 | `RecordingUrl` | Twilio | URL to download recording |
 | `RecordingStatus` | Twilio | `completed` or other |
+| `Direction` | Twilio | `inbound` or `outbound-api` |
 
 **Response:** `200 OK`
 
@@ -589,8 +666,6 @@ Downloads the completed recording WAV and queues it for ML processing.
 #### `GET /health`
 > **Health Check**
 
-Simple liveness probe.
-
 **Response:** `200 OK` — body: `ok`
 
 ---
@@ -598,52 +673,36 @@ Simple liveness probe.
 #### `POST /conference_host`, `POST /conference_join`, `POST /conference_ivr`, `POST /conference_ivr_next`
 > **Conference Call Endpoints**
 
-Handle the Twilio conference call flow. The host enters a waiting room where IVR questions play, then the conference starts when all questions are complete.
+Three-way conference call flow. Host hears IVR questions while waiting; conference starts when questions complete.
 
 ---
 
 #### `POST /silence`
 > **Silence Generator**
 
-Returns TwiML with a 60-second pause. Used as conference hold music fallback.
+Returns TwiML with a 60-second pause — used as conference hold fallback.
 
 ---
 
 #### `GET /ivr-audio/<filename>`
 > **Static IVR Audio Server**
 
-Serves pre-generated Azure TTS audio files from `data/ivr_audio/`.
+Serves cached Azure TTS audio from `data/ivr_audio/`.
 
 ---
 
 ### 5.2 Authenticated Endpoints (Login Required)
 
-All `/admin/*` routes require an active session (cookie-based) or a valid `ADMIN_TOKEN` query parameter.
+All `/admin/*` routes require an active session or valid `ADMIN_TOKEN` query parameter.
 
-#### `GET /admin`
-> **Admin Dashboard**
+#### `GET /admin` — Admin Dashboard (full HTML page)
 
-Renders the full admin dashboard HTML page.
+#### `GET /admin/live_state` — Live State JSON API
 
-**Response:** `200 OK` — HTML page
-
----
-
-#### `GET /admin/live_state`
-> **Live State JSON API**
-
-Returns current participant state for live-polling dashboard updates.
-
-**Response:**
 ```json
 {
   "total": 42,
-  "counts": {
-    "pending": 10,
-    "in_progress": 5,
-    "completed": 25,
-    "failed": 2
-  },
+  "counts": {"pending": 10, "in_progress": 5, "completed": 25, "failed": 2},
   "participants": [
     {
       "participant_id": "P001",
@@ -651,118 +710,49 @@ Returns current participant state for live-polling dashboard updates.
       "status": "completed",
       "attempts": 1,
       "engaged": true,
-      "scheduled_local": "2026-03-15 14:00",
-      "scheduled_input": "2026-03-15 14:00"
+      "direction": "inbound",
+      "scheduled_local": "2026-04-05 14:00",
+      "processing_status": "completed"
     }
-  ]
+  ],
+  "runtime": {
+    "scheduler": {"status": "running", "label": "Running", "age_sec": 3},
+    "worker": {"status": "running", "label": "Running", "age_sec": 2}
+  }
 }
 ```
 
----
+#### `POST /admin/upload_contacts` — Upload participant CSV (`participant_id,phone_e164`)
 
-#### `POST /admin/upload_contacts`
-> **Upload Participant CSV**
+#### `POST /admin/save_questions` — Save `data/questions.txt`
 
-Accepts a CSV file with headers `participant_id,phone_e164`. Creates participant entries with `idle` status (not immediately callable).
+#### `POST /admin/schedule` — Set scheduled call time for a participant (NYC timezone)
 
----
+#### `POST /admin/dial_now` — Force dial all eligible participants immediately
 
-#### `POST /admin/save_questions`
-> **Save Survey Questions**
+#### `POST /admin/pause` / `POST /admin/resume` — Toggle scheduler pause
 
-Saves the survey question text to `data/questions.txt`.
+#### `POST /admin/reset_state` — Back up and reset all participant state
 
----
+#### `GET /admin/export_excel` — Download `ivr_responses.xlsx` (original language)
 
-#### `POST /admin/schedule`
-> **Schedule Participant Call**
+#### `GET /admin/export_excel_english` — Download `ivr_responses_english.xlsx` (translated)
 
-Sets a participant's scheduled call time (NYC timezone).
+#### `POST /admin/conference_call` — Dial two numbers into a conference room
 
-| Parameter | Source | Description |
-|-----------|--------|-------------|
-| `participant_id` | Form | Participant ID |
-| `local_time` | Form | `YYYY-MM-DD HH:MM` (NYC time) |
+#### `POST /admin/end_call` — End a specific active call by CallSid *(v1.2.0)*
 
----
-
-#### `POST /admin/dial_now`
-> **Force Dial**
-
-Triggers `run_once(force=True)` — calls all eligible participants immediately, bypassing schedule/retry timing.
-
----
-
-#### `POST /admin/pause` / `POST /admin/resume`
-> **System Pause / Resume**
-
-Toggles the global scheduler pause state.
-
----
-
-#### `POST /admin/reset_state`
-> **Reset State**
-
-Creates timestamped backups of `participants.json` and `call_log.csv`, then resets all state.
-
----
-
-#### `GET /admin/export_excel`
-> **Export Survey Responses (Original Language)**
-
-Downloads `ivr_responses.xlsx` containing MCQ/MCQO responses with option text decoded.
-
----
-
-#### `GET /admin/export_excel_english`
-> **Export Survey Responses (English)**
-
-Translates all response cells to English and downloads `ivr_responses_english.xlsx`.
-
----
-
-#### `POST /admin/conference_call`
-> **Start Conference Call**
-
-Dials two phone numbers into a shared Twilio conference room.
-
-| Parameter | Source | Description |
-|-----------|--------|-------------|
-| `number_1` | Form | First phone number (E.164) |
-| `number_2` | Form | Second phone number (E.164) |
+#### `POST /admin/end_all_calls` — End all currently active calls *(v1.2.0)*
 
 ---
 
 ### 5.3 Authentication Endpoints
 
-#### `GET /login`
-> **Login Page**
+#### `GET /login` — Login page
 
-Renders the login form.
+#### `POST /login` — Authenticate; sets session cookie on success
 
----
-
-#### `POST /login`
-> **Login Submit**
-
-Authenticates the user against `config.yaml` password hashes.
-
-| Parameter | Source | Description |
-|-----------|--------|-------------|
-| `username` | Form | Username (case-insensitive) |
-| `password` | Form | Plaintext password |
-
-**Responses:**
-- Success: redirect to `/admin`
-- Invalid credentials: re-render login page with error
-- Locked out: show remaining lockout time
-
----
-
-#### `POST /logout`
-> **Logout**
-
-Clears the session and logs the event.
+#### `POST /logout` — Clear session and log event
 
 ---
 
@@ -770,31 +760,30 @@ Clears the session and logs the event.
 
 ### 6.1 Participant Schema
 
-Each participant in `data/state/participants.json` follows this schema:
-
 ```json
 {
   "P001": {
-    "status": "pending",
-    "attempts": 0,
-    "last_call_time": null,
-    "last_call_sid": null,
-    "last_call_status": null,
-    "engaged": false,
-    "last_recording_url": null,
+    "status": "completed",
+    "attempts": 1,
+    "last_call_time": "2026-04-05T18:30:00",
+    "last_call_sid": "CA1234567890abcdef",
+    "last_call_status": "completed",
+    "engaged": true,
+    "last_recording_url": "https://api.twilio.com/2010-04-01/Accounts/.../Recordings/RE...",
     "last_outputs": {},
-    "scheduled_time_local": null,
-    "scheduled_time_utc": null,
+    "scheduled_time_local": "2026-04-05 14:30",
+    "scheduled_time_utc": "2026-04-05T18:30:00Z",
     "phone_e164": "+254700000000",
     "responses": {
-      "q1": "2",
-      "q2": "1",
-      "q3": "3"
+      "q1": "Jina langu ni Amina",
+      "q2": "2",
+      "q3": "1",
+      "survey_q_counter": 15
     },
-    "survey_q_counter": 3,
     "processing_status": "completed",
-    "audio_path": "data/audio/P001_20260315_140000.wav",
-    "recording_url": "https://api.twilio.com/2010-04-01/Accounts/.../Recordings/RE..."
+    "audio_path": "data/audio/P001_20260405_183000.wav",
+    "recording_url": "https://api.twilio.com/...",
+    "direction": "inbound"
   }
 }
 ```
@@ -802,88 +791,78 @@ Each participant in `data/state/participants.json` follows this schema:
 ### 6.2 Participant State Machine
 
 ```
-                          +-------+
-                          | START |
-                          +---+---+
-                              |
-                          CSV upload
-                              |
-                              v
-                          +-------+
-                   +----->| idle  |
-                   |      +---+---+
-                   |          |
-                   |     Schedule set
-                   |          |
-                   |          v
-                   |    +---------+       Eligible for calling when:
-                   +----|         |       - scheduled_time_utc <= now
-                   |    | pending |       - retry gap (1h) elapsed
-                   |    |         |       - attempts < 3
-                   |    +----+----+
-                   |         |
-                   |    Call placed
-                   |         |
-                   |         v
-                   |  +-------------+
-                   |  | in_progress |
-                   |  +------+------+
-                   |         |
-              +----+---------+---------+-------------------+
-              |              |                             |
-        No answer /    Survey finished              Completed but
-        Busy           (engaged=true)               not engaged
-        (attempts<3)         |                             |
-              |              v                             |
-              |      +-----------+                         |
-              +      | completed |                         |
-                     +-----------+                         |
-                                                           |
-              +--------------------------------------------+
-              |
-        No answer / Busy
-        (attempts >= 3)
-              |
-              v
-         +--------+
-         | failed |
-         +--------+
+                       +-------+
+                       | START |
+                       +---+---+
+                           |
+                       CSV upload / inbound call
+                           |
+                           v
+                       +-------+
+                +----->| idle  |
+                |      +---+---+
+                |          |
+                |     Schedule set / inbound triggers
+                |          |
+                |          v
+                |    +---------+       Eligible when:
+                +----|         |       - scheduled_time_utc <= now
+                |    | pending |       - retry gap (1h) elapsed
+                |    |         |       - attempts < 3
+                |    +----+----+
+                |         |
+                |    Call placed
+                |         |
+                |         v
+                |  +-------------+
+                |  | in_progress |
+                |  +------+------+
+                |         |
+           +----+---------+---------+-------------------+
+           |              |                             |
+     No answer /    Survey finished              Completed but
+     Busy           (engaged=true)               not engaged
+     (attempts<3)         |                             |
+           |              v                             |
+           |      +-----------+                    (retry)
+           +      | completed |
+                  +-----------+
+
+     No answer/Busy (attempts >= 3)
+           |
+           v
+      +--------+
+      | failed |
+      +--------+
 ```
 
 ### 6.3 Processing Status State Machine
 
 ```
-  +-------+     No recording     +------+
-  | START |--------------------->| none |
-  +-------+                      +--+---+
-                                    |
-                           Recording downloaded
-                                    |
-                                    v
-                                +---------+
-                                | pending |
-                                +----+----+
-                                     |
-                               Worker picks up
-                                     |
-                                     v
-                               +------------+
-                               | processing |
-                               +-----+------+
-                                     |
-                         +-----------+-----------+
-                         |                       |
-                   Pipeline success        Pipeline error
-                         |                       |
-                         v                       v
-                   +-----------+           +--------+
-                   | completed |           | failed |
-                   +-----------+           +--------+
+  Recording received
+        |
+        v
+  Engaged?
+  |         |
+ No         Yes
+  |         |
+saved_no_  pending
+engagement  |
+           Worker picks up
+            |
+            v
+        processing
+            |
+       +----+----+
+       |         |
+    success    error
+       |         |
+  completed   failed
 ```
 
 ### 6.4 Call Log Schema
 
-`data/state/call_log.csv` columns:
+`data/state/call_log.csv`:
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -893,10 +872,10 @@ Each participant in `data/state/participants.json` follows this schema:
 | `direction` | String | `inbound` or `outbound-api` |
 | `call_sid` | String | Twilio call SID |
 | `recording_url` | URL | Twilio recording URL |
-| `audio_path` | String | Local file path |
-| `transcript_path` | String | Local transcript path |
-| `translation_path` | String | Local translation path |
-| `english_audio_path` | String | Local English audio path |
+| `audio_path` | String | Local WAV file path |
+| `transcript_path` | String | Kiswahili transcript path |
+| `translation_path` | String | English translation path |
+| `english_audio_path` | String | English MP3 path |
 
 ### 6.5 Auth State Schema
 
@@ -916,9 +895,7 @@ Each participant in `data/state/participants.json` follows this schema:
 
 `data/state/settings.json`:
 ```json
-{
-  "paused": false
-}
+{ "paused": false }
 ```
 
 ---
@@ -928,34 +905,30 @@ Each participant in `data/state/participants.json` follows this schema:
 ### 7.1 Authentication Flow
 
 ```
-  USER                    FLASK               config.yaml       auth_state.json    auth_log.jsonl
-   |                        |                      |                  |                 |
-   |-- GET /admin --------->|                      |                  |                 |
-   |                        |-- before_request     |                  |                 |
-   |<-- 302 -> /login ------|   guard              |                  |                 |
-   |                        |                      |                  |                 |
-   |-- POST /login -------->|                      |                  |                 |
-   |   (username, password) |                      |                  |                 |
-   |                        |-- is_locked? ------->|                  |                 |
-   |                        |                      |                  |                 |
-   |              +---------+--- [If Locked] ------+------------------+                 |
-   |              |         |                      |                  |                 |
-   |<-- "Too many attempts" |                      |                  |                 |
-   |                        |                      |                  |                 |
-   |                        |-- Load auth.users -->|                  |                 |
-   |                        |-- check_password_hash()                 |                 |
-   |                        |                      |                  |                 |
-   |              +---------+-- [If Invalid] ------+------------------+                 |
-   |              |         |-- record_fail ------>|                  |                 |
-   |              |         |   (If fails>=7 in 10min -> lock 15min) |                 |
-   |              |         |-- Log failed ------->|                  |--- append ----->|
-   |<-- "Invalid credentials"                      |                  |                 |
-   |                        |                      |                  |                 |
-   |              +---------+-- [If Valid] --------+------------------+                 |
-   |              |         |-- clear_fails ------>|                  |                 |
-   |              |         |-- Set session cookie |                  |                 |
-   |              |         |-- Log success ------>|                  |--- append ----->|
-   |<-- 302 -> /admin ------|                      |                  |                 |
+  USER                  FLASK              config.yaml     auth_state.json  auth_log.jsonl
+   |                       |                    |                |                |
+   |-- GET /admin -------->|                    |                |                |
+   |                       |-- before_request   |                |                |
+   |<-- 302 -> /login -----|   guard            |                |                |
+   |                       |                    |                |                |
+   |-- POST /login ------->|                    |                |                |
+   |  (username,password)  |                    |                |                |
+   |                       |-- _is_locked? -----|--------------->|                |
+   |                       |                    |                |                |
+   |          [If Locked]  |                    |                |                |
+   |<-- "Try again in Xs"--|                    |                |                |
+   |                       |                    |                |                |
+   |                       |-- Load auth.users->|                |                |
+   |                       |-- check_password_hash()             |                |
+   |                       |                    |                |                |
+   |          [If Invalid] |-- _record_fail() --|--------------->|                |
+   |                       |   (7 fails=lock)   |                |                |
+   |<-- "Invalid creds"    |-- Log event -------|----------------|--------------->|
+   |                       |                    |                |                |
+   |          [If Valid]   |-- _clear_fails() --|--------------->|                |
+   |                       |-- Set session      |                |                |
+   |                       |-- Log success -----|----------------|--------------->|
+   |<-- 302 -> /admin -----|                    |                |                |
 ```
 
 ### 7.2 Security Measures
@@ -963,44 +936,14 @@ Each participant in `data/state/participants.json` follows this schema:
 | Measure | Implementation | Details |
 |---------|---------------|---------|
 | **Password Hashing** | PBKDF2-SHA256 | 1,000,000 iterations via Werkzeug |
-| **Brute-Force Protection** | Rate limiting | 7 failures in 10 minutes -> 15-minute lockout per username+IP |
+| **Brute-Force Protection** | Rate limiting per username+IP | 7 failures in 10 min → 15-min lockout |
 | **Session Security** | Flask sessions | `HttpOnly`, `SameSite=Lax`, `Secure=True`, 8-hour lifetime |
-| **Phone Masking** | `mask_phone()` | Only first 2 + last 4 digits shown (e.g., `+2******1234`) |
-| **PII Protection** | `.gitignore` | Contacts CSV, participant state, audio, and logs are git-ignored |
+| **Phone Masking** | `mask_phone()` | First 2 + last 4 digits only (e.g., `+2******1234`) |
+| **PII Protection** | `.gitignore` | Contacts CSV, participant state, audio, and logs excluded from git |
 | **Route Protection** | `@app.before_request` | All `/admin` routes require session or admin token |
-| **Webhook Passthrough** | Allowlist | Twilio webhook paths (`/voice`, `/next`, etc.) bypass auth |
-| **Audit Logging** | JSONL | Every login/logout event logged with IP, user-agent, timestamps |
-
-### 7.3 Request Guard Logic
-
-```
-  Incoming Request
-       |
-       v
-  Path starts with allowed prefix?
-       |
-       +-- /login, /health, /voice, /start, /next,
-       |   /call-status, /recording-done, /ivr-audio/, etc.
-       |       |
-       |       +---> [ALLOW] Pass through
-       |
-       +-- /admin/*
-       |       |
-       |       v
-       |   ADMIN_TOKEN set & matches?
-       |       |          |
-       |      Yes        No
-       |       |          |
-       |   [ALLOW]    Session has 'user' key?
-       |                  |          |
-       |                 Yes        No
-       |                  |          |
-       |              [ALLOW]    [REDIRECT -> /login]
-       |
-       +-- Other paths
-               |
-               +---> [ALLOW] No guard
-```
+| **Webhook Passthrough** | Allowlist | Twilio webhook paths bypass auth |
+| **Audit Logging** | JSONL | Every login/logout logged with IP, user-agent, timestamps |
+| **Atomic Writes** | `os.replace()` | Prevents corrupt state files on crash |
 
 ---
 
@@ -1008,34 +951,32 @@ Each participant in `data/state/participants.json` follows this schema:
 
 ### 8.1 Question File Format
 
-Questions are stored in `data/questions.txt` using a pipe-delimited format:
-
 ```
-TYPE|Question Text|Option1|Option2|...
+TYPE|Question Text|Option1|Option2|Option3...
 ```
 
 ### 8.2 Supported Question Types
 
 | Type | Format | Input Method | Response Storage | Example |
 |------|--------|-------------|-----------------|---------|
-| **INFO** | `INFO\|text` | None (read-only) | Not stored | `INFO\|Maswali sehemu ya kwanza` |
+| **INFO** | `INFO\|text` | None | Not stored | `INFO\|Maswali sehemu ya kwanza` |
 | **OPEN** | `OPEN\|text` | Speech (`<Gather input="speech">`) | Raw speech text | `OPEN\|Tafadhali sema jina lako` |
-| **MCQ** | `MCQ\|text\|opt1\|opt2\|opt3` | DTMF keypad (`<Gather input="dtmf">`) | Digit (1-9) | `MCQ\|Nani..?\|Marafiki\|Mume\|Watoto` |
-| **MCQO** | `MCQO\|text\|opt1\|opt2\|Nyingine` | DTMF + optional speech | Digit (1-9) | `MCQO\|Kupanga..?\|Ndiyo\|Hapana\|Nyingine` |
+| **MCQ** | `MCQ\|text\|opt1\|opt2\|opt3` | DTMF keypad | Digit (1–9) | `MCQ\|Nani..?\|Marafiki\|Mume\|Watoto` |
+| **MCQO** | `MCQO\|text\|opt1\|opt2\|Nyingine` | DTMF + optional speech | Digit (1–9) | `MCQO\|Kupanga..?\|Ndiyo\|Hapana\|Nyingine` |
 
 ### 8.3 IVR Question Flow
 
 ```
-  Call Answered
+  Call Answered (inbound or outbound)
        |
        v
-  Start Full-Call Recording (30 min max)
+  /voice: Start Full-Call Recording (30 min max), tag direction
        |
        v
-  Play Q[0] + Q[1] (INFO intros)
+  /start: Play Q[0] + Q[1] (INFO intros)
        |
        v
-  Play Q[2] (First real question)
+  /start: Play Q[2] (First real question) with <Gather>
        |
        v
   +--- Question Type? ---+------------------+------------------+
@@ -1043,48 +984,40 @@ TYPE|Question Text|Option1|Option2|...
   INFO                   OPEN               MCQ               MCQO
   |                       |                  |                  |
   Play text              Play text          Play text          Play text
-  |                      Gather speech      + options          + options
-  |                      timeout=6s         Gather 1 digit     Gather 1 digit
-  |                       |                  |                  |
-  |                      Store              Store              Digit == Other?
-  |                      SpeechResult       Digit               |        |
-  |                       |                  |                 No       Yes
-  |                       |                  |                  |        |
-  |                       |                  |              Store    "Umechagua
-  |                       |                  |              Digit   nyingine..."
-  |                       |                  |                  |   Gather speech
-  |                       |                  |                  |        |
-  +---+-------------------+------------------+--------+---------+--------+
+  Pause 1s               Gather speech      + options          + options
+  Redirect next          timeout=6s         Gather 1 digit     Gather 1 digit
+                          |                  |                  |
+                         Store              Store           Digit == Other?
+                         SpeechResult       digit            |          |
+                         mark_engaged()     mark_engaged()  No         Yes
+                          |                  |               |          |
+                          |                  |           Store      "Umechagua
+                          |                  |           digit      nyingine..."
+                          |                  |               |   Gather speech 4s
+                          |                  |               |          |
+  +---+------------------++------------------+--------+------+----------+
       |
       v
   Advance to Q[n+1]
       |
-      v
-  More questions?
-      |         |
-     Yes       No
-      |         |
-  [loop]    Play "Kwaheri" + Hangup
+  More questions? Yes -> [loop]
+                  No  -> "Kwaheri" + Hangup
 ```
 
 ### 8.4 TTS Prompt Generation
 
-Survey prompts are spoken aloud using **Azure Cognitive Services Neural TTS**:
-
 - **Voice:** `sw-KE-ZuriNeural` (Swahili) / `en-US-JennyNeural` (English)
-- **Rate:** `-15%` prosody for clearer, slower speech
-- **Caching:** SHA1 hash of `voice|format|text` to disk-cached MP3 in `data/ivr_audio/`
+- **Rate:** `-15%` prosody for clearer, slower delivery
+- **Caching:** SHA1 hash of `voice|format|text` → disk-cached MP3 in `data/ivr_audio/`
 - **Serving:** Public URL via `/ivr-audio/{hash}.mp3`, referenced in TwiML `<Play>` tags
-- **Format:** SSML with XML entity escaping
+- **SSML:** Full XML with entity escaping for special characters
 
 ### 8.5 MCQ Option Verbalization
-
-For MCQ/MCQO questions, options are read aloud with their digit mapping:
 
 ```
 "finya 1 kwa Ndiyo. finya 2 kwa Hapana. finya 3 kwa Nyingine."
 ```
-(Translation: "press 1 for Yes. press 2 for No. press 3 for Other.")
+("press 1 for Yes. press 2 for No. press 3 for Other.")
 
 ---
 
@@ -1094,76 +1027,70 @@ For MCQ/MCQO questions, options are read aloud with their digit mapping:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `TWILIO_ACCOUNT_SID` | Yes | -- | Twilio account SID |
-| `TWILIO_AUTH_TOKEN` | Yes | -- | Twilio auth token |
-| `TWILIO_FROM_NUMBER` | Yes | -- | Twilio phone number (E.164) |
-| `PUBLIC_BASE_URL` | Yes | -- | Public URL for webhooks (ngrok or custom) |
+| `TWILIO_ACCOUNT_SID` | Yes | — | Twilio account SID |
+| `TWILIO_AUTH_TOKEN` | Yes | — | Twilio auth token |
+| `TWILIO_FROM_NUMBER` | Yes | — | Twilio phone number (E.164) |
+| `PUBLIC_BASE_URL` | Yes | — | Public HTTPS URL for webhooks |
 | `ADMIN_TOKEN` | No | `""` | Optional token for admin access without login |
-| `AZURE_SPEECH_KEY` | Yes | -- | Azure Cognitive Services subscription key |
-| `AZURE_SPEECH_REGION` | Yes | -- | Azure region (e.g., `eastus`) |
-| `AZURE_TTS_VOICE_SW` | No | `sw-KE-ZuriNeural` | Swahili TTS voice name |
-| `AZURE_TTS_VOICE_EN` | No | `en-US-JennyNeural` | English TTS voice name |
-| `AZURE_TTS_FORMAT` | No | `audio-16khz-128kbitrate-mono-mp3` | Audio output format |
-| `MAX_CALLS_PER_TICK` | No | `3` | Max concurrent calls per scheduler tick |
+| `AZURE_SPEECH_KEY` | Yes | — | Azure Cognitive Services subscription key |
+| `AZURE_SPEECH_REGION` | Yes | — | Azure region (e.g., `eastus`) |
+| `AZURE_TTS_VOICE_SW` | No | `sw-KE-ZuriNeural` | Swahili TTS voice |
+| `AZURE_TTS_VOICE_EN` | No | `en-US-JennyNeural` | English TTS voice |
+| `AZURE_TTS_FORMAT` | No | `audio-16khz-128kbitrate-mono-mp3` | Audio format |
+| `MAX_CALLS_PER_TICK` | No | `3` | Max outbound calls per scheduler tick |
 | `CALL_SPACING_SEC` | No | `0.8` | Delay between outbound calls |
 | `FLASK_SECRET_KEY` | No | `CHANGE_ME_NOW` | Flask session signing key |
-| `AUTO_START_NGROK` | No | `1` | Auto-start ngrok tunnel |
-| `APP_OPEN_URL` | No | -- | Custom URL to open in browser |
-| `OPEN_PUBLIC_URL` | No | `0` | Open ngrok URL instead of localhost |
-| `AUTH_STATE_PATH` | No | `data/auth_state.json` | Auth state file location |
-| `AUTH_LOG_PATH` | No | `data/auth_log.jsonl` | Auth event log location |
+| `AUTO_START_NGROK` | No | `1` | Auto-start ngrok on launch |
 | `AUTH_MAX_FAILS` | No | `7` | Failed attempts before lockout |
-| `AUTH_LOCK_SECONDS` | No | `900` | Lockout duration (seconds) |
-| `AUTH_WINDOW_SECONDS` | No | `600` | Failure tracking window (seconds) |
+| `AUTH_LOCK_SECONDS` | No | `900` | Lockout duration (15 minutes) |
+| `AUTH_WINDOW_SECONDS` | No | `600` | Failure tracking window (10 minutes) |
 
 ### 9.2 Configuration File (`config.yaml`)
 
 ```yaml
-# Twilio Configuration
 twilio:
-  account_sid: ""              # (Overridden by .env)
-  auth_token: ""               # (Overridden by .env)
-  from_number: ""              # (Overridden by .env)
-  public_base_url: ""          # (Overridden by .env)
+  account_sid: ""              # Overridden by .env
+  auth_token: ""
+  from_number: ""
+  public_base_url: ""
 
-# IVR Configuration
 ivr:
-  questions_file: "data/questions.txt"    # Path to questions file
-  gather_timeout_sec: 6                   # Seconds to wait for input
-  speech_timeout: "auto"                  # Twilio auto speech detection
-  say_voice: "alice"                      # Fallback Twilio voice
-  speech_language: "sw-KE"                # Kiswahili-Kenya for recognition
+  questions_file: "data/questions.txt"
+  gather_timeout_sec: 6
+  speech_timeout: "auto"
+  speech_language: "sw-KE"
+  recording_max_seconds: 1800  # 30 minutes
 
-# Audio Preprocessing (DeepFilterNet)
 audio_processing:
-  enabled: true                           # Toggle noise removal
-  backend: "deepfilternet"                # Only supported backend
-  processed_dir: "data/audio_processed"   # Cleaned audio output
-  temp_dir: "data/audio_processed/tmp"    # Intermediate files
-  output_sample_rate: 16000               # Whisper expects 16kHz
-  model_sample_rate: 48000                # DeepFilterNet expects 48kHz
-  channel_mode: "mixdown"                 # "mixdown" or "channel"
-  caller_channel: 0                       # Channel index if mode="channel"
-  keep_intermediate_files: false          # Cleanup temp files
+  enabled: true
+  backend: "deepfilternet"
+  processed_dir: "data/audio_processed"
+  temp_dir: "data/audio_processed/tmp"
+  output_sample_rate: 16000    # Whisper expects 16kHz
+  model_sample_rate: 48000     # DeepFilterNet expects 48kHz
+  channel_mode: "mixdown"      # "mixdown" or "channel"
+  caller_channel: 0
+  keep_intermediate_files: false
 
-# Authentication
 auth:
   users:
     username:
-      password_hash: "pbkdf2:sha256:..."  # Werkzeug generate_password_hash()
+      password_hash: "pbkdf2:sha256:..."
 ```
 
-### 9.3 State Management Constants
+### 9.3 System Constants
 
-| Constant | Value | Location | Description |
-|----------|-------|----------|-------------|
+| Constant | Value | File | Description |
+|----------|-------|------|-------------|
 | `MAX_ATTEMPTS` | `3` | `state.py` | Maximum call attempts per participant |
-| `RETRY_GAP` | `1 hour` | `state.py` | Minimum time between retry attempts |
-| `RECORDING_MAX_SEC` | `1800` (30 min) | `twilio_handler.py` | Maximum recording duration |
-| `GATHER_TIMEOUT` | `6` seconds | `config.yaml` | DTMF/speech input timeout |
-| `SCHEDULER_INTERVAL` | `15` seconds | `twilio_handler.py` | Scheduler polling interval |
-| `WORKER_POLL` | `5` seconds | `background_worker.py` | Worker polling interval |
+| `RETRY_GAP` | `1 hour` | `state.py` | Minimum time between retries |
+| `RECORDING_MAX_SEC` | `1800` | `twilio_handler.py` | Max recording length |
+| `GATHER_TIMEOUT` | `6s` | `config.yaml` | DTMF/speech input timeout |
+| `SCHEDULER_INTERVAL` | `15s` | `twilio_handler.py` | Scheduler polling interval |
+| `WORKER_POLL` | `5s` | `background_worker.py` | Worker polling interval |
 | `MAX_CHARS` | `3000` | `translate.py` | Max characters per translation chunk |
+| `SCHEDULER_TIMEOUT_SEC` | `45s` | `runtime_status.py` | Scheduler heartbeat timeout |
+| `WORKER_TIMEOUT_SEC` | `20s` | `runtime_status.py` | Worker heartbeat timeout |
 
 ---
 
@@ -1173,80 +1100,68 @@ auth:
 
 ```
 +-----------------------------------------------------------------------+
-| AudioSurvey AI -- Admin                           System: [RUNNING]   |
-| NYC time: 2026-03-20 14:32:15 EDT    Logged in as: krishnanand        |
-|                                                        [Sign out]     |
+| AudioSurvey AI — Admin                        [RUNNING] [PAUSED]      |
+| NYC time: 2026-04-05 14:32:15 EDT     Logged in as: krishnanand       |
+|                                                           [Sign out]  |
 +-----------------------------------------------------------------------+
-| [Dial Now] [Start] [Stop] [State Refresh] [Export Excel] [English]    |
-|                                                                       |
+| [Dial Now] [Start] [Stop] [Refresh] [Export Excel] [English] [Reset] |
++-----------------------------------------------------------------------+
+| TECH INFO                                                             |
+| Scheduler: Running (3s ago) | Worker: Running (1s ago) | Load: normal |
++-----------------------------------------------------------------------+
 | +-----------+ +-----------+ +-----------+ +-----------+               |
 | |    42     | |    10     | |     5     | |    25     |               |
 | |   Total   | |  Pending  | |In Progress| | Completed |               |
 | +-----------+ +-----------+ +-----------+ +-----------+               |
 +-----------------------------------------------------------------------+
-| +---------------------+  +-----------------------------+              |
-| |  Upload Contacts    |  |  Questions                  |              |
-| |  [Choose CSV][Upload]|  |  +---------------------+   |              |
-| |                     |  |  | INFO|Maswali kuhu...|   |              |
-| |                     |  |  | OPEN|Tafadhali se...|   |              |
-| |                     |  |  | MCQ|Question text...|   |              |
-| |                     |  |  +---------------------+   |              |
-| |                     |  |  [Save questions]           |              |
-| +---------------------+  +-----------------------------+              |
-+-----------------------------------------------------------------------+
-| Conference Call                                                       |
-| [+1...] [+1...] [Start call]                                         |
+| Upload Contacts [CSV] | Questions Editor [Save] | Conference Call [Go]|
 +-----------------------------------------------------------------------+
 | Participants                                                          |
-| +--------+----------+----------+----+----------+--------+--------+   |
-| | ID     | Phone    | Status   |Att.| Engaged  |Sched.  |Schedule|   |
-| +--------+----------+----------+----+----------+--------+--------+   |
-| | P001   | +2****34 | Completed| 1  | Engaged  |03-15   |[__][Set]|  |
-| | P002   | +2****56 | Pending  | 0  | Not eng. |        |[__][Set]|  |
-| | P003   | +2****78 | Failed   | 3  | Not eng. |03-14   |[__][Set]|  |
-| +--------+----------+----------+----+----------+--------+--------+   |
+| +------+----------+----------+----+----------+------+--------+-----+ |
+| | ID   | Phone    | Status   |Att.| Engaged  |Dir.  |Sched.  |Ctrl | |
+| +------+----------+----------+----+----------+------+--------+-----+ |
+| | P001 | +2****34 | Completed| 1  | Engaged  |In    |04-05   |     | |
+| | P002 | +2****56 | Pending  | 0  | Not eng. |Out   |        |[Set]| |
+| | P003 | +2****78 | InProg.  | 1  | Engaged  |In    |        |[End]| |
+| +------+----------+----------+----+----------+------+--------+-----+ |
++-----------------------------------------------------------------------+
+| [End All Calls]                                                       |
 +-----------------------------------------------------------------------+
 ```
 
-### 10.2 Live Polling Architecture
-
-```
-  BROWSER (JS)                FLASK SERVER            participants.json
-       |                           |                        |
-       +====[Every 1 second]=======================================+
-       |                           |                        |      |
-       |-- Check guards:          |                        |      |
-       |   Skip if:               |                        |      |
-       |   - Flatpickr open       |                        |      |
-       |   - Schedule input dirty |                        |      |
-       |   - Active focus in table|                        |      |
-       |   - Previous poll active |                        |      |
-       |                           |                        |      |
-       |-- GET /admin/live_state ->|                        |      |
-       |                           |-- load_participants -->|      |
-       |                           |<-- JSON state ---------|      |
-       |<-- {total, counts,        |                        |      |
-       |     participants}         |                        |      |
-       |                           |                        |      |
-       |-- Update KPI cards       |                        |      |
-       |-- Re-render table rows   |                        |      |
-       |-- Re-initialize Flatpickr|                        |      |
-       |                           |                        |      |
-       +===========================================================+
-```
-
-### 10.3 Dashboard Features
+### 10.2 New Dashboard Features (v1.2.0)
 
 | Feature | Description |
 |---------|-------------|
-| **Live NYC Clock** | JavaScript Intl.DateTimeFormat, updates every second |
-| **KPI Cards** | Total, Pending, In Progress, Completed — live-updated |
-| **Status Pills** | Color-coded badges: green=completed, yellow=in_progress, red=failed, gray=pending |
-| **Engaged Badges** | Green dot = engaged, gray dot = not engaged |
-| **Flatpickr Date Picker** | Dark-themed calendar with time selection and confirm plugin |
-| **Dirty Input Detection** | Prevents live-poll from overwriting user's in-progress schedule edits |
-| **File Upload** | Styled file input with chosen filename display |
-| **Dark Theme** | Custom CSS with glassmorphism, radial gradients, and blur effects |
+| **Live Tech Info Panel** | Shows Scheduler status, Worker status, and system load level (quiet/normal/busy) — updated every poll cycle |
+| **Call Direction Column** | Shows `Incoming` or `Outgoing` badge per participant based on call direction |
+| **End Call Button** | Per-participant button (visible when call is `in_progress`) to immediately terminate that call via Twilio API |
+| **End All Calls Button** | Global button to terminate all currently in-progress calls at once |
+| **Refreshing Overlay** | Visual overlay during state reset operations to prevent user interaction during reset |
+| **Redesigned Login Page** | Stronger branding, animated gradient, "Welcome" header, improved UX |
+| **Runtime Status API** | `/admin/live_state` now includes `runtime` object with scheduler and worker heartbeat info |
+
+### 10.3 Live Polling Architecture
+
+```
+  BROWSER (JS — every 1 second)      FLASK SERVER         participants.json
+       |                                   |                     |
+       |-- Guard checks:                  |                     |
+       |   Skip if Flatpickr open         |                     |
+       |   Skip if input dirty            |                     |
+       |   Skip if poll in flight         |                     |
+       |                                   |                     |
+       |-- GET /admin/live_state -------->|                     |
+       |                                   |-- load_participants |
+       |                                   |-- get_runtime_snapshot()
+       |<-- {total, counts,                |                     |
+       |     participants, runtime}        |                     |
+       |                                   |                     |
+       |-- Update KPI cards               |                     |
+       |-- Re-render table rows           |                     |
+       |-- Update Tech Info panel         |                     |
+       |-- Re-initialize Flatpickr        |                     |
+```
 
 ---
 
@@ -1262,245 +1177,259 @@ auth:
        |-- Thread(daemon).start ---|-------------------->|
        |-- app.run(port=5050)      |                     |
        |                           |                     |
-       |    [Parallel execution]   |                     |
-       |                           |                     |
-       |          +===[Every 15 seconds]====+            |
-       |          | load_participants()     |             |
-       |          | Filter eligible         |             |
-       |          |   (can_call)            |             |
-       |          | client.calls.create()   |             |
-       |          | mark_call_started()     |             |
-       |          | save_participants()     |             |
-       |          +=========================+             |
-       |                                                  |
-       |                    +===[Every 5 seconds]========+|
-       |                    | load_participants()        ||
-       |                    | Find processing_status     ||
-       |                    |   = "pending"              ||
-       |                    | Run ML pipeline            ||
-       |                    | mark_completed()           ||
-       |                    | save_participants()        ||
-       |                    +============================+|
+       |    +===[Every 15 seconds]=====+                 |
+       |    | mark_scheduler_heartbeat()|                |
+       |    | load_participants()       |                |
+       |    | Filter can_call()         |                |
+       |    | client.calls.create()     |                |
+       |    | mark_call_started()       |                |
+       |    | save_participants()       |                |
+       |    +===========================+                |
+       |                                                 |
+       |                    +===[Every 5 seconds]========+
+       |                    | mark_worker_heartbeat()    |
+       |                    | load_participants()        |
+       |                    | Find processing_status     |
+       |                    |   = "pending"              |
+       |                    | Run ML pipeline            |
+       |                    | mark_completed()           |
+       |                    | save_participants()        |
+       |                    +============================+
 ```
 
-### 11.2 Call Eligibility Logic (`can_call`)
+### 11.2 Worker Pipeline Stages
 
+| Stage | Progress | Typical Duration | Description |
+|-------|----------|-----------------|-------------|
+| 1. Prepare | 10–25% | ~5s | FFmpeg: extract channel, resample to 48kHz mono PCM16 |
+| 2. Denoise | 25–60% | ~30–90s | DeepFilterNet: neural noise removal (PyTorch) |
+| 3. Resample | 60–75% | ~3s | FFmpeg: downsample to 16kHz for Whisper |
+| 4. Transcribe | 75–85% | ~60–180s | Whisper large-v3: Swahili STT |
+| 5. Translate | 85–93% | ~5–20s | Google Translate: chunked sw→en with retries |
+| 6. English TTS | 93–97% | ~5–10s | gTTS: English audio synthesis |
+| 7. Complete | 100% | — | Mark completed, save outputs to state |
+
+### 11.3 Runtime Status Module (`runtime_status.py`)
+
+Added in v1.2.0. Tracks heartbeats from both background threads and provides health status for the dashboard.
+
+```python
+# Statuses returned by get_runtime_snapshot():
+# "not_started"  -> Thread hasn't started yet
+# "starting"     -> Thread started but no heartbeat yet
+# "running"      -> Last heartbeat within timeout window
+# "paused"       -> Scheduler is paused (admin toggled)
+# "down"         -> No heartbeat received within timeout
 ```
-  can_call(state, pid, force)
-       |
-       v
-  Participant exists?
-       |          |
-      No         Yes
-       |          |
-  [DENY]     Status is completed or failed?
-                  |          |
-                 Yes        No
-                  |          |
-             [DENY]     Attempts >= MAX_ATTEMPTS (3)?
-                             |          |
-                            Yes        No
-                             |          |
-                        [DENY]     force=True?
-                                       |          |
-                                      Yes        No
-                                       |          |
-                                  [ALLOW]    Has scheduled_time_utc?
-                                                  |          |
-                                                 No         Yes
-                                                  |          |
-                                             [DENY]     now_utc >= scheduled_time?
-                                                             |          |
-                                                            No         Yes
-                                                             |          |
-                                                        [DENY]     Last call time exists?
-                                                                        |          |
-                                                                       No         Yes
-                                                                        |          |
-                                                                   [ALLOW]   (now - last_call) >=
-                                                                              RETRY_GAP (1h)?
-                                                                                  |          |
-                                                                                 No         Yes
-                                                                                  |          |
-                                                                             [DENY]     [ALLOW]
-```
-
-### 11.3 Worker Pipeline Stages
-
-| Stage | Progress | Duration | Description |
-|-------|----------|----------|-------------|
-| 1. Prepare | 10-25% | ~5s | FFmpeg: extract channel, resample to 48kHz mono |
-| 2. Denoise | 25-60% | ~30-60s | DeepFilterNet: neural noise removal (GPU if available) |
-| 3. Resample | 60-75% | ~3s | FFmpeg: downsample to 16kHz for Whisper |
-| 4. Transcribe | 75-85% | ~60-120s | Whisper large-v3: Swahili STT |
-| 5. Translate | 85-93% | ~5-15s | Google Translate: chunked sw to en |
-| 6. English TTS | 93-97% | ~5-10s | gTTS: English audio synthesis |
-| 7. Complete | 100% | -- | Mark completed, save state |
 
 ---
 
-## 12. Error Handling & Resilience
+## 12. Inbound Call Handling
 
-### 12.1 Fault Tolerance Matrix
+### 12.1 Overview (v1.2.0)
+
+Inbound calls arrive when a participant dials the Twilio phone number directly. The system routes them through the exact same IVR survey and ML processing flow as outbound calls.
+
+### 12.2 Inbound Participant Matching
+
+```python
+@app.route("/voice", methods=["POST"])
+def voice():
+    call_sid = request.values.get("CallSid")
+    direction = request.values.get("Direction", "")  # "inbound" or "outbound-api"
+    caller_number = request.values.get("From", "")   # E.164 phone number
+
+    state = load_participants()
+    pid, p = find_participant_by_callsid(state, call_sid)
+
+    if not pid and direction == "inbound" and caller_number:
+        # Try to match by phone number
+        for existing_pid, existing_p in state.items():
+            if existing_p.get("phone_e164") == caller_number:
+                pid = existing_pid
+                p = existing_p
+                break
+
+        if not pid:
+            # Auto-create a new participant from the inbound number
+            pid = f"inbound_{caller_number.replace('+', '').replace(' ', '_')}"
+            upsert_participant(state, pid, caller_number)
+            p = state[pid]
+
+    # Tag direction on the participant record
+    if pid:
+        state[pid]["direction"] = direction
+        mark_call_started(state, pid, call_sid)
+        save_participants(state)
+```
+
+### 12.3 Call Controls (v1.2.0)
+
+**End Individual Call:**
+```python
+@app.route("/admin/end_call", methods=["POST"])
+def end_call():
+    call_sid = request.form.get("call_sid")
+    client = Client(TWILIO_SID, TWILIO_TOKEN)
+    client.calls(call_sid).update(status="completed")
+```
+
+**End All Active Calls:**
+```python
+@app.route("/admin/end_all_calls", methods=["POST"])
+def end_all_calls():
+    state = load_participants()
+    client = Client(TWILIO_SID, TWILIO_TOKEN)
+    for pid, p in state.items():
+        if p.get("status") == "in_progress" and p.get("last_call_sid"):
+            client.calls(p["last_call_sid"]).update(status="completed")
+```
+
+---
+
+## 13. Error Handling & Resilience
+
+### 13.1 Fault Tolerance Matrix
 
 | Component | Failure Mode | Handling Strategy |
 |-----------|-------------|-------------------|
 | **Twilio Call** | No answer / Busy | Mark `pending`, retry after 1h (up to 3 attempts) |
 | **Twilio Call** | Failed / Canceled | Mark `failed` if max attempts reached |
-| **Azure TTS** | API error | RuntimeError raised, prevents corrupted audio serving |
-| **Azure TTS** | Duplicate request | Disk cache by content hash prevents re-synthesis |
-| **Whisper** | Transcription drift | `condition_on_previous_text=False`, `temperature=0.0` |
-| **Google Translate** | API error | 3 retries with 1.5s backoff; failed chunks marked with `[TRANSLATION_FAILED_CHUNK]` |
-| **Google Translate** | Returns `None` | Explicit None check with RuntimeError |
+| **Azure TTS** | API error | RuntimeError raised; corrupted audio not served |
+| **Azure TTS** | Duplicate request | Disk cache by SHA1 hash prevents re-synthesis |
+| **Whisper** | Hallucination drift | `condition_on_previous_text=False`, `temperature=0.0` |
+| **Google Translate** | API error | 3 retries with 1.5s backoff; failed chunks marked `[TRANSLATION_FAILED_CHUNK]` |
+| **Google Translate** | Returns `None` | Explicit `None` check; RuntimeError raised |
 | **DeepFilterNet** | Processing error | Graceful fallback to unprocessed audio |
-| **Recording Download** | HTTP error | Logged, returns 200 (Twilio won't retry) |
+| **Recording Download** | HTTP error | Logged; returns 200 (Twilio won't retry webhook) |
 | **State File** | Corrupt JSON | Renamed to `.corrupt`, returns empty state |
 | **State File** | Concurrent access | `threading.RLock()` + atomic write (`.tmp` then `os.replace`) |
-| **Scheduler** | Exception in tick | Caught and logged, loop continues |
-| **Worker** | Exception in pipeline | Caught, `processing_status` set to `failed`, loop continues |
+| **Scheduler** | Exception in tick | Caught and logged; loop continues |
+| **Worker** | Exception in pipeline | Caught; `processing_status="failed"`; loop continues |
 | **Auth State** | Missing file | Returns safe defaults `{"fails": {}, "locks": {}}` |
-| **Config** | Missing `config.yaml` | Uses hardcoded defaults |
+| **Inbound Call** | Unknown caller | Auto-creates participant record from phone number |
+| **End Call API** | Call already ended | Twilio returns 200; exception caught and logged |
 
-### 12.2 Retry Policy
+### 13.2 Retry Policy
 
 ```
-  Call Placed (attempt #N)
-       |
-       v
-  Call Result
+  Call Placed (attempt N of 3)
        |
        +-- completed + engaged ---------> Status: completed
        |                                   Pipeline: triggered
        |
        +-- completed + NOT engaged -----> Status: pending
-       |                                   (will retry in 1h)
+       |                                   (retry in 1h if < 3 attempts)
        |
-       +-- no-answer / busy -----------+
-       |                               |
-       +-- failed / canceled ----------+
+       +-- no-answer / busy / failed / canceled
                                        |
-                                       v
                                   attempts >= 3?
                                        |          |
                                       Yes        No
                                        |          |
                                   Status:     Status: pending
-                                  failed      (will retry in 1h)
-                                  (no more
-                                   retries)
+                                  failed      (retry in 1h)
 ```
 
 ---
 
-## 13. Logging & Observability
+## 14. Logging & Observability
 
-### 13.1 Logging Architecture
+### 14.1 Logging Architecture
 
 | Log Type | Format | Location | Purpose |
 |----------|--------|----------|---------|
-| **Application Log** | Colored console | `stdout` | Real-time operational visibility |
+| **Application Log** | Colored console (colorlog) | stdout | Real-time operational visibility |
 | **Auth Event Log** | JSONL | `data/auth_log.jsonl` | Security audit trail |
-| **Call Log** | CSV | `data/state/call_log.csv` | Call history and recording tracking |
-| **Worker Progress** | Terminal progress bar | `stdout` | ML pipeline progress monitoring |
+| **Call Log** | CSV | `data/state/call_log.csv` | Call history, recording tracking, direction |
+| **Worker Progress** | Terminal progress bar | stdout | ML pipeline progress |
+| **Runtime Status** | In-memory heartbeats | `runtime_status.py` | Scheduler/worker liveness |
 
-### 13.2 Console Log Format
+### 14.2 Console Log Format
 
 ```
-[NYC 2026-03-20T14:32:15-04:00 | UTC 2026-03-20T18:32:15Z] PROMPT SENT | CallSid=CA123 | Participant=P001 | q3_mcq | Text="..."
+[NYC 2026-04-05T14:32:15-04:00 | UTC 2026-04-05T18:32:15Z] PROMPT SENT | CallSid=CA123 | Participant=P001 | q3_mcq | Text="..."
+[BackgroundWorker] participant=P001 | [################----]  80% | Removing background noise
+[Scheduler] 2026-04-05 14:32:30 EDT Calling P001 -> +254... | CallSid=CA123
 ```
 
-### 13.3 Auth Event Log Format
+### 14.3 Auth Event Log Format
 
 ```jsonl
-{"event":"login","user":"krishnanand","ip":"127.0.0.1","login_utc":"2026-03-20T18:32:15Z","login_local":"2026-03-20 14:32:15 EDT","user_agent":"Mozilla/5.0..."}
-{"event":"logout","user":"krishnanand","ip":"127.0.0.1","logout_utc":"2026-03-20T22:15:00Z","logout_local":"2026-03-20 18:15:00 EDT","session_duration_sec":13365}
+{"event":"login","user":"krishnanand","ip":"127.0.0.1","login_utc":"2026-04-05T18:32:15Z","login_local":"2026-04-05 14:32:15 EDT","user_agent":"Mozilla/5.0..."}
+{"event":"logout","user":"krishnanand","session_duration_sec":13365}
 ```
 
-### 13.4 Worker Progress Bar
+### 14.4 Silenced Libraries
 
-```
-[BackgroundWorker] participant=P001 | [################----]  80% | Removing background noise
-```
-
-### 13.5 Silenced Libraries
-
-The following library loggers are suppressed to reduce noise:
-
-`httpx`, `httpcore`, `httpcore.connection`, `httpcore.http2`, `hpack`, `hpack.hpack`, `h2`, `h2.connection`, `h2.config`, `gtts`, `gtts.tts`, `googletrans`, `urllib3`, `torio`, `torio._extension`, `torio._extension.utils`, `torchaudio`
+`httpx`, `httpcore`, `httpcore.connection`, `httpcore.http2`, `hpack`, `h2`, `gtts`, `gtts.tts`, `googletrans`, `urllib3`, `torio`, `torchaudio`
 
 ---
 
-## 14. Deployment Guide
+## 15. Deployment Guide
 
-### 14.1 Prerequisites
+### 15.1 Prerequisites
 
 | Requirement | Version | Purpose |
 |-------------|---------|---------|
 | Python | 3.10+ | Runtime |
-| pip | -- | Package management |
+| pip | — | Package management |
 | ngrok | 3.x | HTTPS tunneling |
 | FFmpeg | 4.x+ | Audio processing |
-| Twilio Account | -- | Voice API |
-| Azure Account | -- | Cognitive Services TTS |
+| Twilio Account | — | Voice API |
+| Azure Account | — | Cognitive Services TTS |
 
-### 14.2 Local Development Setup
+### 15.2 Local Development Setup
 
 ```bash
-# 1. Clone the repository
+# 1. Clone and enter the repository
 git clone https://github.com/krishnanand20/audiosurvey_ai.git
 cd audiosurvey_ai
 
-# 2. Create virtual environment
+# 2. Create a virtual environment
 python3 -m venv venv
 source venv/bin/activate
 
-# 3. Install dependencies
+# 3. Install all dependencies
 pip install -r requirements.txt
 
-# 4. Configure environment
+# 4. Configure your credentials
 cp .env.example .env
-# Edit .env with your Twilio + Azure credentials
+# Edit .env with your Twilio + Azure keys
 
-# 5. Launch (auto-starts ngrok + Flask + opens browser)
+# 5. Launch (auto-starts ngrok + Flask + opens admin in browser)
 python3 run_app.py
 ```
 
-### 14.3 Startup Sequence
+### 15.3 Startup Sequence
 
 ```
-  USER                run_app.py            ngrok             Flask App           BROWSER
-   |                      |                   |                   |                   |
-   |-- python3 run_app.py |                   |                   |                   |
-   |                      |                   |                   |                   |
-   |                      |-- Check AUTO_START_NGROK              |                   |
-   |                      |-- Check existing tunnel               |                   |
-   |                      |   (localhost:4040) |                   |                   |
-   |                      |                   |                   |                   |
-   |                      | [If no tunnel]    |                   |                   |
-   |                      |-- Start ngrok --->|                   |                   |
-   |                      |   http 5050       |                   |                   |
-   |                      |                   |                   |                   |
-   |                      | [Poll up to 20s]  |                   |                   |
-   |                      |-- /api/tunnels -->|                   |                   |
-   |                      |<-- HTTPS URL -----|                   |                   |
-   |                      |                   |                   |                   |
-   |                      |-- Set PUBLIC_BASE_URL env var         |                   |
-   |                      |-- subprocess: python3 -m              |                   |
-   |                      |   app.twilio_handler serve ---------->|                   |
-   |                      |                   |                   |                   |
-   |                      |                   |   Load .env, config.yaml              |
-   |                      |                   |   Load Whisper model (large-v3)       |
-   |                      |                   |   start_background_services()         |
-   |                      |                   |   app.run(port=5050)                  |
-   |                      |                   |                   |                   |
-   |                      |-- Wait 1.5s       |                   |                   |
-   |                      |-- Open browser ---|-------------------|------------------>|
-   |                      |   http://127.0.0.1:5050/admin         |                   |
+  python3 run_app.py
+       |
+       +-- Check AUTO_START_NGROK env
+       +-- Check if ngrok already running (localhost:4040)
+       |
+       +-- [No existing tunnel] Start ngrok http 5050
+       +-- Poll /api/tunnels until HTTPS URL appears (20 retries)
+       +-- Set PUBLIC_BASE_URL env var
+       |
+       +-- subprocess: python3 -m app.twilio_handler serve
+           |
+           +-- load_dotenv() + load_config()
+           +-- Validate Twilio env vars
+           +-- Load Whisper model large-v3 (cached globally)
+           +-- init Azure TTS SDK
+           +-- start_background_services()
+           |   +-- Scheduler thread (daemon, 15s loop)
+           |   +-- Worker thread (daemon, 5s poll)
+           |
+           +-- app.run(host="0.0.0.0", port=5050)
+       |
+       +-- Wait 1.5s
+       +-- webbrowser.open("http://127.0.0.1:5050/admin")
 ```
 
-### 14.4 macOS DMG Distribution
-
-The application can be packaged as a native macOS `.app` inside a DMG installer:
+### 15.4 macOS DMG Distribution
 
 ```bash
 cd packaging/macos_dmg
@@ -1508,45 +1437,29 @@ cd packaging/macos_dmg
 # Output: output/AudioSurvey-AI.dmg
 ```
 
-**Build process:**
-1. Compiles Swift icon generator, generates 1024x1024 PNG icon
-2. Creates `.iconset` with all required sizes via `sips`
-3. Converts to `.icns` via `iconutil`
-4. Builds `.app` bundle with `Info.plist`, launcher script, and project files
-5. Creates read-write DMG, sets volume icon, converts to compressed DMG
-6. Optionally embeds icon resource via `Rez`
-
-**App bundle structure:**
-```
-AudioSurvey AI.app/
-  Contents/
-    Info.plist
-    MacOS/
-      AudioSurveyAI    (bash launcher)
-    Resources/
-      AppIcon.icns
-      project/          (full project copy)
-```
+**Build steps:** Swift icon generation → `.iconset` → `.icns` → `.app` bundle with launcher script → DMG
 
 ---
 
-## 15. Directory Structure
+## 16. Directory Structure
 
 ```
 audiosurvey_ai/
 |
-|-- .env                          # Environment variables (secrets -- gitignored)
+|-- .env                          # Environment variables (secrets — gitignored)
 |-- .gitignore                    # Git exclusion rules
 |-- config.yaml                   # Application configuration
 |-- main.py                       # Batch processing entry point
-|-- run_app.py                    # Application launcher (ngrok + Flask)
-|-- requirements.txt              # Python dependencies
-|-- README.md                     # Quick-start documentation
+|-- run_app.py                    # Application launcher
+|-- requirements.txt              # Python dependencies (146 packages)
+|-- README.md                     # Quick-start
 |-- DOCUMENTATION.md              # This file
+|-- STUDY_GUIDE.md                # Presentation study guide
 |
-|-- app/                          # Application source code
-|   |-- twilio_handler.py         # Flask app, IVR routes, Azure TTS, auth
-|   |-- dashboard.py              # Admin dashboard UI + routes
+|-- app/
+|   |-- twilio_handler.py         # Flask app, IVR routes, inbound handling, auth (~1,780 lines)
+|   |-- dashboard.py              # Admin dashboard UI + routes (~1,280 lines)
+|   |-- runtime_status.py         # Background service health tracking (NEW v1.2.0)
 |   |-- state.py                  # Thread-safe state management
 |   |-- scheduler.py              # Background call scheduler
 |   |-- background_worker.py      # ML processing pipeline worker
@@ -1563,113 +1476,109 @@ audiosurvey_ai/
 |   |-- runtime_warnings.py       # Warning suppression
 |   |-- twilio_utils.py           # Twilio call helpers
 |
-|-- data/                         # Runtime data (mostly gitignored)
+|-- data/
 |   |-- questions.txt             # Survey questions (pipe-delimited)
-|   |-- state/                    # Participant state + logs
-|   |   |-- participants.json     # Participant records
-|   |   |-- call_log.csv          # Call history
-|   |   |-- settings.json         # System settings
+|   |-- state/
+|   |   |-- participants.json     # All participant records, responses, status
+|   |   |-- call_log.csv          # Call history with direction field
+|   |   |-- settings.json         # System settings (paused flag)
 |   |-- audio/                    # Raw call recordings (.wav)
 |   |-- audio_processed/          # Denoised recordings (.wav)
-|   |-- transcripts/              # Whisper transcriptions (.txt)
+|   |-- transcripts/              # Whisper transcriptions (.txt, Kiswahili)
 |   |-- translations/             # English translations (.txt)
 |   |-- english_audio/            # English TTS audio (.mp3)
-|   |-- ivr_audio/                # Cached IVR prompts (.mp3)
-|   |-- results/                  # Excel exports (.xlsx)
-|   |-- *.csv                     # Contact lists
+|   |-- ivr_audio/                # Cached IVR prompts (.mp3, hash-named)
+|   |-- results/
+|       |-- ivr_responses.xlsx    # MCQ/MCQO responses (original)
+|       |-- ivr_responses_english.xlsx # MCQ/MCQO responses (English)
 |
-|-- packaging/                    # Distribution packaging
-    |-- macos_icon_generator.swift # Programmatic icon generation
+|-- packaging/
+    |-- macos_icon_generator.swift
     |-- macos_dmg/
-        |-- build_macos_dmg.sh    # DMG build script
-        |-- README.md             # Build instructions
-        |-- output/
-            |-- AudioSurvey-AI.dmg # Built DMG installer
+        |-- build_macos_dmg.sh
+        |-- output/AudioSurvey-AI.dmg
 ```
 
 ---
 
-## 16. Dependency Matrix
+## 17. Dependency Matrix
 
-### 16.1 Core Dependencies
+### 17.1 Core Dependencies
 
 | Package | Version | Purpose | Critical? |
 |---------|---------|---------|-----------|
 | `Flask` | 3.1.2 | Web framework | Yes |
-| `twilio` | 9.10.0 | Telephony API | Yes |
-| `openai-whisper` | 20240930 | Speech-to-text | Yes |
-| `azure-cognitiveservices-speech` | 1.48.1 | Neural TTS (prompts) | Yes |
-| `googletrans` | 4.0.0rc1 | Translation (sw to en) | Yes |
+| `twilio` | 9.10.0 | Telephony API (calls, TwiML, webhooks) | Yes |
+| `openai-whisper` | 20240930 | Post-call speech-to-text (large-v3) | Yes |
+| `azure-cognitiveservices-speech` | 1.48.1 | Neural TTS for IVR prompts | Yes |
+| `googletrans` | 4.0.0rc1 | Kiswahili → English translation | Yes |
 | `gTTS` | 2.5.4 | English audio generation | Yes |
 | `deepfilternet` | 0.5.6 | Background noise removal | Medium |
 | `torch` | 2.8.0 | ML framework (Whisper + DeepFilterNet) | Yes |
 | `torchaudio` | 2.8.0 | Audio tensor operations | Yes |
 
-### 16.2 Data & Export
+### 17.2 Data & Export
 
 | Package | Version | Purpose |
 |---------|---------|---------|
 | `pandas` | 2.3.3 | DataFrame operations for Excel export |
-| `openpyxl` | 3.1.5 | Excel file writing |
-| `numpy` | 1.26.4 | Numerical operations |
+| `openpyxl` | 3.1.5 | Excel (.xlsx) file writing |
+| `numpy` | 1.26.4 | Audio data numerical operations |
 | `pydub` | 0.25.1 | Audio manipulation |
 
-### 16.3 Infrastructure
+### 17.3 Infrastructure
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `python-dotenv` | 1.2.1 | .env file loading |
-| `PyYAML` | 6.0.3 | config.yaml parsing |
+| `python-dotenv` | 1.2.1 | `.env` file loading |
+| `PyYAML` | 6.0.3 | `config.yaml` parsing |
 | `gunicorn` | 23.0.0 | Production WSGI server |
 | `Werkzeug` | 3.1.4 | Password hashing, HTTP utilities |
 | `colorlog` | 6.10.1 | Colored console logging |
 | `requests` | 2.32.5 | HTTP client (recording download) |
 | `Jinja2` | 3.1.6 | Template rendering |
 
-### 16.4 External Services
+### 17.4 External Services
 
-| Service | Provider | Purpose | Pricing Model |
-|---------|----------|---------|---------------|
-| **Voice API** | Twilio | Outbound/inbound calls, recording, DTMF/speech gather | Per-minute |
-| **Speech TTS** | Azure Cognitive Services | Neural TTS for IVR prompts (Swahili + English) | Per-character |
-| **Translation** | Google Translate | Kiswahili to English translation | Free (scraping) |
-| **Text-to-Speech** | Google TTS (gTTS) | English audio from translations | Free |
-| **Tunneling** | ngrok | HTTPS tunnel for Twilio webhooks | Free tier available |
+| Service | Provider | Purpose | Pricing |
+|---------|----------|---------|---------|
+| **Voice API** | Twilio | Outbound/inbound calls, recording, webhooks | Per-minute |
+| **Speech TTS** | Azure Cognitive Services | Neural TTS prompts (Swahili + English) | Per-character |
+| **Translation** | Google Translate (googletrans) | Kiswahili → English | Free (scraping) |
+| **Text-to-Speech** | Google TTS (gTTS) | English audio output | Free |
+| **Tunneling** | ngrok | HTTPS tunnel for Twilio webhooks | Free tier |
 
 ---
 
-## 17. Glossary
+## 18. Glossary
 
 | Term | Definition |
 |------|-----------|
 | **IVR** | Interactive Voice Response — automated phone menu system |
-| **DTMF** | Dual-Tone Multi-Frequency — keypad tones (pressing 1-9, *, #) |
-| **TwiML** | Twilio Markup Language — XML instructions for call handling |
+| **DTMF** | Dual-Tone Multi-Frequency — phone keypad tones (pressing 1–9, *, #) |
+| **TwiML** | Twilio Markup Language — XML instructions for call scripting |
 | **TTS** | Text-to-Speech — converting text to spoken audio |
 | **STT** | Speech-to-Text — converting spoken audio to text |
+| **SSML** | Speech Synthesis Markup Language — XML for controlling TTS prosody and voice |
 | **E.164** | International phone number format (e.g., `+254700000000`) |
 | **CallSid** | Unique Twilio identifier for a phone call |
-| **SSML** | Speech Synthesis Markup Language — XML for controlling TTS output |
-| **DeepFilterNet** | Neural network for real-time speech enhancement/noise removal |
-| **Whisper** | OpenAI's multilingual speech recognition model |
-| **MCQ** | Multiple Choice Question (DTMF input) |
-| **MCQO** | Multiple Choice Question with "Other" (DTMF + optional speech) |
-| **OPEN** | Open-ended question (speech input) |
-| **INFO** | Informational prompt (no input collected) |
-| **Engaged** | Participant spoke during the call (real speech detected) |
-| **NYC / NY_TZ** | New York City timezone (America/New_York) used for scheduling |
-| **ngrok** | Tunneling service exposing localhost to the internet |
-| **Kiswahili / sw** | Swahili language (ISO 639-1: `sw`) |
-| **sw-KE** | Swahili as spoken in Kenya (BCP 47 locale tag) |
-| **Pipeline** | The 4-stage ML processing chain: denoise, transcribe, translate, TTS |
-| **Participant** | A survey respondent identified by `participant_id` |
-| **Flatpickr** | JavaScript date/time picker library used in the dashboard |
-| **PII** | Personally Identifiable Information (phone numbers, names) |
-| **PBKDF2** | Password-Based Key Derivation Function 2 (hashing algorithm) |
+| **Direction** | Call direction: `inbound` (participant called us) or `outbound-api` (we called them) |
+| **DeepFilterNet** | PyTorch neural network for real-time speech enhancement and noise removal |
+| **Whisper** | OpenAI's multilingual speech recognition model (large-v3 used here) |
+| **MCQ** | Multiple Choice Question — DTMF keypad input |
+| **MCQO** | Multiple Choice with Other — DTMF + optional speech for "Other" option |
+| **OPEN** | Open-ended question — free speech input |
+| **INFO** | Informational prompt — no response collected |
+| **Engaged** | Participant produced detectable real speech during the call |
+| **Pipeline** | The 4-stage ML chain: DeepFilterNet → Whisper → Google Translate → gTTS |
+| **Heartbeat** | Periodic signal emitted by background threads to indicate they are alive |
+| **Atomic Write** | Write to temp file then `os.replace()` — prevents partial/corrupted file writes |
+| **RLock** | Reentrant Lock — a thread lock the same thread can acquire multiple times |
+| **Daemon Thread** | Background thread that automatically exits when the main process ends |
+| **ngrok** | Tunneling service that exposes localhost to the internet over HTTPS |
+| **Kiswahili / sw** | Swahili language (ISO 639-1: `sw`; BCP 47 locale: `sw-KE`) |
+| **PBKDF2** | Password-Based Key Derivation Function 2 — slow hashing for password storage |
+| **PII** | Personally Identifiable Information (phone numbers, names) — kept gitignored |
+| **Flatpickr** | JavaScript date/time picker library used in the admin dashboard |
 
----
-
-<p align="center">
-  <em>End of Document</em><br/>
-  <code>AudioSurvey AI v1.1.0</code> &nbsp;|&nbsp; <code>Generated 2026-03-20</code>
-</p>
+<p align="center"><em>End of Document</em> &nbsp;|&nbsp; <code>AudioSurvey AI v1.2.0</code> &nbsp;|&nbsp; <code>April 6, 2026</code> &nbsp;|&nbsp; <code>Confidential — Restricted Distribution</code></p>

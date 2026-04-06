@@ -1,0 +1,2650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AudioSurvey AI — Technical Documentation v1.2.0</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; color: #1a202c; background: #fff; line-height: 1.6; }
+  .content { max-width: 860px; margin: 0 auto; padding: 48px 56px; }
+  h1 { font-size: 22pt; font-weight: 800; color: #0f172a; margin: 32px 0 14px; border-bottom: 3px solid #2563eb; padding-bottom: 8px; }
+  h2 { font-size: 15pt; font-weight: 700; color: #1e3a5f; margin: 28px 0 10px; border-left: 4px solid #3b82f6; padding-left: 12px; }
+  h3 { font-size: 11.5pt; font-weight: 700; color: #1e40af; margin: 20px 0 8px; }
+  h4 { font-size: 10.5pt; font-weight: 700; color: #2563eb; margin: 16px 0 6px; }
+  p { margin: 8px 0 10px; }
+  ul, ol { margin: 8px 0 10px 24px; }
+  li { margin-bottom: 4px; }
+  code { background: #eff6ff; color: #1d4ed8; padding: 1px 5px; border-radius: 3px; font-family: "Cascadia Code", "Fira Code", monospace; font-size: 9pt; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px 20px; border-radius: 8px; overflow-x: auto; margin: 14px 0; font-size: 8.5pt; line-height: 1.5; border-left: 4px solid #3b82f6; }
+  pre code { background: none; color: inherit; padding: 0; font-size: 8.5pt; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 9.5pt; }
+  th { background: #1e3a5f; color: #fff; padding: 8px 12px; text-align: left; font-weight: 600; }
+  td { padding: 7px 12px; border-bottom: 1px solid #dbeafe; }
+  tr:nth-child(even) td { background: #f0f7ff; }
+  blockquote { border-left: 4px solid #3b82f6; padding: 10px 16px; color: #1e40af; background: #eff6ff; margin: 12px 0; }
+  strong { color: #1e3a8a; }
+  hr { border: none; border-top: 2px solid #dbeafe; margin: 28px 0; }
+  @media print {
+    .content { padding: 30px 40px; }
+    pre, table { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="content">
+<div style="min-height:100vh;background:linear-gradient(160deg,#080e1f 0%,#0d1b38 40%,#091428 100%);display:flex;flex-direction:column;justify-content:space-between;padding:56px 64px;box-sizing:border-box;page-break-after:always;">
+
+<div>
+  <div style="border-top:4px solid #2563eb;margin-bottom:48px;"></div>
+
+  <div style="font-size:9.5pt;letter-spacing:5px;color:#4b6cb7;text-transform:uppercase;font-weight:600;margin-bottom:14px;">AI Research Technology Platform</div>
+
+  <div style="font-size:48pt;font-weight:900;color:#f0f4ff;letter-spacing:-2px;line-height:1;margin-bottom:8px;">AudioSurvey AI</div>
+
+  <div style="height:4px;width:320px;background:linear-gradient(90deg,#2563eb,#7c3aed,rgba(124,58,237,0));margin:18px 0 22px 0;"></div>
+
+  <div style="font-size:19pt;color:#93c5fd;font-weight:300;letter-spacing:0.5px;margin-bottom:4px;">Technical Architecture &amp; System Documentation</div>
+  <div style="font-size:11pt;color:#4b6cb7;margin-bottom:48px;">Comprehensive reference for system design, APIs, data models, and operations</div>
+
+  <table style="border-collapse:collapse;width:100%;max-width:600px;margin-bottom:40px;">
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+      <td style="padding:12px 0;color:#6b7280;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;width:180px;">Document Version</td>
+      <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#e2e8f0;border-left:3px solid #2563eb;">1.2.0</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+      <td style="padding:12px 0;color:#6b7280;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Release Date</td>
+      <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#e2e8f0;border-left:3px solid #2563eb;">April 6, 2026</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+      <td style="padding:12px 0;color:#6b7280;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Author</td>
+      <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#e2e8f0;border-left:3px solid #2563eb;">Krishnanand</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+      <td style="padding:12px 0;color:#6b7280;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Project Status</td>
+      <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#6ee7b7;border-left:3px solid #10b981;">Active Development</td>
+    </tr>
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+      <td style="padding:12px 0;color:#6b7280;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Classification</td>
+      <td style="padding:12px 24px;font-size:12pt;font-weight:700;color:#fca5a5;border-left:3px solid #ef4444;">Confidential — Internal Use Only</td>
+    </tr>
+    <tr>
+      <td style="padding:12px 0;color:#6b7280;font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px;">Core Stack</td>
+      <td style="padding:12px 24px;font-size:10.5pt;font-weight:600;color:#93c5fd;border-left:3px solid #2563eb;">Python · Flask · Twilio · Azure Cognitive Services · OpenAI Whisper · PyTorch</td>
+    </tr>
+  </table>
+
+  <div style="background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.22);border-radius:10px;padding:26px 30px;max-width:680px;">
+    <div style="font-size:9pt;letter-spacing:2.5px;color:#4b6cb7;text-transform:uppercase;font-weight:600;margin-bottom:10px;">Abstract</div>
+    <p style="color:#b0bcd4;font-size:11pt;line-height:1.75;margin:0;">AudioSurvey AI is an AI-powered multilingual Interactive Voice Response (IVR) survey platform designed for academic and public health field research. The system conducts fully automated telephone surveys in Kiswahili, targeting African refugee populations, through a combination of Twilio cloud telephony, Azure Neural Text-to-Speech, OpenAI Whisper speech recognition, and a four-stage ML post-processing pipeline comprising noise removal, transcription, translation, and English audio generation. Survey data is exported to structured Excel workbooks for analysis. The platform is managed via a secure web-based admin dashboard with real-time participant tracking, scheduled outbound calling, inbound call handling, and conference call capabilities.</p>
+  </div>
+</div>
+
+<div>
+  <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:20px;display:flex;justify-content:space-between;color:#374151;font-size:9pt;margin-top:40px;">
+    <span style="color:#4b6cb7;">AudioSurvey AI Research Platform</span>
+    <span style="color:#4b6cb7;">Technical Architecture &amp; System Documentation · v1.2.0</span>
+    <span style="color:#4b6cb7;">© 2026 · All Rights Reserved</span>
+  </div>
+  <div style="border-bottom:4px solid #2563eb;margin-top:16px;"></div>
+</div>
+
+</div>
+
+<hr />
+<h1>Project Documentation</h1>
+<h2>Revision History</h2>
+<table>
+<thead>
+<tr>
+<th>Version</th>
+<th>Date</th>
+<th>Author</th>
+<th>Change Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.1.0</td>
+<td>2026-01-22</td>
+<td>Krishnanand</td>
+<td>Initial project setup — TTS, transcription, and translation modules scaffolded</td>
+</tr>
+<tr>
+<td>0.2.0</td>
+<td>2026-01-22</td>
+<td>Krishnanand</td>
+<td>IVR pipeline operational — inbound and outbound calling working end-to-end</td>
+</tr>
+<tr>
+<td>0.3.0</td>
+<td>2026-01-22</td>
+<td>Krishnanand</td>
+<td>Security improvements — <code>.env</code> for secrets, safe config template added</td>
+</tr>
+<tr>
+<td>0.4.0</td>
+<td>2026-01-23</td>
+<td>Krishnanand</td>
+<td>README added, contacts CSV excluded from version control</td>
+</tr>
+<tr>
+<td>0.5.0</td>
+<td>2026-01-26</td>
+<td>Krishnanand</td>
+<td>State management, call logs, and caller handler functions updated</td>
+</tr>
+<tr>
+<td>0.6.0</td>
+<td>2026-02-22</td>
+<td>Krishnanand</td>
+<td>5-March calling milestone — initial full call flow verified</td>
+</tr>
+<tr>
+<td>1.0.0</td>
+<td>2026-02-22</td>
+<td>Krishnanand</td>
+<td><strong>First stable release</strong> — core IVR engine, Twilio integration, Whisper STT, admin dashboard</td>
+</tr>
+<tr>
+<td>1.0.1</td>
+<td>2026-02-26</td>
+<td>Krishnanand</td>
+<td>Excel export support for survey responses</td>
+</tr>
+<tr>
+<td>1.0.2</td>
+<td>2026-03-01</td>
+<td>Krishnanand</td>
+<td>Excel formatting corrections, UX/UI upgrade, audio channel fix for full-call recordings</td>
+</tr>
+<tr>
+<td>1.0.3</td>
+<td>2026-03-03</td>
+<td>Krishnanand</td>
+<td>Updated survey questions, system cleanup</td>
+</tr>
+<tr>
+<td>1.0.4</td>
+<td>2026-03-04</td>
+<td>Krishnanand</td>
+<td>English translation export, "Convert to English" button added to dashboard</td>
+</tr>
+<tr>
+<td>1.0.5</td>
+<td>2026-03-05</td>
+<td>Krishnanand</td>
+<td>Authentication system — login/logout, PBKDF2 password hashing, brute-force protection, session management</td>
+</tr>
+<tr>
+<td>1.0.6</td>
+<td>2026-03-05</td>
+<td>Krishnanand</td>
+<td>Full call testing milestone — results saved and verified end-to-end</td>
+</tr>
+<tr>
+<td>1.0.7</td>
+<td>2026-03-08</td>
+<td>Krishnanand</td>
+<td>MCQO digit bug fix, hardcoded button logic corrected</td>
+</tr>
+<tr>
+<td>1.0.8</td>
+<td>2026-03-10</td>
+<td>Krishnanand</td>
+<td>DeepFilterNet background noise removal integrated, random crash fix, log improvements</td>
+</tr>
+<tr>
+<td>1.0.9</td>
+<td>2026-03-15</td>
+<td>Krishnanand</td>
+<td>macOS DMG packaging, icon generator update</td>
+</tr>
+<tr>
+<td>1.1.0</td>
+<td>2026-03-17</td>
+<td>Krishnanand</td>
+<td>File naming convention refactored for clarity; auth info cleanup; DOCUMENTATION.md created</td>
+</tr>
+<tr>
+<td>1.1.1</td>
+<td>2026-03-21</td>
+<td>Krishnanand</td>
+<td>Full audio recording logic redesigned — recording now starts at <code>/voice</code> entry, not after survey completion</td>
+</tr>
+<tr>
+<td>1.1.2</td>
+<td>2026-04-01</td>
+<td>Krishnanand</td>
+<td>Study guide and presentation documentation added (<code>STUDY_GUIDE.md</code>)</td>
+</tr>
+<tr>
+<td>1.1.3</td>
+<td>2026-04-05</td>
+<td>Krishnanand</td>
+<td>Inbound call response collection — inbound callers now matched to participants and routed through full survey + export flow</td>
+</tr>
+<tr>
+<td>1.1.4</td>
+<td>2026-04-05</td>
+<td>Krishnanand</td>
+<td>Call direction tracking — <code>direction</code> field added to call log and dashboard display (<code>Incoming</code> / <code>Outgoing</code>)</td>
+</tr>
+<tr>
+<td>1.2.0</td>
+<td>2026-04-06</td>
+<td>Krishnanand</td>
+<td><strong>Major release</strong> — improved inbound call handling, auto participant creation for unknown callers, per-call End Call controls, End All Calls, live tech info panel, <code>runtime_status.py</code> module, redesigned login page, safer call/export state updates</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Table of Contents</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Section</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><a href="#1-executive-summary">Executive Summary</a></td>
+<td>High-level project overview and objectives</td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="#2-system-architecture">System Architecture</a></td>
+<td>Architecture diagrams, component topology, tech stack</td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="#3-component-design">Component Design</a></td>
+<td>Deep dive into each module and its responsibilities</td>
+</tr>
+<tr>
+<td>4</td>
+<td><a href="#4-data-flow--pipelines">Data Flow &amp; Pipelines</a></td>
+<td>End-to-end data lifecycle and ML processing pipeline</td>
+</tr>
+<tr>
+<td>5</td>
+<td><a href="#5-api-reference">API Reference</a></td>
+<td>Complete HTTP endpoint documentation</td>
+</tr>
+<tr>
+<td>6</td>
+<td><a href="#6-data-models--state-schema">Data Models &amp; State Schema</a></td>
+<td>JSON schemas, state machine, data persistence</td>
+</tr>
+<tr>
+<td>7</td>
+<td><a href="#7-authentication--security">Authentication &amp; Security</a></td>
+<td>Auth flow, brute-force protection, session management</td>
+</tr>
+<tr>
+<td>8</td>
+<td><a href="#8-survey-question-engine">Survey Question Engine</a></td>
+<td>Question format specification and IVR call flow</td>
+</tr>
+<tr>
+<td>9</td>
+<td><a href="#9-configuration-reference">Configuration Reference</a></td>
+<td>All configuration files and environment variables</td>
+</tr>
+<tr>
+<td>10</td>
+<td><a href="#10-admin-dashboard">Admin Dashboard</a></td>
+<td>UI features, live polling, user workflows</td>
+</tr>
+<tr>
+<td>11</td>
+<td><a href="#11-background-services">Background Services</a></td>
+<td>Scheduler, ML worker, and concurrency model</td>
+</tr>
+<tr>
+<td>12</td>
+<td><a href="#12-inbound-call-handling">Inbound Call Handling</a></td>
+<td>Inbound caller routing, participant matching, direction tracking</td>
+</tr>
+<tr>
+<td>13</td>
+<td><a href="#13-error-handling--resilience">Error Handling &amp; Resilience</a></td>
+<td>Fault tolerance, retry logic, graceful degradation</td>
+</tr>
+<tr>
+<td>14</td>
+<td><a href="#14-logging--observability">Logging &amp; Observability</a></td>
+<td>Logging architecture, runtime status, audit trails</td>
+</tr>
+<tr>
+<td>15</td>
+<td><a href="#15-deployment-guide">Deployment Guide</a></td>
+<td>Local setup, ngrok tunneling, macOS DMG packaging</td>
+</tr>
+<tr>
+<td>16</td>
+<td><a href="#16-directory-structure">Directory Structure</a></td>
+<td>Complete project tree with annotations</td>
+</tr>
+<tr>
+<td>17</td>
+<td><a href="#17-dependency-matrix">Dependency Matrix</a></td>
+<td>Third-party libraries and their roles</td>
+</tr>
+<tr>
+<td>18</td>
+<td><a href="#18-glossary">Glossary</a></td>
+<td>Domain terminology and abbreviations</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>1. Executive Summary</h2>
+<h3>1.1 Purpose</h3>
+<p>AudioSurvey AI is an AI-powered multilingual Interactive Voice Response (IVR) survey platform designed to conduct automated voice-based research surveys over telephone calls. The system targets <strong>African refugees who speak Kiswahili</strong>, enabling researchers to collect structured survey responses at scale without requiring in-person enumerators.</p>
+<h3>1.2 Business Context</h3>
+<p>The platform was built for academic and public health research. It is designed as a <strong>flexible, multi-survey system</strong> — the survey topic, questions, and thematic sections are fully configurable via the <code>data/questions.txt</code> file. Researchers can deploy different surveys for different studies without any code changes. Both outbound scheduled calling and inbound participant-initiated calls are fully supported, routing through the same survey and ML processing pipeline.</p>
+<h3>1.3 Key Capabilities</h3>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Automated Outbound Calling</strong></td>
+<td>Scheduled batch dialing of research participants via Twilio</td>
+</tr>
+<tr>
+<td><strong>Inbound Call Support</strong></td>
+<td>Participants can call in; auto-matched to existing records or auto-created</td>
+</tr>
+<tr>
+<td><strong>Call Direction Tracking</strong></td>
+<td>All calls tagged as <code>inbound</code> or <code>outbound-api</code>, shown in dashboard</td>
+</tr>
+<tr>
+<td><strong>Multilingual IVR</strong></td>
+<td>Survey prompts spoken in Kiswahili via Azure Neural TTS</td>
+</tr>
+<tr>
+<td><strong>Multi-Format Questions</strong></td>
+<td>INFO, OPEN (speech), MCQ (DTMF keypad), MCQO (MCQ + "Other" speech)</td>
+</tr>
+<tr>
+<td><strong>Full-Call Recording</strong></td>
+<td>Complete audio capture of every call (up to 30 minutes)</td>
+</tr>
+<tr>
+<td><strong>AI Audio Processing</strong></td>
+<td>Background noise removal via DeepFilterNet</td>
+</tr>
+<tr>
+<td><strong>Speech-to-Text</strong></td>
+<td>Post-call transcription using OpenAI Whisper (large-v3)</td>
+</tr>
+<tr>
+<td><strong>Machine Translation</strong></td>
+<td>Automatic Kiswahili to English translation</td>
+</tr>
+<tr>
+<td><strong>English Audio Generation</strong></td>
+<td>TTS synthesis of translated responses</td>
+</tr>
+<tr>
+<td><strong>Structured Data Export</strong></td>
+<td>Excel export of MCQ/MCQO responses (original + English)</td>
+</tr>
+<tr>
+<td><strong>Admin Dashboard</strong></td>
+<td>Real-time web UI — participant management, live status, call controls</td>
+</tr>
+<tr>
+<td><strong>Per-Call &amp; Global Call Controls</strong></td>
+<td>End individual calls or all active calls from the admin UI</td>
+</tr>
+<tr>
+<td><strong>Conference Calling</strong></td>
+<td>Three-way call support for researcher-moderated interviews</td>
+</tr>
+<tr>
+<td><strong>Runtime Status Panel</strong></td>
+<td>Live tech info — scheduler status, worker status, system load</td>
+</tr>
+<tr>
+<td><strong>macOS Distribution</strong></td>
+<td>Packaged as a native .app inside a DMG installer</td>
+</tr>
+</tbody>
+</table>
+<h3>1.4 Technology Summary</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Runtime</strong></td>
+<td>Python 3.x</td>
+</tr>
+<tr>
+<td><strong>Web Framework</strong></td>
+<td>Flask 3.1.2</td>
+</tr>
+<tr>
+<td><strong>Telephony</strong></td>
+<td>Twilio Voice API</td>
+</tr>
+<tr>
+<td><strong>Live Speech Recognition</strong></td>
+<td>Twilio <code>&lt;Gather&gt;</code> (Kiswahili <code>sw-KE</code>)</td>
+</tr>
+<tr>
+<td><strong>Post-Call Transcription</strong></td>
+<td>OpenAI Whisper <code>large-v3</code></td>
+</tr>
+<tr>
+<td><strong>Text-to-Speech (Prompts)</strong></td>
+<td>Azure Cognitive Services (Neural SSML)</td>
+</tr>
+<tr>
+<td><strong>Text-to-Speech (Output)</strong></td>
+<td>Google TTS (gTTS)</td>
+</tr>
+<tr>
+<td><strong>Translation</strong></td>
+<td>Google Translate (googletrans)</td>
+</tr>
+<tr>
+<td><strong>Noise Reduction</strong></td>
+<td>DeepFilterNet (PyTorch-based)</td>
+</tr>
+<tr>
+<td><strong>Audio Processing</strong></td>
+<td>FFmpeg, pydub</td>
+</tr>
+<tr>
+<td><strong>Data Export</strong></td>
+<td>pandas + openpyxl</td>
+</tr>
+<tr>
+<td><strong>Tunneling</strong></td>
+<td>ngrok</td>
+</tr>
+<tr>
+<td><strong>Runtime Monitoring</strong></td>
+<td><code>runtime_status.py</code> (heartbeat-based)</td>
+</tr>
+<tr>
+<td><strong>Packaging</strong></td>
+<td>macOS .app bundle + DMG</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>2. System Architecture</h2>
+<h3>2.1 High-Level Architecture</h3>
+<pre><code>+-----------------------------------------------------------------------+
+|                         EXTERNAL SERVICES                             |
+|   +------------------+  +------------------+  +------------------+    |
+|   | Twilio Voice API |  | Azure Cognitive  |  | Google Translate |    |
+|   |                  |  | Services (TTS)   |  |                  |    |
+|   +--------+---------+  +--------+---------+  +--------+---------+    |
+|            |                     |                      |             |
++-----------------------------------------------------------------------+
+             |                     |                      |
+             v                     v                      v
++-----------------------------------------------------------------------+
+|                    FLASK APPLICATION SERVER (:5050)                    |
+|                                                                       |
+|   +--------------+  +--------------+  +--------------+                |
+|   | Auth Module  |  | IVR Webhook  |  |    Admin     |                |
+|   |              |  | Handlers     |  |  Dashboard   |                |
+|   +--------------+  +--------------+  +--------------+                |
+|                                                                       |
+|   +--------------+  +--------------+  +--------------+                |
+|   | Conference   |  | Excel Export |  | Inbound Call |                |
+|   | Call Module  |  |              |  | Handler      |                |
+|   +--------------+  +--------------+  +--------------+                |
+|                                                                       |
+|   +-----------------------------+  +-----------------------------+    |
+|   |     BACKGROUND SERVICES     |  |   RUNTIME STATUS MODULE     |    |
+|   |  +----------+ +-----------+ |  |  Scheduler &amp; Worker         |    |
+|   |  | Scheduler| | ML Worker | |  |  heartbeat tracking         |    |
+|   |  | (15s)    | | (5s poll) | |  |                             |    |
+|   |  +----------+ +-----------+ |  +-----------------------------+    |
+|   +-----------------------------+                                     |
++-----------------------------------------------------------------------+
+             |                     |
+             v                     v
++-----------------------------------------------------------------------+
+|                      ML PROCESSING PIPELINE                           |
+|   +--------------+  +-----------+  +------------+  +-----------+      |
+|   | DeepFilterNet|-&gt;| Whisper   |-&gt;| Translation|-&gt;| English   |      |
+|   | (Denoise)    |  | large-v3  |  | (sw -&gt; en) |  | TTS       |      |
+|   +--------------+  +-----------+  +------------+  +-----------+      |
++-----------------------------------------------------------------------+
+             |
+             v
++-----------------------------------------------------------------------+
+|                       LOCAL FILE STORAGE                              |
+|                                                                       |
+|   data/state/          data/audio/           data/audio_processed/    |
+|   data/transcripts/    data/translations/    data/english_audio/      |
+|   data/results/        data/ivr_audio/                                |
++-----------------------------------------------------------------------+
+</code></pre>
+<p><strong>Data flow summary:</strong></p>
+<ul>
+<li>Participant Phone (outbound or inbound) &lt;--&gt; Twilio &lt;--&gt; ngrok &lt;--&gt; IVR Webhook Handlers</li>
+<li>Inbound callers matched to participants by phone or auto-created</li>
+<li>Admin Browser --&gt; ngrok --&gt; Auth Module --&gt; Dashboard</li>
+<li>IVR Handlers --&gt; Azure TTS --&gt; data/ivr_audio/</li>
+<li>IVR Handlers --&gt; Recording Done --&gt; ML Worker</li>
+<li>ML Worker --&gt; DeepFilterNet --&gt; Whisper --&gt; Translation --&gt; English TTS</li>
+<li>Translation --&gt; Google Translate API</li>
+<li>Scheduler --&gt; Twilio (dial eligible participants)</li>
+<li>Excel Export --&gt; data/state/ --&gt; data/results/</li>
+</ul>
+<h3>2.2 Network Topology</h3>
+<pre><code>+------------------------------------------------------------------+
+|                          INTERNET                                |
+|                                                                  |
+|   +------------------+           +------------------+            |
+|   | Participant      |           | Admin Browser    |            |
+|   | (Kiswahili       |           |                  |            |
+|   |  Speaker)        |           +--------+---------+            |
+|   +--------+---------+                    |                      |
+|            |                              |                      |
+|   PSTN/VoIP (outbound or inbound)         | HTTPS                |
+|            v                              v                      |
+|   +------------------+                                           |
+|   | Twilio Cloud     |                                           |
+|   | (Voice Infra)    |                                           |
+|   +--------+---------+                                           |
+|            |                                                     |
++------------------------------------------------------------------+
+             | HTTPS Webhooks
+             v
++------------------------------------------------------------------+
+|                    LOCAL MACHINE (macOS)                          |
+|                                                                  |
+|   +------------------+         +------------------+              |
+|   | ngrok Process    | &lt;-----&gt; | Flask Server     |              |
+|   | :4040 (API)      | local   | :5050            |              |
+|   +------------------+ host    +--------+---------+              |
+|                                         |                        |
+|                                         | REST API               |
+|                                         v                        |
+|                                +------------------+              |
+|                                | Azure TTS        |              |
+|                                | (East US Region) |              |
+|                                +------------------+              |
++------------------------------------------------------------------+
+</code></pre>
+<h3>2.3 Thread Architecture</h3>
+<pre><code>+------------------------------------------------------------------+
+|                    PYTHON MAIN PROCESS                            |
+|                                                                  |
+|   +-------------------+                                          |
+|   | Main Thread       |---&gt; start_background_services()          |
+|   | (Flask WSGI)      |          |            |                  |
+|   +-------------------+          |            |                  |
+|                                  v            v                  |
+|   +-------------------+   +-------------------+                  |
+|   | Scheduler Thread  |   | Worker Thread     |                  |
+|   | (daemon, 15s loop)|   | (daemon, 5s poll) |                  |
+|   +-------------------+   +-------------------+                  |
+|            |                       |                             |
+|    mark_scheduler_heartbeat()  mark_worker_heartbeat()           |
+|            |                       |                             |
+|            +----------+------------+                             |
+|                       |                                          |
+|                       v                                          |
+|              +-----------------+                                 |
+|              | threading.RLock |                                  |
+|              | (STATE_IO_LOCK) |                                  |
+|              +--------+--------+                                 |
+|                       |                                          |
+|                       v                                          |
+|              +-----------------+                                 |
+|              | participants.json                                 |
+|              | call_log.csv                                      |
+|              | settings.json   |                                 |
+|              +-----------------+                                 |
++------------------------------------------------------------------+
+</code></pre>
+<hr />
+<h2>3. Component Design</h2>
+<h3>3.1 Module Dependency Graph</h3>
+<pre><code>  run_app.py ---------(subprocess)---------&gt; twilio_handler.py
+  (Launcher)                                  (Flask App + IVR)
+                                                     |
+            +----------+----------+---------+--------+--------+------+
+            |          |          |         |        |        |      |
+            v          v          v         v        v        v      v
+       dashboard.py  scheduler.py  state.py  utils.py  export_excel.py
+       (Admin UI)    (Call Sched.) (State)   (Helpers) (Excel Export)
+            |          |                                       |
+            v          v                                       v
+         state.py   state.py                              translate.py
+       runtime_status.py
+
+  twilio_handler.py ---+----------+-----------+
+                       |          |           |
+                       v          v           v
+              background_worker.py  transcribe.py  file_naming.py
+              (ML Pipeline)         (Whisper STT)  (Safe Names)
+                       |
+          +------------+----------+-----------+
+          |            |          |           |
+          v            v          v           v
+  audio_preprocess.py  transcribe.py  translate.py  tts.py
+  (DeepFilterNet)      (Whisper)      (Translation) (Google TTS)
+
+  main.py -------&gt; transcribe.py, translate.py, tts.py
+  (Batch Pipeline)
+
+  Supporting:  logger.py (Colored Logging)
+               auth.py (Authentication)
+               azure_tts.py (Azure TTS)
+               runtime_warnings.py (Warning Suppression)
+               twilio_utils.py (Twilio Call Helpers)
+               runtime_status.py (Heartbeat Monitoring)  [NEW v1.2.0]
+</code></pre>
+<h3>3.2 Module Descriptions</h3>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Lines</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>twilio_handler.py</code></td>
+<td>~1,780</td>
+<td>Core Flask application. IVR webhook routes, inbound call matching, Azure TTS, auth, conference calling, recording download, call controls, Excel export trigger, application bootstrap. Central orchestrator.</td>
+</tr>
+<tr>
+<td><code>dashboard.py</code></td>
+<td>~1,280</td>
+<td>Admin web dashboard. HTML UI with inline CSS/JS. Participant management, live-polling, scheduling, pause/resume, state reset, call controls (End Call, End All), live tech status panel.</td>
+</tr>
+<tr>
+<td><code>runtime_status.py</code></td>
+<td>~92</td>
+<td>Background service health tracking. Heartbeat-based scheduler and worker status reporting. Exposes <code>get_runtime_snapshot()</code> for dashboard live info.</td>
+</tr>
+<tr>
+<td><code>state.py</code></td>
+<td>~241</td>
+<td>Thread-safe participant state management. JSON persistence with atomic writes, call eligibility logic (<code>can_call</code>), state transitions, retry gap enforcement, participant schema migration.</td>
+</tr>
+<tr>
+<td><code>export_excel.py</code></td>
+<td>~314</td>
+<td>Builds structured Excel exports from participant responses. Decodes DTMF digits back to option text, filters OPEN responses, supports original-language and English-translated exports.</td>
+</tr>
+<tr>
+<td><code>background_worker.py</code></td>
+<td>~148</td>
+<td>Continuous polling worker that processes completed recordings through the 4-stage ML pipeline (denoise → transcribe → translate → TTS). Terminal progress bars and heartbeat updates.</td>
+</tr>
+<tr>
+<td><code>scheduler.py</code></td>
+<td>~114</td>
+<td>Timed call dispatcher. Runs every 15 seconds, checks participant eligibility, places Twilio calls. Supports force-dial mode. Updates scheduler heartbeat.</td>
+</tr>
+<tr>
+<td><code>audio_preprocess.py</code></td>
+<td>~210</td>
+<td>Audio noise removal pipeline using DeepFilterNet. FFmpeg-based channel extraction/resampling, PyTorch noise removal, output resampling for Whisper.</td>
+</tr>
+<tr>
+<td><code>transcribe.py</code></td>
+<td>~48</td>
+<td>Whisper large-v3 speech-to-text. Swahili language hint, returns text and detected language. Single-file and directory batch modes.</td>
+</tr>
+<tr>
+<td><code>translate.py</code></td>
+<td>~134</td>
+<td>Chunked Google Translate integration. Splits on sentence boundaries, retries failed chunks, marks failures with placeholder tags.</td>
+</tr>
+<tr>
+<td><code>tts.py</code></td>
+<td>~55</td>
+<td>Google TTS (gTTS) wrapper for generating English MP3 audio from translated text.</td>
+</tr>
+<tr>
+<td><code>auth.py</code></td>
+<td>~165</td>
+<td>Authentication helpers. Brute-force protection, session management, credential verification.</td>
+</tr>
+<tr>
+<td><code>utils.py</code></td>
+<td>~25</td>
+<td>Scheduling utility. Converts NYC local time to UTC and updates participant state.</td>
+</tr>
+<tr>
+<td><code>azure_tts.py</code></td>
+<td>~49</td>
+<td>Standalone Azure TTS module with SHA1 disk caching. Generates IVR call prompt audio.</td>
+</tr>
+<tr>
+<td><code>file_naming.py</code></td>
+<td>~28</td>
+<td>Safe filename generation. Sanitizes participant IDs, generates timestamped base names.</td>
+</tr>
+<tr>
+<td><code>logger.py</code></td>
+<td>~76</td>
+<td>Colored console logging via <code>colorlog</code>. Silences noisy third-party library logs. Context manager for quiet operations.</td>
+</tr>
+<tr>
+<td><code>runtime_warnings.py</code></td>
+<td>~16</td>
+<td>Suppresses urllib3/OpenSSL compatibility warnings at startup.</td>
+</tr>
+<tr>
+<td><code>run_app.py</code></td>
+<td>~129</td>
+<td>Application launcher. Auto-starts ngrok, sets environment variables, launches Flask subprocess, opens browser.</td>
+</tr>
+<tr>
+<td><code>main.py</code></td>
+<td>~28</td>
+<td>Standalone batch processor for offline audio → transcript → translation → TTS pipeline.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>4. Data Flow &amp; Pipelines</h2>
+<h3>4.1 Outbound Call Lifecycle</h3>
+<pre><code>  ADMIN                DASHBOARD          SCHEDULER          TWILIO
+    |                      |                  |                 |
+    |-- Upload CSV -------&gt;|                  |                 |
+    |                      |-- upsert_participant()            |
+    |                      |                  |                 |
+    |-- Set schedule -----&gt;|                  |                 |
+    |                      |-- schedule_participant()          |
+    |                      |                  |                 |
+    |-- Click &quot;Start&quot; ----&gt;|                  |                 |
+    |                      |-- set_paused(false)               |
+    |                      |                  |                 |
+    |                      |    +--[Every 15 seconds]--+       |
+    |                      |    | mark_scheduler_heartbeat()   |
+    |                      |    | load_participants()  |       |
+    |                      |    | can_call() check     |       |
+    |                      |    +----------------------+       |
+    |                      |                  |                 |
+    |                      |                  |-- calls.create ---&gt;
+    |                      |                  |-- mark_call_started()
+    |                      |                  |                 |
+
+  TWILIO             PARTICIPANT          IVR HANDLER       AZURE TTS
+    |                      |                  |                 |
+    |-- Ring -------------&gt;|                  |                 |
+    |&lt;-- Answer -----------|                  |                 |
+    |-- POST /voice ---------------------&gt;|   direction=outbound|
+    |                      |              | Start recording    |
+    |                      |              |-- Redirect /start  |
+    |-- POST /start ---------------------&gt;|                    |
+    |                      |              |-- Generate TTS ---&gt;|
+    |                      |              |&lt;-- MP3 audio ------|
+    |&lt;-- TwiML: Play intro + Gather ------|                    |
+    |                      |                  |                 |
+    |    +--[For each question]--+            |                 |
+    |    | Speech / DTMF input   |            |                 |
+    |    | POST /next?q=N        |            |                 |
+    |    | Store response        |            |                 |
+    |    | Generate TTS          |            |                 |
+    |    +-----------------------+            |                 |
+    |                      |                  |                 |
+    |&lt;-- Play &quot;Kwaheri&quot; + Hangup ------------|                 |
+    |-- POST /call-status (completed) ------&gt;|                 |
+    |                      |              | mark_call_result() |
+    |                      |              | append_to_excel()  |
+    |-- POST /recording-done ---------------&gt;|                 |
+    |                      |              | Download WAV       |
+    |                      |              | processing = pending
+</code></pre>
+<h3>4.2 Inbound Call Lifecycle (v1.2.0)</h3>
+<pre><code>  PARTICIPANT           TWILIO             IVR HANDLER        STATE
+    |                      |                   |                 |
+    |-- Dials Twilio #----&gt;|                   |                 |
+    |                      |-- POST /voice ---&gt;|                 |
+    |                      |   From=+254...    |                 |
+    |                      |   Direction=inbound                 |
+    |                      |                   |                 |
+    |                      |        Match caller by phone?       |
+    |                      |              |          |           |
+    |                      |             Yes         No          |
+    |                      |              |          |           |
+    |                      |         Use existing   Auto-create  |
+    |                      |         participant    new participant
+    |                      |         record         from caller # |
+    |                      |              |          |           |
+    |                      |              +----+-----+           |
+    |                      |                   |                 |
+    |                      |              mark_call_started()    |
+    |                      |              (direction=inbound)    |
+    |                      |                   |                 |
+    |                      | [Same IVR flow as outbound]         |
+    |                      |   /start, /next, /mcq-handler, etc. |
+    |                      |                   |                 |
+    |                      |-- POST /call-status               |
+    |                      |-- POST /recording-done            |
+    |                      |              append_to_excel()     |
+    |                      |              processing = pending  |
+</code></pre>
+<h3>4.3 ML Processing Pipeline</h3>
+<pre><code> INPUT         STAGE 1               STAGE 2        STAGE 3           STAGE 4     OUTPUTS
+            Audio Preprocessing   Transcription   Translation       English TTS
+
++-------+  +---------------+    +-----------+  +-------------+  +---------+  +-----------+
+| Raw   |  | FFmpeg        |    |           |  | Language    |  |         |  | Cleaned   |
+| WAV   |-&gt;| Channel Mix + |    |           |  | Detection   |  |         |  | WAV       |
+|       |  | Resample 48kHz|    |           |  |   |         |  |         |  +-----------+
++-------+  +-------+-------+    |           |  |lang=en lang |  |         |  | Transcript|
+                   |             |           |  |  |    !=en  |  |         |  | .txt (sw) |
+           +-------+-------+    | Whisper   |  |  v      v   |  |         |  +-----------+
+           | DeepFilterNet |    | large-v3  |  | Copy  Chunk |  |         |  | Translation
+           | Noise Removal |    | lang=&quot;sw&quot; |-&gt;| as-is  3000 |-&gt;| gTTS    |  | .txt (en) |
+           | (PyTorch)     |    | temp=0.0  |  | (en)  chars |  | lang=en |  +-----------+
+           +-------+-------+    | fp16=False|  |  |    |     |  |         |  | English   |
+                   |             +-----------+  |  |  Translate  |         |  | .mp3      |
+           +-------+-------+                   |  |  3 retries  +---------+  +-----------+
+           | FFmpeg        |                   |  +------+------+
+           | Resample 16kHz|                   +---------|------+
+           +---------------+                             v
+                                                  data/translations/
+</code></pre>
+<h3>4.4 Recording Callback Flow</h3>
+<pre><code>  Twilio POST /recording-done
+       |
+       v
+  Recording completed?
+       |           |
+      No          Yes
+       |           |
+  Return 200    Recording URL present?
+                   |           |
+                  No          Yes
+                   |           |
+              Return 400    Find participant by CallSid
+                               |
+                        Known participant?
+                           |           |
+                          No          Yes
+                           |           |
+                   Download WAV    Call status retryable failure?
+                   (saved)         (no-answer/busy/failed/canceled)
+                                       |           |
+                                      Yes         No
+                                       |           |
+                                  Skip pipeline  Participant engaged?
+                                                   |           |
+                                                  No          Yes
+                                                   |           |
+                                             Skip pipeline   Download WAV from Twilio
+                                             (saved_no_engagement)  |
+                                                            Save to data/audio/
+                                                                 |
+                                                            Set processing_status = pending
+                                                                 |
+                                                            Log to call_log.csv
+                                                                 |
+                                                            Background Worker picks up
+</code></pre>
+<h3>4.5 Excel Export Data Flow</h3>
+<pre><code>  INPUT                         PROCESSING                         OUTPUT
+
+  +---------------+     +---------------------+     +---------------------------+
+  | questions.txt |----&gt;| Build Response      |     | ivr_responses.xlsx        |
+  +---------------+     | Metadata            |     | (Kiswahili option text)   |
+                        +----------+----------+     +-------------+-------------+
+  +-----------------+              |                               |
+  | participants.json|--&gt;| Filter Responses   |     Cell-by-cell translate
+  +-----------------+   | (exclude OPEN)      |                    |
+                        +----------+----------+     +-------------+-------------+
+                                   |                | Translation Cache (dict)  |
+                        +----------+----------+     +-------------+-------------+
+                        | Decode DTMF         |                    |
+                        | digit -&gt; Option Text|     +-------------+-------------+
+                        +----------+----------+     | ivr_responses_english.xlsx|
+                                   |                +---------------------------+
+                        +----------+----------+
+                        | Renumber Question   |
+                        | Keys (q1, q2, ...)  |
+                        +----------+----------+
+                                   |
+                        +----------+----------+
+                        | Build DataFrame     |-------&gt; ivr_responses.xlsx
+                        +---------------------+
+</code></pre>
+<hr />
+<h2>5. API Reference</h2>
+<h3>5.1 Public Endpoints (No Auth Required)</h3>
+<p>These endpoints are accessible without authentication — called by Twilio webhooks or used for health checks.</p>
+<h4><code>POST /voice</code></h4>
+<blockquote>
+<p><strong>Call Entrypoint — Outbound and Inbound</strong></p>
+</blockquote>
+<p>Initiates full-call recording and redirects to the survey start. For inbound calls, attempts to match the caller by phone number or auto-creates a participant.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CallSid</code></td>
+<td>Twilio</td>
+<td>Unique call identifier</td>
+</tr>
+<tr>
+<td><code>From</code></td>
+<td>Twilio</td>
+<td>Caller phone number (used for inbound matching)</td>
+</tr>
+<tr>
+<td><code>Direction</code></td>
+<td>Twilio</td>
+<td><code>inbound</code> or <code>outbound-api</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> TwiML — starts <code>&lt;Recording&gt;</code>, redirects to <code>/start</code></p>
+<hr />
+<h4><code>POST /start</code></h4>
+<blockquote>
+<p><strong>Survey Introduction</strong></p>
+</blockquote>
+<p>Plays the first 2 intro prompts (INFO questions), then begins the first survey question.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CallSid</code></td>
+<td>Twilio</td>
+<td>Call identifier</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> TwiML — plays intros, gathers first OPEN question</p>
+<hr />
+<h4><code>POST /next?q={index}</code></h4>
+<blockquote>
+<p><strong>Survey Question Router</strong></p>
+</blockquote>
+<p>Core question loop. Stores previous answer, advances to next question based on type.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>Query string</td>
+<td>0-based question index</td>
+</tr>
+<tr>
+<td><code>CallSid</code></td>
+<td>Twilio</td>
+<td>Call identifier</td>
+</tr>
+<tr>
+<td><code>SpeechResult</code></td>
+<td>Twilio</td>
+<td>Transcribed speech (OPEN questions)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> TwiML — varies by question type (Gather speech / Gather DTMF / Play + Redirect)</p>
+<hr />
+<h4><code>POST /mcq-handler?q={index}</code></h4>
+<blockquote>
+<p><strong>MCQ/MCQO DTMF Handler</strong></p>
+</blockquote>
+<p>Processes keypad digit. If MCQO and "Other" selected, redirects to speech capture.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>Query string</td>
+<td>Question index</td>
+</tr>
+<tr>
+<td><code>Digits</code></td>
+<td>Twilio</td>
+<td>Pressed DTMF digit (1–9)</td>
+</tr>
+<tr>
+<td><code>CallSid</code></td>
+<td>Twilio</td>
+<td>Call identifier</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> TwiML — next question or <code>/mcqo-other-handler</code></p>
+<hr />
+<h4><code>POST /mcqo-other-handler?q={index}</code></h4>
+<blockquote>
+<p><strong>MCQO "Other" Speech Handler</strong></p>
+</blockquote>
+<p>Captures the free-speech "Other" response and moves to next question.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>q</code></td>
+<td>Query string</td>
+<td>Question index</td>
+</tr>
+<tr>
+<td><code>SpeechResult</code></td>
+<td>Twilio</td>
+<td>Free-speech "Other" response</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> TwiML — redirects to <code>/next?q={q+1}</code></p>
+<hr />
+<h4><code>POST /call-status</code></h4>
+<blockquote>
+<p><strong>Twilio Call Status Webhook</strong></p>
+</blockquote>
+<p>Receives call completion events. Updates participant state, triggers Excel export on completion.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CallSid</code></td>
+<td>Twilio</td>
+<td>Call identifier</td>
+</tr>
+<tr>
+<td><code>CallStatus</code></td>
+<td>Twilio</td>
+<td><code>completed</code>, <code>no-answer</code>, <code>busy</code>, <code>failed</code>, <code>canceled</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> <code>200 OK</code></p>
+<hr />
+<h4><code>POST /recording-done</code></h4>
+<blockquote>
+<p><strong>Twilio Recording Completion Webhook</strong></p>
+</blockquote>
+<p>Downloads the completed recording WAV and queues it for ML processing.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CallSid</code></td>
+<td>Twilio</td>
+<td>Call identifier</td>
+</tr>
+<tr>
+<td><code>RecordingUrl</code></td>
+<td>Twilio</td>
+<td>URL to download recording</td>
+</tr>
+<tr>
+<td><code>RecordingStatus</code></td>
+<td>Twilio</td>
+<td><code>completed</code> or other</td>
+</tr>
+<tr>
+<td><code>Direction</code></td>
+<td>Twilio</td>
+<td><code>inbound</code> or <code>outbound-api</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response:</strong> <code>200 OK</code></p>
+<hr />
+<h4><code>GET /health</code></h4>
+<blockquote>
+<p><strong>Health Check</strong></p>
+</blockquote>
+<p><strong>Response:</strong> <code>200 OK</code> — body: <code>ok</code></p>
+<hr />
+<h4><code>POST /conference_host</code>, <code>POST /conference_join</code>, <code>POST /conference_ivr</code>, <code>POST /conference_ivr_next</code></h4>
+<blockquote>
+<p><strong>Conference Call Endpoints</strong></p>
+</blockquote>
+<p>Three-way conference call flow. Host hears IVR questions while waiting; conference starts when questions complete.</p>
+<hr />
+<h4><code>POST /silence</code></h4>
+<blockquote>
+<p><strong>Silence Generator</strong></p>
+</blockquote>
+<p>Returns TwiML with a 60-second pause — used as conference hold fallback.</p>
+<hr />
+<h4><code>GET /ivr-audio/&lt;filename&gt;</code></h4>
+<blockquote>
+<p><strong>Static IVR Audio Server</strong></p>
+</blockquote>
+<p>Serves cached Azure TTS audio from <code>data/ivr_audio/</code>.</p>
+<hr />
+<h3>5.2 Authenticated Endpoints (Login Required)</h3>
+<p>All <code>/admin/*</code> routes require an active session or valid <code>ADMIN_TOKEN</code> query parameter.</p>
+<h4><code>GET /admin</code> — Admin Dashboard (full HTML page)</h4>
+<h4><code>GET /admin/live_state</code> — Live State JSON API</h4>
+<pre><code class="language-json">{
+  &quot;total&quot;: 42,
+  &quot;counts&quot;: {&quot;pending&quot;: 10, &quot;in_progress&quot;: 5, &quot;completed&quot;: 25, &quot;failed&quot;: 2},
+  &quot;participants&quot;: [
+    {
+      &quot;participant_id&quot;: &quot;P001&quot;,
+      &quot;phone_masked&quot;: &quot;+2******1234&quot;,
+      &quot;status&quot;: &quot;completed&quot;,
+      &quot;attempts&quot;: 1,
+      &quot;engaged&quot;: true,
+      &quot;direction&quot;: &quot;inbound&quot;,
+      &quot;scheduled_local&quot;: &quot;2026-04-05 14:00&quot;,
+      &quot;processing_status&quot;: &quot;completed&quot;
+    }
+  ],
+  &quot;runtime&quot;: {
+    &quot;scheduler&quot;: {&quot;status&quot;: &quot;running&quot;, &quot;label&quot;: &quot;Running&quot;, &quot;age_sec&quot;: 3},
+    &quot;worker&quot;: {&quot;status&quot;: &quot;running&quot;, &quot;label&quot;: &quot;Running&quot;, &quot;age_sec&quot;: 2}
+  }
+}
+</code></pre>
+<h4><code>POST /admin/upload_contacts</code> — Upload participant CSV (<code>participant_id,phone_e164</code>)</h4>
+<h4><code>POST /admin/save_questions</code> — Save <code>data/questions.txt</code></h4>
+<h4><code>POST /admin/schedule</code> — Set scheduled call time for a participant (NYC timezone)</h4>
+<h4><code>POST /admin/dial_now</code> — Force dial all eligible participants immediately</h4>
+<h4><code>POST /admin/pause</code> / <code>POST /admin/resume</code> — Toggle scheduler pause</h4>
+<h4><code>POST /admin/reset_state</code> — Back up and reset all participant state</h4>
+<h4><code>GET /admin/export_excel</code> — Download <code>ivr_responses.xlsx</code> (original language)</h4>
+<h4><code>GET /admin/export_excel_english</code> — Download <code>ivr_responses_english.xlsx</code> (translated)</h4>
+<h4><code>POST /admin/conference_call</code> — Dial two numbers into a conference room</h4>
+<h4><code>POST /admin/end_call</code> — End a specific active call by CallSid <em>(v1.2.0)</em></h4>
+<h4><code>POST /admin/end_all_calls</code> — End all currently active calls <em>(v1.2.0)</em></h4>
+<hr />
+<h3>5.3 Authentication Endpoints</h3>
+<h4><code>GET /login</code> — Login page</h4>
+<h4><code>POST /login</code> — Authenticate; sets session cookie on success</h4>
+<h4><code>POST /logout</code> — Clear session and log event</h4>
+<hr />
+<h2>6. Data Models &amp; State Schema</h2>
+<h3>6.1 Participant Schema</h3>
+<pre><code class="language-json">{
+  &quot;P001&quot;: {
+    &quot;status&quot;: &quot;completed&quot;,
+    &quot;attempts&quot;: 1,
+    &quot;last_call_time&quot;: &quot;2026-04-05T18:30:00&quot;,
+    &quot;last_call_sid&quot;: &quot;CA1234567890abcdef&quot;,
+    &quot;last_call_status&quot;: &quot;completed&quot;,
+    &quot;engaged&quot;: true,
+    &quot;last_recording_url&quot;: &quot;https://api.twilio.com/2010-04-01/Accounts/.../Recordings/RE...&quot;,
+    &quot;last_outputs&quot;: {},
+    &quot;scheduled_time_local&quot;: &quot;2026-04-05 14:30&quot;,
+    &quot;scheduled_time_utc&quot;: &quot;2026-04-05T18:30:00Z&quot;,
+    &quot;phone_e164&quot;: &quot;+254700000000&quot;,
+    &quot;responses&quot;: {
+      &quot;q1&quot;: &quot;Jina langu ni Amina&quot;,
+      &quot;q2&quot;: &quot;2&quot;,
+      &quot;q3&quot;: &quot;1&quot;,
+      &quot;survey_q_counter&quot;: 15
+    },
+    &quot;processing_status&quot;: &quot;completed&quot;,
+    &quot;audio_path&quot;: &quot;data/audio/P001_20260405_183000.wav&quot;,
+    &quot;recording_url&quot;: &quot;https://api.twilio.com/...&quot;,
+    &quot;direction&quot;: &quot;inbound&quot;
+  }
+}
+</code></pre>
+<h3>6.2 Participant State Machine</h3>
+<pre><code>                       +-------+
+                       | START |
+                       +---+---+
+                           |
+                       CSV upload / inbound call
+                           |
+                           v
+                       +-------+
+                +-----&gt;| idle  |
+                |      +---+---+
+                |          |
+                |     Schedule set / inbound triggers
+                |          |
+                |          v
+                |    +---------+       Eligible when:
+                +----|         |       - scheduled_time_utc &lt;= now
+                |    | pending |       - retry gap (1h) elapsed
+                |    |         |       - attempts &lt; 3
+                |    +----+----+
+                |         |
+                |    Call placed
+                |         |
+                |         v
+                |  +-------------+
+                |  | in_progress |
+                |  +------+------+
+                |         |
+           +----+---------+---------+-------------------+
+           |              |                             |
+     No answer /    Survey finished              Completed but
+     Busy           (engaged=true)               not engaged
+     (attempts&lt;3)         |                             |
+           |              v                             |
+           |      +-----------+                    (retry)
+           +      | completed |
+                  +-----------+
+
+     No answer/Busy (attempts &gt;= 3)
+           |
+           v
+      +--------+
+      | failed |
+      +--------+
+</code></pre>
+<h3>6.3 Processing Status State Machine</h3>
+<pre><code>  Recording received
+        |
+        v
+  Engaged?
+  |         |
+ No         Yes
+  |         |
+saved_no_  pending
+engagement  |
+           Worker picks up
+            |
+            v
+        processing
+            |
+       +----+----+
+       |         |
+    success    error
+       |         |
+  completed   failed
+</code></pre>
+<h3>6.4 Call Log Schema</h3>
+<p><code>data/state/call_log.csv</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>timestamp_utc</code></td>
+<td>ISO 8601</td>
+<td>Event timestamp</td>
+</tr>
+<tr>
+<td><code>participant_id</code></td>
+<td>String</td>
+<td>Participant identifier</td>
+</tr>
+<tr>
+<td><code>phone_masked</code></td>
+<td>String</td>
+<td>Masked phone (e.g., <code>+2******1234</code>)</td>
+</tr>
+<tr>
+<td><code>direction</code></td>
+<td>String</td>
+<td><code>inbound</code> or <code>outbound-api</code></td>
+</tr>
+<tr>
+<td><code>call_sid</code></td>
+<td>String</td>
+<td>Twilio call SID</td>
+</tr>
+<tr>
+<td><code>recording_url</code></td>
+<td>URL</td>
+<td>Twilio recording URL</td>
+</tr>
+<tr>
+<td><code>audio_path</code></td>
+<td>String</td>
+<td>Local WAV file path</td>
+</tr>
+<tr>
+<td><code>transcript_path</code></td>
+<td>String</td>
+<td>Kiswahili transcript path</td>
+</tr>
+<tr>
+<td><code>translation_path</code></td>
+<td>String</td>
+<td>English translation path</td>
+</tr>
+<tr>
+<td><code>english_audio_path</code></td>
+<td>String</td>
+<td>English MP3 path</td>
+</tr>
+</tbody>
+</table>
+<h3>6.5 Auth State Schema</h3>
+<p><code>data/auth_state.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;fails&quot;: {
+    &quot;username|ip_address&quot;: [1711234567, 1711234580]
+  },
+  &quot;locks&quot;: {
+    &quot;username|ip_address&quot;: 1711235467
+  }
+}
+</code></pre>
+<h3>6.6 Settings Schema</h3>
+<p><code>data/state/settings.json</code>:</p>
+<pre><code class="language-json">{ &quot;paused&quot;: false }
+</code></pre>
+<hr />
+<h2>7. Authentication &amp; Security</h2>
+<h3>7.1 Authentication Flow</h3>
+<pre><code>  USER                  FLASK              config.yaml     auth_state.json  auth_log.jsonl
+   |                       |                    |                |                |
+   |-- GET /admin --------&gt;|                    |                |                |
+   |                       |-- before_request   |                |                |
+   |&lt;-- 302 -&gt; /login -----|   guard            |                |                |
+   |                       |                    |                |                |
+   |-- POST /login -------&gt;|                    |                |                |
+   |  (username,password)  |                    |                |                |
+   |                       |-- _is_locked? -----|---------------&gt;|                |
+   |                       |                    |                |                |
+   |          [If Locked]  |                    |                |                |
+   |&lt;-- &quot;Try again in Xs&quot;--|                    |                |                |
+   |                       |                    |                |                |
+   |                       |-- Load auth.users-&gt;|                |                |
+   |                       |-- check_password_hash()             |                |
+   |                       |                    |                |                |
+   |          [If Invalid] |-- _record_fail() --|---------------&gt;|                |
+   |                       |   (7 fails=lock)   |                |                |
+   |&lt;-- &quot;Invalid creds&quot;    |-- Log event -------|----------------|---------------&gt;|
+   |                       |                    |                |                |
+   |          [If Valid]   |-- _clear_fails() --|---------------&gt;|                |
+   |                       |-- Set session      |                |                |
+   |                       |-- Log success -----|----------------|---------------&gt;|
+   |&lt;-- 302 -&gt; /admin -----|                    |                |                |
+</code></pre>
+<h3>7.2 Security Measures</h3>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Implementation</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Password Hashing</strong></td>
+<td>PBKDF2-SHA256</td>
+<td>1,000,000 iterations via Werkzeug</td>
+</tr>
+<tr>
+<td><strong>Brute-Force Protection</strong></td>
+<td>Rate limiting per username+IP</td>
+<td>7 failures in 10 min → 15-min lockout</td>
+</tr>
+<tr>
+<td><strong>Session Security</strong></td>
+<td>Flask sessions</td>
+<td><code>HttpOnly</code>, <code>SameSite=Lax</code>, <code>Secure=True</code>, 8-hour lifetime</td>
+</tr>
+<tr>
+<td><strong>Phone Masking</strong></td>
+<td><code>mask_phone()</code></td>
+<td>First 2 + last 4 digits only (e.g., <code>+2******1234</code>)</td>
+</tr>
+<tr>
+<td><strong>PII Protection</strong></td>
+<td><code>.gitignore</code></td>
+<td>Contacts CSV, participant state, audio, and logs excluded from git</td>
+</tr>
+<tr>
+<td><strong>Route Protection</strong></td>
+<td><code>@app.before_request</code></td>
+<td>All <code>/admin</code> routes require session or admin token</td>
+</tr>
+<tr>
+<td><strong>Webhook Passthrough</strong></td>
+<td>Allowlist</td>
+<td>Twilio webhook paths bypass auth</td>
+</tr>
+<tr>
+<td><strong>Audit Logging</strong></td>
+<td>JSONL</td>
+<td>Every login/logout logged with IP, user-agent, timestamps</td>
+</tr>
+<tr>
+<td><strong>Atomic Writes</strong></td>
+<td><code>os.replace()</code></td>
+<td>Prevents corrupt state files on crash</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>8. Survey Question Engine</h2>
+<h3>8.1 Question File Format</h3>
+<pre><code>TYPE|Question Text|Option1|Option2|Option3...
+</code></pre>
+<h3>8.2 Supported Question Types</h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Format</th>
+<th>Input Method</th>
+<th>Response Storage</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>INFO</strong></td>
+<td><code>INFO\|text</code></td>
+<td>None</td>
+<td>Not stored</td>
+<td><code>INFO\|Maswali sehemu ya kwanza</code></td>
+</tr>
+<tr>
+<td><strong>OPEN</strong></td>
+<td><code>OPEN\|text</code></td>
+<td>Speech (<code>&lt;Gather input="speech"&gt;</code>)</td>
+<td>Raw speech text</td>
+<td><code>OPEN\|Tafadhali sema jina lako</code></td>
+</tr>
+<tr>
+<td><strong>MCQ</strong></td>
+<td><code>MCQ\|text\|opt1\|opt2\|opt3</code></td>
+<td>DTMF keypad</td>
+<td>Digit (1–9)</td>
+<td><code>MCQ\|Nani..?\|Marafiki\|Mume\|Watoto</code></td>
+</tr>
+<tr>
+<td><strong>MCQO</strong></td>
+<td><code>MCQO\|text\|opt1\|opt2\|Nyingine</code></td>
+<td>DTMF + optional speech</td>
+<td>Digit (1–9)</td>
+<td><code>MCQO\|Kupanga..?\|Ndiyo\|Hapana\|Nyingine</code></td>
+</tr>
+</tbody>
+</table>
+<h3>8.3 IVR Question Flow</h3>
+<pre><code>  Call Answered (inbound or outbound)
+       |
+       v
+  /voice: Start Full-Call Recording (30 min max), tag direction
+       |
+       v
+  /start: Play Q[0] + Q[1] (INFO intros)
+       |
+       v
+  /start: Play Q[2] (First real question) with &lt;Gather&gt;
+       |
+       v
+  +--- Question Type? ---+------------------+------------------+
+  |                       |                  |                  |
+  INFO                   OPEN               MCQ               MCQO
+  |                       |                  |                  |
+  Play text              Play text          Play text          Play text
+  Pause 1s               Gather speech      + options          + options
+  Redirect next          timeout=6s         Gather 1 digit     Gather 1 digit
+                          |                  |                  |
+                         Store              Store           Digit == Other?
+                         SpeechResult       digit            |          |
+                         mark_engaged()     mark_engaged()  No         Yes
+                          |                  |               |          |
+                          |                  |           Store      &quot;Umechagua
+                          |                  |           digit      nyingine...&quot;
+                          |                  |               |   Gather speech 4s
+                          |                  |               |          |
+  +---+------------------++------------------+--------+------+----------+
+      |
+      v
+  Advance to Q[n+1]
+      |
+  More questions? Yes -&gt; [loop]
+                  No  -&gt; &quot;Kwaheri&quot; + Hangup
+</code></pre>
+<h3>8.4 TTS Prompt Generation</h3>
+<ul>
+<li><strong>Voice:</strong> <code>sw-KE-ZuriNeural</code> (Swahili) / <code>en-US-JennyNeural</code> (English)</li>
+<li><strong>Rate:</strong> <code>-15%</code> prosody for clearer, slower delivery</li>
+<li><strong>Caching:</strong> SHA1 hash of <code>voice|format|text</code> → disk-cached MP3 in <code>data/ivr_audio/</code></li>
+<li><strong>Serving:</strong> Public URL via <code>/ivr-audio/{hash}.mp3</code>, referenced in TwiML <code>&lt;Play&gt;</code> tags</li>
+<li><strong>SSML:</strong> Full XML with entity escaping for special characters</li>
+</ul>
+<h3>8.5 MCQ Option Verbalization</h3>
+<pre><code>&quot;finya 1 kwa Ndiyo. finya 2 kwa Hapana. finya 3 kwa Nyingine.&quot;
+</code></pre>
+<p>("press 1 for Yes. press 2 for No. press 3 for Other.")</p>
+<hr />
+<h2>9. Configuration Reference</h2>
+<h3>9.1 Environment Variables (<code>.env</code>)</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Required</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TWILIO_ACCOUNT_SID</code></td>
+<td>Yes</td>
+<td>—</td>
+<td>Twilio account SID</td>
+</tr>
+<tr>
+<td><code>TWILIO_AUTH_TOKEN</code></td>
+<td>Yes</td>
+<td>—</td>
+<td>Twilio auth token</td>
+</tr>
+<tr>
+<td><code>TWILIO_FROM_NUMBER</code></td>
+<td>Yes</td>
+<td>—</td>
+<td>Twilio phone number (E.164)</td>
+</tr>
+<tr>
+<td><code>PUBLIC_BASE_URL</code></td>
+<td>Yes</td>
+<td>—</td>
+<td>Public HTTPS URL for webhooks</td>
+</tr>
+<tr>
+<td><code>ADMIN_TOKEN</code></td>
+<td>No</td>
+<td><code>""</code></td>
+<td>Optional token for admin access without login</td>
+</tr>
+<tr>
+<td><code>AZURE_SPEECH_KEY</code></td>
+<td>Yes</td>
+<td>—</td>
+<td>Azure Cognitive Services subscription key</td>
+</tr>
+<tr>
+<td><code>AZURE_SPEECH_REGION</code></td>
+<td>Yes</td>
+<td>—</td>
+<td>Azure region (e.g., <code>eastus</code>)</td>
+</tr>
+<tr>
+<td><code>AZURE_TTS_VOICE_SW</code></td>
+<td>No</td>
+<td><code>sw-KE-ZuriNeural</code></td>
+<td>Swahili TTS voice</td>
+</tr>
+<tr>
+<td><code>AZURE_TTS_VOICE_EN</code></td>
+<td>No</td>
+<td><code>en-US-JennyNeural</code></td>
+<td>English TTS voice</td>
+</tr>
+<tr>
+<td><code>AZURE_TTS_FORMAT</code></td>
+<td>No</td>
+<td><code>audio-16khz-128kbitrate-mono-mp3</code></td>
+<td>Audio format</td>
+</tr>
+<tr>
+<td><code>MAX_CALLS_PER_TICK</code></td>
+<td>No</td>
+<td><code>3</code></td>
+<td>Max outbound calls per scheduler tick</td>
+</tr>
+<tr>
+<td><code>CALL_SPACING_SEC</code></td>
+<td>No</td>
+<td><code>0.8</code></td>
+<td>Delay between outbound calls</td>
+</tr>
+<tr>
+<td><code>FLASK_SECRET_KEY</code></td>
+<td>No</td>
+<td><code>CHANGE_ME_NOW</code></td>
+<td>Flask session signing key</td>
+</tr>
+<tr>
+<td><code>AUTO_START_NGROK</code></td>
+<td>No</td>
+<td><code>1</code></td>
+<td>Auto-start ngrok on launch</td>
+</tr>
+<tr>
+<td><code>AUTH_MAX_FAILS</code></td>
+<td>No</td>
+<td><code>7</code></td>
+<td>Failed attempts before lockout</td>
+</tr>
+<tr>
+<td><code>AUTH_LOCK_SECONDS</code></td>
+<td>No</td>
+<td><code>900</code></td>
+<td>Lockout duration (15 minutes)</td>
+</tr>
+<tr>
+<td><code>AUTH_WINDOW_SECONDS</code></td>
+<td>No</td>
+<td><code>600</code></td>
+<td>Failure tracking window (10 minutes)</td>
+</tr>
+</tbody>
+</table>
+<h3>9.2 Configuration File (<code>config.yaml</code>)</h3>
+<pre><code class="language-yaml">twilio:
+  account_sid: &quot;&quot;              # Overridden by .env
+  auth_token: &quot;&quot;
+  from_number: &quot;&quot;
+  public_base_url: &quot;&quot;
+
+ivr:
+  questions_file: &quot;data/questions.txt&quot;
+  gather_timeout_sec: 6
+  speech_timeout: &quot;auto&quot;
+  speech_language: &quot;sw-KE&quot;
+  recording_max_seconds: 1800  # 30 minutes
+
+audio_processing:
+  enabled: true
+  backend: &quot;deepfilternet&quot;
+  processed_dir: &quot;data/audio_processed&quot;
+  temp_dir: &quot;data/audio_processed/tmp&quot;
+  output_sample_rate: 16000    # Whisper expects 16kHz
+  model_sample_rate: 48000     # DeepFilterNet expects 48kHz
+  channel_mode: &quot;mixdown&quot;      # &quot;mixdown&quot; or &quot;channel&quot;
+  caller_channel: 0
+  keep_intermediate_files: false
+
+auth:
+  users:
+    username:
+      password_hash: &quot;pbkdf2:sha256:...&quot;
+</code></pre>
+<h3>9.3 System Constants</h3>
+<table>
+<thead>
+<tr>
+<th>Constant</th>
+<th>Value</th>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MAX_ATTEMPTS</code></td>
+<td><code>3</code></td>
+<td><code>state.py</code></td>
+<td>Maximum call attempts per participant</td>
+</tr>
+<tr>
+<td><code>RETRY_GAP</code></td>
+<td><code>1 hour</code></td>
+<td><code>state.py</code></td>
+<td>Minimum time between retries</td>
+</tr>
+<tr>
+<td><code>RECORDING_MAX_SEC</code></td>
+<td><code>1800</code></td>
+<td><code>twilio_handler.py</code></td>
+<td>Max recording length</td>
+</tr>
+<tr>
+<td><code>GATHER_TIMEOUT</code></td>
+<td><code>6s</code></td>
+<td><code>config.yaml</code></td>
+<td>DTMF/speech input timeout</td>
+</tr>
+<tr>
+<td><code>SCHEDULER_INTERVAL</code></td>
+<td><code>15s</code></td>
+<td><code>twilio_handler.py</code></td>
+<td>Scheduler polling interval</td>
+</tr>
+<tr>
+<td><code>WORKER_POLL</code></td>
+<td><code>5s</code></td>
+<td><code>background_worker.py</code></td>
+<td>Worker polling interval</td>
+</tr>
+<tr>
+<td><code>MAX_CHARS</code></td>
+<td><code>3000</code></td>
+<td><code>translate.py</code></td>
+<td>Max characters per translation chunk</td>
+</tr>
+<tr>
+<td><code>SCHEDULER_TIMEOUT_SEC</code></td>
+<td><code>45s</code></td>
+<td><code>runtime_status.py</code></td>
+<td>Scheduler heartbeat timeout</td>
+</tr>
+<tr>
+<td><code>WORKER_TIMEOUT_SEC</code></td>
+<td><code>20s</code></td>
+<td><code>runtime_status.py</code></td>
+<td>Worker heartbeat timeout</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>10. Admin Dashboard</h2>
+<h3>10.1 UI Layout</h3>
+<pre><code>+-----------------------------------------------------------------------+
+| AudioSurvey AI — Admin                        [RUNNING] [PAUSED]      |
+| NYC time: 2026-04-05 14:32:15 EDT     Logged in as: krishnanand       |
+|                                                           [Sign out]  |
++-----------------------------------------------------------------------+
+| [Dial Now] [Start] [Stop] [Refresh] [Export Excel] [English] [Reset] |
++-----------------------------------------------------------------------+
+| TECH INFO                                                             |
+| Scheduler: Running (3s ago) | Worker: Running (1s ago) | Load: normal |
++-----------------------------------------------------------------------+
+| +-----------+ +-----------+ +-----------+ +-----------+               |
+| |    42     | |    10     | |     5     | |    25     |               |
+| |   Total   | |  Pending  | |In Progress| | Completed |               |
+| +-----------+ +-----------+ +-----------+ +-----------+               |
++-----------------------------------------------------------------------+
+| Upload Contacts [CSV] | Questions Editor [Save] | Conference Call [Go]|
++-----------------------------------------------------------------------+
+| Participants                                                          |
+| +------+----------+----------+----+----------+------+--------+-----+ |
+| | ID   | Phone    | Status   |Att.| Engaged  |Dir.  |Sched.  |Ctrl | |
+| +------+----------+----------+----+----------+------+--------+-----+ |
+| | P001 | +2****34 | Completed| 1  | Engaged  |In    |04-05   |     | |
+| | P002 | +2****56 | Pending  | 0  | Not eng. |Out   |        |[Set]| |
+| | P003 | +2****78 | InProg.  | 1  | Engaged  |In    |        |[End]| |
+| +------+----------+----------+----+----------+------+--------+-----+ |
++-----------------------------------------------------------------------+
+| [End All Calls]                                                       |
++-----------------------------------------------------------------------+
+</code></pre>
+<h3>10.2 New Dashboard Features (v1.2.0)</h3>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Live Tech Info Panel</strong></td>
+<td>Shows Scheduler status, Worker status, and system load level (quiet/normal/busy) — updated every poll cycle</td>
+</tr>
+<tr>
+<td><strong>Call Direction Column</strong></td>
+<td>Shows <code>Incoming</code> or <code>Outgoing</code> badge per participant based on call direction</td>
+</tr>
+<tr>
+<td><strong>End Call Button</strong></td>
+<td>Per-participant button (visible when call is <code>in_progress</code>) to immediately terminate that call via Twilio API</td>
+</tr>
+<tr>
+<td><strong>End All Calls Button</strong></td>
+<td>Global button to terminate all currently in-progress calls at once</td>
+</tr>
+<tr>
+<td><strong>Refreshing Overlay</strong></td>
+<td>Visual overlay during state reset operations to prevent user interaction during reset</td>
+</tr>
+<tr>
+<td><strong>Redesigned Login Page</strong></td>
+<td>Stronger branding, animated gradient, "Welcome" header, improved UX</td>
+</tr>
+<tr>
+<td><strong>Runtime Status API</strong></td>
+<td><code>/admin/live_state</code> now includes <code>runtime</code> object with scheduler and worker heartbeat info</td>
+</tr>
+</tbody>
+</table>
+<h3>10.3 Live Polling Architecture</h3>
+<pre><code>  BROWSER (JS — every 1 second)      FLASK SERVER         participants.json
+       |                                   |                     |
+       |-- Guard checks:                  |                     |
+       |   Skip if Flatpickr open         |                     |
+       |   Skip if input dirty            |                     |
+       |   Skip if poll in flight         |                     |
+       |                                   |                     |
+       |-- GET /admin/live_state --------&gt;|                     |
+       |                                   |-- load_participants |
+       |                                   |-- get_runtime_snapshot()
+       |&lt;-- {total, counts,                |                     |
+       |     participants, runtime}        |                     |
+       |                                   |                     |
+       |-- Update KPI cards               |                     |
+       |-- Re-render table rows           |                     |
+       |-- Update Tech Info panel         |                     |
+       |-- Re-initialize Flatpickr        |                     |
+</code></pre>
+<hr />
+<h2>11. Background Services</h2>
+<h3>11.1 Service Lifecycle</h3>
+<pre><code>  MAIN THREAD              SCHEDULER THREAD         WORKER THREAD
+       |                        |                        |
+       |-- start_background_services()                   |
+       |-- Thread(daemon).start --&gt;|                     |
+       |-- Thread(daemon).start ---|--------------------&gt;|
+       |-- app.run(port=5050)      |                     |
+       |                           |                     |
+       |    +===[Every 15 seconds]=====+                 |
+       |    | mark_scheduler_heartbeat()|                |
+       |    | load_participants()       |                |
+       |    | Filter can_call()         |                |
+       |    | client.calls.create()     |                |
+       |    | mark_call_started()       |                |
+       |    | save_participants()       |                |
+       |    +===========================+                |
+       |                                                 |
+       |                    +===[Every 5 seconds]========+
+       |                    | mark_worker_heartbeat()    |
+       |                    | load_participants()        |
+       |                    | Find processing_status     |
+       |                    |   = &quot;pending&quot;              |
+       |                    | Run ML pipeline            |
+       |                    | mark_completed()           |
+       |                    | save_participants()        |
+       |                    +============================+
+</code></pre>
+<h3>11.2 Worker Pipeline Stages</h3>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Progress</th>
+<th>Typical Duration</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. Prepare</td>
+<td>10–25%</td>
+<td>~5s</td>
+<td>FFmpeg: extract channel, resample to 48kHz mono PCM16</td>
+</tr>
+<tr>
+<td>2. Denoise</td>
+<td>25–60%</td>
+<td>~30–90s</td>
+<td>DeepFilterNet: neural noise removal (PyTorch)</td>
+</tr>
+<tr>
+<td>3. Resample</td>
+<td>60–75%</td>
+<td>~3s</td>
+<td>FFmpeg: downsample to 16kHz for Whisper</td>
+</tr>
+<tr>
+<td>4. Transcribe</td>
+<td>75–85%</td>
+<td>~60–180s</td>
+<td>Whisper large-v3: Swahili STT</td>
+</tr>
+<tr>
+<td>5. Translate</td>
+<td>85–93%</td>
+<td>~5–20s</td>
+<td>Google Translate: chunked sw→en with retries</td>
+</tr>
+<tr>
+<td>6. English TTS</td>
+<td>93–97%</td>
+<td>~5–10s</td>
+<td>gTTS: English audio synthesis</td>
+</tr>
+<tr>
+<td>7. Complete</td>
+<td>100%</td>
+<td>—</td>
+<td>Mark completed, save outputs to state</td>
+</tr>
+</tbody>
+</table>
+<h3>11.3 Runtime Status Module (<code>runtime_status.py</code>)</h3>
+<p>Added in v1.2.0. Tracks heartbeats from both background threads and provides health status for the dashboard.</p>
+<pre><code class="language-python"># Statuses returned by get_runtime_snapshot():
+# &quot;not_started&quot;  -&gt; Thread hasn't started yet
+# &quot;starting&quot;     -&gt; Thread started but no heartbeat yet
+# &quot;running&quot;      -&gt; Last heartbeat within timeout window
+# &quot;paused&quot;       -&gt; Scheduler is paused (admin toggled)
+# &quot;down&quot;         -&gt; No heartbeat received within timeout
+</code></pre>
+<hr />
+<h2>12. Inbound Call Handling</h2>
+<h3>12.1 Overview (v1.2.0)</h3>
+<p>Inbound calls arrive when a participant dials the Twilio phone number directly. The system routes them through the exact same IVR survey and ML processing flow as outbound calls.</p>
+<h3>12.2 Inbound Participant Matching</h3>
+<pre><code class="language-python">@app.route(&quot;/voice&quot;, methods=[&quot;POST&quot;])
+def voice():
+    call_sid = request.values.get(&quot;CallSid&quot;)
+    direction = request.values.get(&quot;Direction&quot;, &quot;&quot;)  # &quot;inbound&quot; or &quot;outbound-api&quot;
+    caller_number = request.values.get(&quot;From&quot;, &quot;&quot;)   # E.164 phone number
+
+    state = load_participants()
+    pid, p = find_participant_by_callsid(state, call_sid)
+
+    if not pid and direction == &quot;inbound&quot; and caller_number:
+        # Try to match by phone number
+        for existing_pid, existing_p in state.items():
+            if existing_p.get(&quot;phone_e164&quot;) == caller_number:
+                pid = existing_pid
+                p = existing_p
+                break
+
+        if not pid:
+            # Auto-create a new participant from the inbound number
+            pid = f&quot;inbound_{caller_number.replace('+', '').replace(' ', '_')}&quot;
+            upsert_participant(state, pid, caller_number)
+            p = state[pid]
+
+    # Tag direction on the participant record
+    if pid:
+        state[pid][&quot;direction&quot;] = direction
+        mark_call_started(state, pid, call_sid)
+        save_participants(state)
+</code></pre>
+<h3>12.3 Call Controls (v1.2.0)</h3>
+<p><strong>End Individual Call:</strong></p>
+<pre><code class="language-python">@app.route(&quot;/admin/end_call&quot;, methods=[&quot;POST&quot;])
+def end_call():
+    call_sid = request.form.get(&quot;call_sid&quot;)
+    client = Client(TWILIO_SID, TWILIO_TOKEN)
+    client.calls(call_sid).update(status=&quot;completed&quot;)
+</code></pre>
+<p><strong>End All Active Calls:</strong></p>
+<pre><code class="language-python">@app.route(&quot;/admin/end_all_calls&quot;, methods=[&quot;POST&quot;])
+def end_all_calls():
+    state = load_participants()
+    client = Client(TWILIO_SID, TWILIO_TOKEN)
+    for pid, p in state.items():
+        if p.get(&quot;status&quot;) == &quot;in_progress&quot; and p.get(&quot;last_call_sid&quot;):
+            client.calls(p[&quot;last_call_sid&quot;]).update(status=&quot;completed&quot;)
+</code></pre>
+<hr />
+<h2>13. Error Handling &amp; Resilience</h2>
+<h3>13.1 Fault Tolerance Matrix</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Failure Mode</th>
+<th>Handling Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Twilio Call</strong></td>
+<td>No answer / Busy</td>
+<td>Mark <code>pending</code>, retry after 1h (up to 3 attempts)</td>
+</tr>
+<tr>
+<td><strong>Twilio Call</strong></td>
+<td>Failed / Canceled</td>
+<td>Mark <code>failed</code> if max attempts reached</td>
+</tr>
+<tr>
+<td><strong>Azure TTS</strong></td>
+<td>API error</td>
+<td>RuntimeError raised; corrupted audio not served</td>
+</tr>
+<tr>
+<td><strong>Azure TTS</strong></td>
+<td>Duplicate request</td>
+<td>Disk cache by SHA1 hash prevents re-synthesis</td>
+</tr>
+<tr>
+<td><strong>Whisper</strong></td>
+<td>Hallucination drift</td>
+<td><code>condition_on_previous_text=False</code>, <code>temperature=0.0</code></td>
+</tr>
+<tr>
+<td><strong>Google Translate</strong></td>
+<td>API error</td>
+<td>3 retries with 1.5s backoff; failed chunks marked <code>[TRANSLATION_FAILED_CHUNK]</code></td>
+</tr>
+<tr>
+<td><strong>Google Translate</strong></td>
+<td>Returns <code>None</code></td>
+<td>Explicit <code>None</code> check; RuntimeError raised</td>
+</tr>
+<tr>
+<td><strong>DeepFilterNet</strong></td>
+<td>Processing error</td>
+<td>Graceful fallback to unprocessed audio</td>
+</tr>
+<tr>
+<td><strong>Recording Download</strong></td>
+<td>HTTP error</td>
+<td>Logged; returns 200 (Twilio won't retry webhook)</td>
+</tr>
+<tr>
+<td><strong>State File</strong></td>
+<td>Corrupt JSON</td>
+<td>Renamed to <code>.corrupt</code>, returns empty state</td>
+</tr>
+<tr>
+<td><strong>State File</strong></td>
+<td>Concurrent access</td>
+<td><code>threading.RLock()</code> + atomic write (<code>.tmp</code> then <code>os.replace</code>)</td>
+</tr>
+<tr>
+<td><strong>Scheduler</strong></td>
+<td>Exception in tick</td>
+<td>Caught and logged; loop continues</td>
+</tr>
+<tr>
+<td><strong>Worker</strong></td>
+<td>Exception in pipeline</td>
+<td>Caught; <code>processing_status="failed"</code>; loop continues</td>
+</tr>
+<tr>
+<td><strong>Auth State</strong></td>
+<td>Missing file</td>
+<td>Returns safe defaults <code>{"fails": {}, "locks": {}}</code></td>
+</tr>
+<tr>
+<td><strong>Inbound Call</strong></td>
+<td>Unknown caller</td>
+<td>Auto-creates participant record from phone number</td>
+</tr>
+<tr>
+<td><strong>End Call API</strong></td>
+<td>Call already ended</td>
+<td>Twilio returns 200; exception caught and logged</td>
+</tr>
+</tbody>
+</table>
+<h3>13.2 Retry Policy</h3>
+<pre><code>  Call Placed (attempt N of 3)
+       |
+       +-- completed + engaged ---------&gt; Status: completed
+       |                                   Pipeline: triggered
+       |
+       +-- completed + NOT engaged -----&gt; Status: pending
+       |                                   (retry in 1h if &lt; 3 attempts)
+       |
+       +-- no-answer / busy / failed / canceled
+                                       |
+                                  attempts &gt;= 3?
+                                       |          |
+                                      Yes        No
+                                       |          |
+                                  Status:     Status: pending
+                                  failed      (retry in 1h)
+</code></pre>
+<hr />
+<h2>14. Logging &amp; Observability</h2>
+<h3>14.1 Logging Architecture</h3>
+<table>
+<thead>
+<tr>
+<th>Log Type</th>
+<th>Format</th>
+<th>Location</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Application Log</strong></td>
+<td>Colored console (colorlog)</td>
+<td>stdout</td>
+<td>Real-time operational visibility</td>
+</tr>
+<tr>
+<td><strong>Auth Event Log</strong></td>
+<td>JSONL</td>
+<td><code>data/auth_log.jsonl</code></td>
+<td>Security audit trail</td>
+</tr>
+<tr>
+<td><strong>Call Log</strong></td>
+<td>CSV</td>
+<td><code>data/state/call_log.csv</code></td>
+<td>Call history, recording tracking, direction</td>
+</tr>
+<tr>
+<td><strong>Worker Progress</strong></td>
+<td>Terminal progress bar</td>
+<td>stdout</td>
+<td>ML pipeline progress</td>
+</tr>
+<tr>
+<td><strong>Runtime Status</strong></td>
+<td>In-memory heartbeats</td>
+<td><code>runtime_status.py</code></td>
+<td>Scheduler/worker liveness</td>
+</tr>
+</tbody>
+</table>
+<h3>14.2 Console Log Format</h3>
+<pre><code>[NYC 2026-04-05T14:32:15-04:00 | UTC 2026-04-05T18:32:15Z] PROMPT SENT | CallSid=CA123 | Participant=P001 | q3_mcq | Text=&quot;...&quot;
+[BackgroundWorker] participant=P001 | [################----]  80% | Removing background noise
+[Scheduler] 2026-04-05 14:32:30 EDT Calling P001 -&gt; +254... | CallSid=CA123
+</code></pre>
+<h3>14.3 Auth Event Log Format</h3>
+<pre><code class="language-jsonl">{&quot;event&quot;:&quot;login&quot;,&quot;user&quot;:&quot;krishnanand&quot;,&quot;ip&quot;:&quot;127.0.0.1&quot;,&quot;login_utc&quot;:&quot;2026-04-05T18:32:15Z&quot;,&quot;login_local&quot;:&quot;2026-04-05 14:32:15 EDT&quot;,&quot;user_agent&quot;:&quot;Mozilla/5.0...&quot;}
+{&quot;event&quot;:&quot;logout&quot;,&quot;user&quot;:&quot;krishnanand&quot;,&quot;session_duration_sec&quot;:13365}
+</code></pre>
+<h3>14.4 Silenced Libraries</h3>
+<p><code>httpx</code>, <code>httpcore</code>, <code>httpcore.connection</code>, <code>httpcore.http2</code>, <code>hpack</code>, <code>h2</code>, <code>gtts</code>, <code>gtts.tts</code>, <code>googletrans</code>, <code>urllib3</code>, <code>torio</code>, <code>torchaudio</code></p>
+<hr />
+<h2>15. Deployment Guide</h2>
+<h3>15.1 Prerequisites</h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.10+</td>
+<td>Runtime</td>
+</tr>
+<tr>
+<td>pip</td>
+<td>—</td>
+<td>Package management</td>
+</tr>
+<tr>
+<td>ngrok</td>
+<td>3.x</td>
+<td>HTTPS tunneling</td>
+</tr>
+<tr>
+<td>FFmpeg</td>
+<td>4.x+</td>
+<td>Audio processing</td>
+</tr>
+<tr>
+<td>Twilio Account</td>
+<td>—</td>
+<td>Voice API</td>
+</tr>
+<tr>
+<td>Azure Account</td>
+<td>—</td>
+<td>Cognitive Services TTS</td>
+</tr>
+</tbody>
+</table>
+<h3>15.2 Local Development Setup</h3>
+<pre><code class="language-bash"># 1. Clone and enter the repository
+git clone https://github.com/krishnanand20/audiosurvey_ai.git
+cd audiosurvey_ai
+
+# 2. Create a virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. Install all dependencies
+pip install -r requirements.txt
+
+# 4. Configure your credentials
+cp .env.example .env
+# Edit .env with your Twilio + Azure keys
+
+# 5. Launch (auto-starts ngrok + Flask + opens admin in browser)
+python3 run_app.py
+</code></pre>
+<h3>15.3 Startup Sequence</h3>
+<pre><code>  python3 run_app.py
+       |
+       +-- Check AUTO_START_NGROK env
+       +-- Check if ngrok already running (localhost:4040)
+       |
+       +-- [No existing tunnel] Start ngrok http 5050
+       +-- Poll /api/tunnels until HTTPS URL appears (20 retries)
+       +-- Set PUBLIC_BASE_URL env var
+       |
+       +-- subprocess: python3 -m app.twilio_handler serve
+           |
+           +-- load_dotenv() + load_config()
+           +-- Validate Twilio env vars
+           +-- Load Whisper model large-v3 (cached globally)
+           +-- init Azure TTS SDK
+           +-- start_background_services()
+           |   +-- Scheduler thread (daemon, 15s loop)
+           |   +-- Worker thread (daemon, 5s poll)
+           |
+           +-- app.run(host=&quot;0.0.0.0&quot;, port=5050)
+       |
+       +-- Wait 1.5s
+       +-- webbrowser.open(&quot;http://127.0.0.1:5050/admin&quot;)
+</code></pre>
+<h3>15.4 macOS DMG Distribution</h3>
+<pre><code class="language-bash">cd packaging/macos_dmg
+./build_macos_dmg.sh
+# Output: output/AudioSurvey-AI.dmg
+</code></pre>
+<p><strong>Build steps:</strong> Swift icon generation → <code>.iconset</code> → <code>.icns</code> → <code>.app</code> bundle with launcher script → DMG</p>
+<hr />
+<h2>16. Directory Structure</h2>
+<pre><code>audiosurvey_ai/
+|
+|-- .env                          # Environment variables (secrets — gitignored)
+|-- .gitignore                    # Git exclusion rules
+|-- config.yaml                   # Application configuration
+|-- main.py                       # Batch processing entry point
+|-- run_app.py                    # Application launcher
+|-- requirements.txt              # Python dependencies (146 packages)
+|-- README.md                     # Quick-start
+|-- DOCUMENTATION.md              # This file
+|-- STUDY_GUIDE.md                # Presentation study guide
+|
+|-- app/
+|   |-- twilio_handler.py         # Flask app, IVR routes, inbound handling, auth (~1,780 lines)
+|   |-- dashboard.py              # Admin dashboard UI + routes (~1,280 lines)
+|   |-- runtime_status.py         # Background service health tracking (NEW v1.2.0)
+|   |-- state.py                  # Thread-safe state management
+|   |-- scheduler.py              # Background call scheduler
+|   |-- background_worker.py      # ML processing pipeline worker
+|   |-- audio_preprocess.py       # DeepFilterNet noise removal
+|   |-- transcribe.py             # Whisper speech-to-text
+|   |-- translate.py              # Google Translate integration
+|   |-- tts.py                    # Google TTS (English audio)
+|   |-- azure_tts.py              # Azure Cognitive Services TTS
+|   |-- export_excel.py           # Excel response export
+|   |-- auth.py                   # Authentication helpers
+|   |-- utils.py                  # Scheduling utilities
+|   |-- file_naming.py            # Safe filename generation
+|   |-- logger.py                 # Colored logging setup
+|   |-- runtime_warnings.py       # Warning suppression
+|   |-- twilio_utils.py           # Twilio call helpers
+|
+|-- data/
+|   |-- questions.txt             # Survey questions (pipe-delimited)
+|   |-- state/
+|   |   |-- participants.json     # All participant records, responses, status
+|   |   |-- call_log.csv          # Call history with direction field
+|   |   |-- settings.json         # System settings (paused flag)
+|   |-- audio/                    # Raw call recordings (.wav)
+|   |-- audio_processed/          # Denoised recordings (.wav)
+|   |-- transcripts/              # Whisper transcriptions (.txt, Kiswahili)
+|   |-- translations/             # English translations (.txt)
+|   |-- english_audio/            # English TTS audio (.mp3)
+|   |-- ivr_audio/                # Cached IVR prompts (.mp3, hash-named)
+|   |-- results/
+|       |-- ivr_responses.xlsx    # MCQ/MCQO responses (original)
+|       |-- ivr_responses_english.xlsx # MCQ/MCQO responses (English)
+|
+|-- packaging/
+    |-- macos_icon_generator.swift
+    |-- macos_dmg/
+        |-- build_macos_dmg.sh
+        |-- output/AudioSurvey-AI.dmg
+</code></pre>
+<hr />
+<h2>17. Dependency Matrix</h2>
+<h3>17.1 Core Dependencies</h3>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Purpose</th>
+<th>Critical?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Flask</code></td>
+<td>3.1.2</td>
+<td>Web framework</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>twilio</code></td>
+<td>9.10.0</td>
+<td>Telephony API (calls, TwiML, webhooks)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>openai-whisper</code></td>
+<td>20240930</td>
+<td>Post-call speech-to-text (large-v3)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>azure-cognitiveservices-speech</code></td>
+<td>1.48.1</td>
+<td>Neural TTS for IVR prompts</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>googletrans</code></td>
+<td>4.0.0rc1</td>
+<td>Kiswahili → English translation</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>gTTS</code></td>
+<td>2.5.4</td>
+<td>English audio generation</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>deepfilternet</code></td>
+<td>0.5.6</td>
+<td>Background noise removal</td>
+<td>Medium</td>
+</tr>
+<tr>
+<td><code>torch</code></td>
+<td>2.8.0</td>
+<td>ML framework (Whisper + DeepFilterNet)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>torchaudio</code></td>
+<td>2.8.0</td>
+<td>Audio tensor operations</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h3>17.2 Data &amp; Export</h3>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pandas</code></td>
+<td>2.3.3</td>
+<td>DataFrame operations for Excel export</td>
+</tr>
+<tr>
+<td><code>openpyxl</code></td>
+<td>3.1.5</td>
+<td>Excel (.xlsx) file writing</td>
+</tr>
+<tr>
+<td><code>numpy</code></td>
+<td>1.26.4</td>
+<td>Audio data numerical operations</td>
+</tr>
+<tr>
+<td><code>pydub</code></td>
+<td>0.25.1</td>
+<td>Audio manipulation</td>
+</tr>
+</tbody>
+</table>
+<h3>17.3 Infrastructure</h3>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python-dotenv</code></td>
+<td>1.2.1</td>
+<td><code>.env</code> file loading</td>
+</tr>
+<tr>
+<td><code>PyYAML</code></td>
+<td>6.0.3</td>
+<td><code>config.yaml</code> parsing</td>
+</tr>
+<tr>
+<td><code>gunicorn</code></td>
+<td>23.0.0</td>
+<td>Production WSGI server</td>
+</tr>
+<tr>
+<td><code>Werkzeug</code></td>
+<td>3.1.4</td>
+<td>Password hashing, HTTP utilities</td>
+</tr>
+<tr>
+<td><code>colorlog</code></td>
+<td>6.10.1</td>
+<td>Colored console logging</td>
+</tr>
+<tr>
+<td><code>requests</code></td>
+<td>2.32.5</td>
+<td>HTTP client (recording download)</td>
+</tr>
+<tr>
+<td><code>Jinja2</code></td>
+<td>3.1.6</td>
+<td>Template rendering</td>
+</tr>
+</tbody>
+</table>
+<h3>17.4 External Services</h3>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Provider</th>
+<th>Purpose</th>
+<th>Pricing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Voice API</strong></td>
+<td>Twilio</td>
+<td>Outbound/inbound calls, recording, webhooks</td>
+<td>Per-minute</td>
+</tr>
+<tr>
+<td><strong>Speech TTS</strong></td>
+<td>Azure Cognitive Services</td>
+<td>Neural TTS prompts (Swahili + English)</td>
+<td>Per-character</td>
+</tr>
+<tr>
+<td><strong>Translation</strong></td>
+<td>Google Translate (googletrans)</td>
+<td>Kiswahili → English</td>
+<td>Free (scraping)</td>
+</tr>
+<tr>
+<td><strong>Text-to-Speech</strong></td>
+<td>Google TTS (gTTS)</td>
+<td>English audio output</td>
+<td>Free</td>
+</tr>
+<tr>
+<td><strong>Tunneling</strong></td>
+<td>ngrok</td>
+<td>HTTPS tunnel for Twilio webhooks</td>
+<td>Free tier</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>18. Glossary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>IVR</strong></td>
+<td>Interactive Voice Response — automated phone menu system</td>
+</tr>
+<tr>
+<td><strong>DTMF</strong></td>
+<td>Dual-Tone Multi-Frequency — phone keypad tones (pressing 1–9, *, #)</td>
+</tr>
+<tr>
+<td><strong>TwiML</strong></td>
+<td>Twilio Markup Language — XML instructions for call scripting</td>
+</tr>
+<tr>
+<td><strong>TTS</strong></td>
+<td>Text-to-Speech — converting text to spoken audio</td>
+</tr>
+<tr>
+<td><strong>STT</strong></td>
+<td>Speech-to-Text — converting spoken audio to text</td>
+</tr>
+<tr>
+<td><strong>SSML</strong></td>
+<td>Speech Synthesis Markup Language — XML for controlling TTS prosody and voice</td>
+</tr>
+<tr>
+<td><strong>E.164</strong></td>
+<td>International phone number format (e.g., <code>+254700000000</code>)</td>
+</tr>
+<tr>
+<td><strong>CallSid</strong></td>
+<td>Unique Twilio identifier for a phone call</td>
+</tr>
+<tr>
+<td><strong>Direction</strong></td>
+<td>Call direction: <code>inbound</code> (participant called us) or <code>outbound-api</code> (we called them)</td>
+</tr>
+<tr>
+<td><strong>DeepFilterNet</strong></td>
+<td>PyTorch neural network for real-time speech enhancement and noise removal</td>
+</tr>
+<tr>
+<td><strong>Whisper</strong></td>
+<td>OpenAI's multilingual speech recognition model (large-v3 used here)</td>
+</tr>
+<tr>
+<td><strong>MCQ</strong></td>
+<td>Multiple Choice Question — DTMF keypad input</td>
+</tr>
+<tr>
+<td><strong>MCQO</strong></td>
+<td>Multiple Choice with Other — DTMF + optional speech for "Other" option</td>
+</tr>
+<tr>
+<td><strong>OPEN</strong></td>
+<td>Open-ended question — free speech input</td>
+</tr>
+<tr>
+<td><strong>INFO</strong></td>
+<td>Informational prompt — no response collected</td>
+</tr>
+<tr>
+<td><strong>Engaged</strong></td>
+<td>Participant produced detectable real speech during the call</td>
+</tr>
+<tr>
+<td><strong>Pipeline</strong></td>
+<td>The 4-stage ML chain: DeepFilterNet → Whisper → Google Translate → gTTS</td>
+</tr>
+<tr>
+<td><strong>Heartbeat</strong></td>
+<td>Periodic signal emitted by background threads to indicate they are alive</td>
+</tr>
+<tr>
+<td><strong>Atomic Write</strong></td>
+<td>Write to temp file then <code>os.replace()</code> — prevents partial/corrupted file writes</td>
+</tr>
+<tr>
+<td><strong>RLock</strong></td>
+<td>Reentrant Lock — a thread lock the same thread can acquire multiple times</td>
+</tr>
+<tr>
+<td><strong>Daemon Thread</strong></td>
+<td>Background thread that automatically exits when the main process ends</td>
+</tr>
+<tr>
+<td><strong>ngrok</strong></td>
+<td>Tunneling service that exposes localhost to the internet over HTTPS</td>
+</tr>
+<tr>
+<td><strong>Kiswahili / sw</strong></td>
+<td>Swahili language (ISO 639-1: <code>sw</code>; BCP 47 locale: <code>sw-KE</code>)</td>
+</tr>
+<tr>
+<td><strong>PBKDF2</strong></td>
+<td>Password-Based Key Derivation Function 2 — slow hashing for password storage</td>
+</tr>
+<tr>
+<td><strong>PII</strong></td>
+<td>Personally Identifiable Information (phone numbers, names) — kept gitignored</td>
+</tr>
+<tr>
+<td><strong>Flatpickr</strong></td>
+<td>JavaScript date/time picker library used in the admin dashboard</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p align="center"><em>End of Document</em> &nbsp;|&nbsp; <code>AudioSurvey AI v1.2.0</code> &nbsp;|&nbsp; <code>April 6, 2026</code> &nbsp;|&nbsp; <code>Confidential — Internal Use Only</code></p>
+</div>
+</body>
+</html>
