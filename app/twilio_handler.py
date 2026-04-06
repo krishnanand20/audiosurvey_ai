@@ -401,38 +401,310 @@ def _render_login_page(err: str = "") -> str:
   <style>
     :root {{
       --bg: #0b1020;
-      --card: rgba(18,26,51,.78);
+      --card: rgba(18,26,51,.80);
       --muted: #9aa4c3;
       --text: #e8ecff;
       --line: rgba(255,255,255,.08);
       --accent: #7c5cff;
+      --accent-soft: rgba(124,92,255,.18);
+      --good: #20c997;
+      --good-soft: rgba(32,201,151,.16);
       --bad: #ff6b6b;
     }}
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(1200px 800px at 20% 10%, rgba(124,92,255,.22), transparent 60%),
-                  radial-gradient(900px 600px at 80% 20%, rgba(32,201,151,.12), transparent 55%),
+      background: radial-gradient(1200px 800px at 18% 10%, rgba(124,92,255,.20), transparent 58%),
+                  radial-gradient(900px 640px at 82% 14%, rgba(32,201,151,.15), transparent 55%),
+                  radial-gradient(760px 520px at 50% 100%, rgba(255,255,255,.05), transparent 60%),
                   var(--bg);
       color: var(--text);
       min-height: 100vh;
       display: grid;
       place-items: center;
-      padding: 18px;
+      padding: 22px;
     }}
-    .card {{
+    .shell {{
       width: 100%;
-      max-width: 420px;
+      max-width: 1080px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(360px, .8fr);
+      gap: 20px;
+      align-items: stretch;
+    }}
+    .panel {{
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      backdrop-filter: blur(8px);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 18px 46px rgba(0,0,0,.28);
+      backdrop-filter: blur(12px);
     }}
-    h1 {{ margin: 0 0 6px 0; font-size: 20px; }}
-    p {{ margin: 0 0 14px 0; color: var(--muted); font-size: 13px; }}
+    .welcome {{
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(760px 360px at 8% 12%, rgba(124,92,255,.22), transparent 62%),
+        radial-gradient(520px 280px at 86% 14%, rgba(32,201,151,.18), transparent 60%),
+        linear-gradient(160deg, rgba(18,26,51,.96), rgba(10,16,32,.90));
+    }}
+    .welcome::before {{
+      content: "";
+      position: absolute;
+      inset: auto -60px -90px auto;
+      width: 280px;
+      height: 280px;
+      border-radius: 32px;
+      background: linear-gradient(135deg, rgba(124,92,255,.12), rgba(32,201,151,.08));
+      border: 1px solid rgba(255,255,255,.05);
+      transform: rotate(18deg);
+      pointer-events: none;
+    }}
+    .welcome::after {{
+      content: "";
+      position: absolute;
+      inset: 28px 34px auto auto;
+      width: 120px;
+      height: 120px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(32,201,151,.18), transparent 68%);
+      pointer-events: none;
+    }}
+    .brand-row {{
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 26px;
+    }}
+    .brand-mark {{
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      background: linear-gradient(135deg, rgba(124,92,255,.34), rgba(32,201,151,.24));
+      border: 1px solid rgba(255,255,255,.10);
+      color: #f8fbff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+    }}
+    .brand-copy {{
+      min-width: 0;
+    }}
+    .brand-name {{
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .01em;
+    }}
+    .brand-sub {{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 3px;
+    }}
+    .hero-layout {{
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(260px, .95fr);
+      gap: 18px;
+      align-items: start;
+    }}
+    .hero-kicker {{
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      color: #d9e4ff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .18px;
+      margin-bottom: 14px;
+    }}
+    .hero-kicker-dot {{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(32,201,151,.14);
+      display: inline-block;
+    }}
+    h1 {{
+      margin: 0;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 1.05;
+      letter-spacing: -.02em;
+      max-width: 9ch;
+      text-wrap: balance;
+    }}
+    .hero-copy {{
+      min-width: 0;
+    }}
+    .welcome-copy {{
+      margin: 16px 0 0 0;
+      color: #d0d6ea;
+      font-size: 15px;
+      line-height: 1.72;
+      max-width: 46ch;
+    }}
+    .hero-list {{
+      margin-top: 22px;
+      display: grid;
+      gap: 10px;
+    }}
+    .hero-item {{
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+    }}
+    .hero-item strong {{
+      display: block;
+      color: #f5f8ff;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }}
+    .hero-item span {{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }}
+    .trust-row {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }}
+    .trust-chip {{
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      color: #d7e0f6;
+      font-size: 12px;
+      font-weight: 700;
+    }}
+    .preview-stack {{
+      display: grid;
+      gap: 12px;
+    }}
+    .preview-card {{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.05);
+      padding: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }}
+    .preview-primary {{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03)),
+        linear-gradient(135deg, rgba(124,92,255,.15), rgba(32,201,151,.08));
+    }}
+    .preview-label {{
+      color: #d6def6;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }}
+    .preview-title {{
+      font-size: 19px;
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      max-width: 16ch;
+    }}
+    .preview-copy {{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }}
+    .mini-metrics {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }}
+    .mini-metric {{
+      padding: 10px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.16);
+      border: 1px solid rgba(255,255,255,.06);
+    }}
+    .mini-metric strong {{
+      display: block;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }}
+    .mini-metric span {{
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }}
+    .preview-rail {{
+      display: grid;
+      gap: 10px;
+    }}
+    .preview-note {{
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }}
+    .preview-dot {{
+      width: 10px;
+      height: 10px;
+      margin-top: 4px;
+      border-radius: 999px;
+      background: var(--good);
+      flex: 0 0 auto;
+      box-shadow: 0 0 0 4px rgba(32,201,151,.10);
+    }}
+    .preview-note strong {{
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }}
+    .preview-note span {{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }}
+    .auth-card {{
+      align-self: center;
+      position: relative;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
+        rgba(18,26,51,.92);
+    }}
+    .auth-kicker {{
+      color: #cdd6f4;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }}
+    .auth-title {{
+      margin: 0 0 6px 0;
+      font-size: 22px;
+    }}
+    .auth-copy {{
+      margin: 0 0 14px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }}
+    .auth-form {{
+      margin-top: 8px;
+    }}
     .banner {{
       border-radius: 14px; padding: 10px 12px;
       border: 1px solid rgba(255,107,107,.35);
@@ -447,37 +719,157 @@ def _render_login_page(err: str = "") -> str:
       border: 1px solid var(--line);
       background: rgba(0,0,0,.18);
       color: var(--text);
-      padding: 10px 10px;
-      border-radius: 12px;
+      padding: 11px 12px;
+      border-radius: 14px;
       outline: none;
       font-size: 14px;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }}
+    input:focus {{
+      border-color: rgba(124,92,255,.34);
+      background: rgba(255,255,255,.03);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.10);
     }}
     button {{
       margin-top: 14px;
       width: 100%;
       border: 1px solid rgba(124,92,255,.35);
-      background: rgba(124,92,255,.22);
+      background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(124,92,255,.16));
       color: var(--text);
-      padding: 10px 12px;
-      border-radius: 12px;
+      padding: 11px 12px;
+      border-radius: 14px;
       cursor: pointer;
       font-weight: 700;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
     }}
-    button:hover {{ background: rgba(124,92,255,.28); }}
+    button:hover {{
+      background: linear-gradient(135deg, rgba(124,92,255,.36), rgba(124,92,255,.20));
+      border-color: rgba(124,92,255,.48);
+    }}
+    button:active {{ transform: translateY(1px); }}
+    .auth-footer {{
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }}
+    @media (max-width: 820px) {{
+      .shell {{
+        grid-template-columns: 1fr;
+        max-width: 560px;
+      }}
+      .hero-layout {{
+        grid-template-columns: 1fr;
+      }}
+      h1 {{
+        max-width: none;
+      }}
+      .mini-metrics {{
+        grid-template-columns: 1fr;
+      }}
+    }}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>AudioSurvey AI</h1>
-    <p>Sign in to continue.</p>
-    {f'<div class="banner">{err}</div>' if err else ''}
-    <form method="POST" action="/login">
-      <label>Username</label>
-      <input name="username" autocomplete="username" />
-      <label>Password</label>
-      <input name="password" type="password" autocomplete="current-password" />
-      <button type="submit">Sign in</button>
-    </form>
+  <div class="shell">
+    <section class="panel welcome">
+      <div class="brand-row">
+        <div class="brand-mark">AS</div>
+        <div class="brand-copy">
+          <div class="brand-name">AudioSurvey AI</div>
+          <div class="brand-sub">Voice research operations cockpit</div>
+        </div>
+      </div>
+
+      <div class="hero-layout">
+        <div class="hero-copy">
+          <div class="hero-kicker"><span class="hero-kicker-dot"></span>Welcome back</div>
+          <h1>Welcome to your survey control room.</h1>
+          <p class="welcome-copy">
+            Keep calling, processing, and response tracking moving from one focused place built for day-to-day field operations.
+          </p>
+
+          <div class="hero-list">
+            <div class="hero-item">
+              <strong>See the whole call flow</strong>
+              <span>Manage inbound and outbound calls, participant state, and live activity from a single admin view.</span>
+            </div>
+            <div class="hero-item">
+              <strong>Stay close to system health</strong>
+              <span>Watch scheduler status, worker status, and live load without leaving the dashboard.</span>
+            </div>
+            <div class="hero-item">
+              <strong>Move from recording to export</strong>
+              <span>Track survey responses through processing, transcripts, translations, and Excel output with less guesswork.</span>
+            </div>
+          </div>
+
+          <div class="trust-row">
+            <span class="trust-chip">Inbound ready</span>
+            <span class="trust-chip">Outbound ready</span>
+            <span class="trust-chip">Live exports</span>
+          </div>
+        </div>
+
+        <div class="preview-stack">
+          <div class="preview-card preview-primary">
+            <div class="preview-label">Operations View</div>
+            <div class="preview-title">One dashboard for live calling and survey follow-through.</div>
+            <div class="preview-copy">Built to help the team stay calm during active survey windows.</div>
+            <div class="mini-metrics">
+              <div class="mini-metric">
+                <strong>Live</strong>
+                <span>Call activity and participant state</span>
+              </div>
+              <div class="mini-metric">
+                <strong>Track</strong>
+                <span>Worker progress and system load</span>
+              </div>
+              <div class="mini-metric">
+                <strong>Export</strong>
+                <span>Responses when calls complete</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-card preview-rail">
+            <div class="preview-note">
+              <span class="preview-dot"></span>
+              <div>
+                <strong>Protected admin access</strong>
+                <span>Only authorized team members can enter the operational dashboard.</span>
+              </div>
+            </div>
+            <div class="preview-note">
+              <span class="preview-dot"></span>
+              <div>
+                <strong>Field-friendly visibility</strong>
+                <span>Important controls stay close at hand when calls are active and time matters.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel auth-card">
+      <div class="auth-kicker">Secure Access</div>
+      <h2 class="auth-title">Sign in to continue</h2>
+      <p class="auth-copy">Use your admin credentials to open the dashboard and manage the survey system.</p>
+      {f'<div class="banner">{err}</div>' if err else ''}
+      <form class="auth-form" method="POST" action="/login">
+        <label>Username</label>
+        <input name="username" autocomplete="username" />
+        <label>Password</label>
+        <input name="password" type="password" autocomplete="current-password" />
+        <button type="submit">Sign in</button>
+      </form>
+      <div class="auth-footer">
+        Access opens the live dashboard for participant management, call control, and survey operations.
+      </div>
+    </section>
   </div>
 </body>
 </html>

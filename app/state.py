@@ -161,6 +161,7 @@ def mark_call_started(
     p["attempts"] = int(p.get("attempts", 0)) + 1
     p["last_call_time"] = _now_iso()
     p["last_call_sid"] = call_sid
+    p["last_call_status"] = None
     if direction:
         p["last_call_direction"] = direction
     p["engaged"] = False  # reset each attempt
