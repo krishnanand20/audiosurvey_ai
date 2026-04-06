@@ -99,6 +99,15 @@ def engaged_badge(engaged: bool) -> str:
     return f'<span class="{cls}"><span class="eng-dot"></span>{label}</span>'
 
 
+def direction_badge(direction: Optional[str]) -> str:
+    d = (direction or "").lower().strip()
+    if d == "incoming":
+        return '<span class="pill pill-ok">Incoming</span>'
+    if d == "outgoing":
+        return '<span class="pill pill-warn">Outgoing</span>'
+    return '<span class="pill pill-neutral">-</span>'
+
+
 def _dashboard_snapshot(state: dict) -> tuple[int, dict, list[dict]]:
     total = len(state)
     counts = {"pending": 0, "in_progress": 0, "completed": 0, "failed": 0}
@@ -115,6 +124,7 @@ def _dashboard_snapshot(state: dict) -> tuple[int, dict, list[dict]]:
             {
                 "participant_id": str(pid),
                 "phone_masked": mask_phone(p.get("phone_e164")),
+                "last_call_direction": p.get("last_call_direction") or "",
                 "status": p.get("status") or "pending",
                 "attempts": int(p.get("attempts", 0) or 0),
                 "engaged": bool(p.get("engaged", False)),
@@ -134,6 +144,7 @@ def _participants_rows_html(participants: list[dict]) -> str:
           <tr>
             <td class="mono">{p["participant_id"]}</td>
             <td class="mono">{p["phone_masked"]}</td>
+            <td>{direction_badge(p.get("last_call_direction"))}</td>
             <td>{pill(p["status"])}</td>
             <td class="mono">{p["attempts"]}</td>
             <td>{engaged_badge(p["engaged"])}</td>
@@ -168,7 +179,7 @@ def admin_home():
     total, counts, participants = _dashboard_snapshot(state)
 
     rows = _participants_rows_html(participants) if participants else """
-      <tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>
+      <tr><td colspan="8" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>
     """
 
     initial_clock = datetime.now(NY_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
@@ -582,6 +593,7 @@ def admin_home():
           <tr>
             <th>ID</th>
             <th>Phone</th>
+            <th>Direction</th>
             <th>Status</th>
             <th>Attempts</th>
             <th>Engaged</th>
@@ -672,9 +684,17 @@ def admin_home():
       return '<span class="eng-badge eng-no"><span class="eng-dot"></span>Not engaged</span>';
     }}
 
+    function directionBadge(directionRaw) {{
+      const d = String(directionRaw || "").toLowerCase().trim();
+      if (d === "incoming") return '<span class="pill pill-ok">Incoming</span>';
+      if (d === "outgoing") return '<span class="pill pill-warn">Outgoing</span>';
+      return '<span class="pill pill-neutral">-</span>';
+    }}
+
     function participantRow(p) {{
       const pid = esc(p.participant_id);
       const phone = esc(p.phone_masked || "");
+      const direction = directionBadge(p.last_call_direction);
       const status = statusPill(p.status);
       const attempts = esc(p.attempts ?? 0);
       const engaged = engagedBadge(!!p.engaged);
@@ -685,6 +705,7 @@ def admin_home():
         <tr>
           <td class="mono">${{pid}}</td>
           <td class="mono">${{phone}}</td>
+          <td>${{direction}}</td>
           <td>${{status}}</td>
           <td class="mono">${{attempts}}</td>
           <td>${{engaged}}</td>
@@ -811,7 +832,7 @@ def admin_home():
 
           const ps = Array.isArray(data.participants) ? data.participants : [];
           if (!ps.length) {{
-            participantsTbody.innerHTML = '<tr><td colspan="7" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>';
+            participantsTbody.innerHTML = '<tr><td colspan="8" class="muted">No participants loaded yet. Upload a contacts CSV.</td></tr>';
           }} else {{
             participantsTbody.innerHTML = ps.map(participantRow).join("");
             initSchedulePickers(participantsTbody);
@@ -876,6 +897,7 @@ def admin_upload_contacts():
         state[pid]["engaged"] = False
         state[pid]["last_call_sid"] = None
         state[pid]["last_call_status"] = None
+        state[pid]["last_call_direction"] = None
 
         count += 1
 

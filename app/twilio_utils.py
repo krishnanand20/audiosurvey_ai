@@ -95,7 +95,7 @@ def dial_eligible_participants() -> int:
             status_callback_method="POST",
         )
 
-        mark_call_started(state, pid, call.sid)
+        mark_call_started(state, pid, call.sid, direction="outgoing")
         calls_placed += 1
 
     if calls_placed:

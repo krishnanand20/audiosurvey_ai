@@ -85,7 +85,7 @@ def run_once(force: bool = False) -> None:
             status_callback_method="POST",
         )
 
-        mark_call_started(state, participant_id, call.sid)
+        mark_call_started(state, participant_id, call.sid, direction="outgoing")
         log(f"Calling {participant_id} -> {phone} | CallSid={call.sid}")
         any_called = True
 

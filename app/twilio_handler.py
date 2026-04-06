@@ -800,6 +800,15 @@ def participant_phone_candidates(direction: str, from_number: str, to_number: st
     return candidates
 
 
+def state_direction_for_call(direction: str) -> Optional[str]:
+    direction_norm = (direction or "").lower().strip()
+    if direction_norm == "inbound":
+        return "incoming"
+    if direction_norm.startswith("outbound"):
+        return "outgoing"
+    return None
+
+
 def ensure_participant_for_call(call_sid: str, direction: str, from_number: str, to_number: str):
     resolution = "unresolved"
     changed = False
@@ -827,7 +836,12 @@ def ensure_participant_for_call(call_sid: str, direction: str, from_number: str,
             changed = True
 
         if pid and call_sid and current_state[pid].get("last_call_sid") != call_sid:
-            mark_call_started(current_state, pid, call_sid)
+            mark_call_started(
+                current_state,
+                pid,
+                call_sid,
+                direction=state_direction_for_call(direction),
+            )
             changed = True
 
         if changed:

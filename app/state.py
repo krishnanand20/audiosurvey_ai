@@ -22,6 +22,7 @@ DEFAULT = {
     "last_call_time": None,       # ISO UTC string
     "last_call_sid": None,
     "last_call_status": None,     # Twilio CallStatus
+    "last_call_direction": None,  # incoming | outgoing
     "last_excel_export_call_sid": None,
     "engaged": False,             # True only if we saw real SpeechResult
     "last_recording_url": None,
@@ -149,12 +150,19 @@ def mark_engaged(state: dict, participant_id: str) -> None:
     p = state.setdefault(participant_id, dict(DEFAULT))
     p["engaged"] = True
 
-def mark_call_started(state: Dict[str, Any], participant_id: str, call_sid: str) -> None:
+def mark_call_started(
+    state: Dict[str, Any],
+    participant_id: str,
+    call_sid: str,
+    direction: Optional[str] = None,
+) -> None:
     p = state.setdefault(participant_id, dict(DEFAULT))
     p["status"] = "in_progress"
     p["attempts"] = int(p.get("attempts", 0)) + 1
     p["last_call_time"] = _now_iso()
     p["last_call_sid"] = call_sid
+    if direction:
+        p["last_call_direction"] = direction
     p["engaged"] = False  # reset each attempt
 
 def mark_completed(state: Dict[str, Any], participant_id: str, recording_url: str, outputs: Dict[str, str]) -> None:
